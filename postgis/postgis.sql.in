@@ -62,26 +62,6 @@ END
 $$ LANGUAGE 'plpgsql';
 
 
--- Check that pgaudit is disabled or not installed
--- Running extension creation with pgaudit enabled will result in a
--- multi-gigabyte log storm for PgSQL <= 14
-DO $$
-DECLARE
-	pgalog text;
-BEGIN
-	SHOW pgaudit.log INTO pgalog;
-	RAISE DEBUG 'pgaudit is installed, pgaudit.log is set to ''%''', pgalog;
-	IF pg_catalog.lower(pgalog) != 'none'
-	THEN
-		RAISE EXCEPTION 'PostGIS installation stopped: pgaudit.log is set to ''%''. Set pgaudit.log to ''none'' before installing PostGIS. You may re-enable pgaudit after installation is complete.', pgalog;
-	END IF;
-EXCEPTION
-	WHEN undefined_object THEN
-		RAISE DEBUG 'pgaudit is not installed';
-END;
-$$;
-
-
 -- Let the user know about a deprecated signature and its new name, if any
 CREATE OR REPLACE FUNCTION _postgis_deprecate(oldname text, newname text, version text)
 RETURNS void AS
@@ -6986,5 +6966,25 @@ CREATE OR REPLACE FUNCTION ST_3DLineInterpolatePoint(geometry, float8)
 -- moved to separate file cause its involved
 #include "postgis_spgist.sql.in"
 #include "postgis_letters.sql"
+
+-----------------------------------------------------------------------
+-- ST_RemoveIrrelevantPointsForView
+-----------------------------------------------------------------------
+-- Availability: 3.5.0
+CREATE OR REPLACE FUNCTION ST_RemoveIrrelevantPointsForView(geometry, box2d)
+RETURNS geometry
+AS 'MODULE_PATHNAME','ST_RemoveIrrelevantPointsForView'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_MEDIUM;
+
+-----------------------------------------------------------------------
+-- ST_RemoveSmallParts
+-----------------------------------------------------------------------
+-- Availability: 3.5.0
+CREATE OR REPLACE FUNCTION ST_RemoveSmallParts(geometry, double precision, double precision)
+RETURNS geometry
+AS 'MODULE_PATHNAME','ST_RemoveSmallParts'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_MEDIUM;
 
 COMMIT;
