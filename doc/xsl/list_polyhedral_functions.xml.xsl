@@ -7,8 +7,8 @@
 	 ********************************************************************
 	 Copyright 2010-2022, Regina Obe
 	 License: BSD-3-Clause
-   Purpose: This is an xsl transform that generates file list_sqlmm_functions.xml.xsl which
-   includes index listing of functions implementing SQL/MM standard.
+   Purpose: This is an xsl transform that generates file list_curved_geometry_functions.xml.xsl which
+   includes index listing of functions supporting curved geometries.
    It uses xml reference sections from reference.xml to then be processed by docbook
 	 ******************************************************************** -->
 	<xsl:output method="xml" indent="yes" encoding="utf-8" />
@@ -18,15 +18,15 @@
 		<xsl:apply-templates select="/db:book/db:chapter[contains(@xml:id, 'reference')]" />
 	</xsl:template>
 
+
 	<xsl:template match="/">
-			<itemizedlist>
+				<itemizedlist>
 			<!-- Pull out the purpose section for each ref entry and strip whitespace and put in a variable to be tagged unto each function comment  -->
 				<xsl:for-each select='//db:refentry'>
 					<xsl:sort select="@xml:id"/>
 					<xsl:variable name='comment'>
 						<xsl:value-of select="normalize-space(translate(translate(db:refnamediv/db:refpurpose,'&#x0d;&#x0a;', ' '), '&#09;', ' '))"/>
 					</xsl:variable>
-
 					<xsl:variable name="refid">
 						<xsl:value-of select="@xml:id" />
 					</xsl:variable>
@@ -34,13 +34,13 @@
 						<xsl:value-of select="db:refnamediv/db:refname" />
 					</xsl:variable>
 
-			<!-- For each section if there is note that it implements SQL/MM catalog it -->
+			<!-- For each section if there is note that it implements Circular String catalog it -->
 						<xsl:for-each select="db:refsection">
-								<xsl:choose>
-									<xsl:when test="descendant::node()[@conformance='sqlmm']">
-										<listitem><simpara><link linkend="{$refid}"><xsl:value-of select="$refname" /></link> - <xsl:value-of select="$comment" /></simpara></listitem>
-									</xsl:when>
-								</xsl:choose>
+							<xsl:choose>
+								<xsl:when test="descendant::node()[@conformance='polyhedral']">
+									<listitem><simpara><link linkend="{$refid}"><xsl:value-of select="$refname" /></link> - <xsl:value-of select="$comment" /></simpara></listitem>
+								</xsl:when>
+							</xsl:choose>
 						</xsl:for-each>
 				</xsl:for-each>
 				</itemizedlist>
