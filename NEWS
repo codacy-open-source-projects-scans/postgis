@@ -3,12 +3,15 @@ PostGIS 3.6.0
 
 * Breaking Changes *
 
-#5799, make ST_TileEnvelope clips envelopes to tile plane extent (Paul Ramsey)
+  - #5799, make ST_TileEnvelope clips envelopes to tile plane extent (Paul Ramsey)
 
 * Deprecated signatures *
 
 
 * New Features *
 
-#5784, GT-223 Export circ_tree_distance_tree_internal for mobilitydb use
-      (Maxime Schoemans)
+  - #1247, ST_AsRasterAgg (Sandro Santilli)
+  - #5784, GT-223 Export circ_tree_distance_tree_internal for mobilitydb use
+           (Maxime Schoemans)
+  - GT-228 Add new functions (Scale, Translate, Rotate, Buffer 3D and
+           Straight Skeleton Partition) from SFCGAL 2 (Loïc Bartoletti)

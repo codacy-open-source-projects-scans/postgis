@@ -1975,7 +1975,7 @@ Changes the shape of an edge without affecting the topology structure.
 			<refsynopsisdiv>
 				<funcsynopsis>
 					<funcprototype>
-					<funcdef>integer <function>ST_ChangeEdgeGeom</function></funcdef>
+					<funcdef>text <function>ST_ChangeEdgeGeom</function></funcdef>
 					<paramdef><type>varchar </type> <parameter>atopology</parameter></paramdef>
 					<paramdef><type>integer </type> <parameter>anedge</parameter></paramdef>
 					<paramdef><type>geometry </type> <parameter>acurve</parameter></paramdef>
@@ -3607,7 +3607,7 @@ Layer 1, type Polygonal (3), 15 topogeoms
         <programlisting><![CDATA[
 
 -- Shrink all TopoGeometry polygons by 10 meters
-UPDATE nei_topo SET topo = ST_Buffer(clearTopoGeom(topo), -10);
+UPDATE nei_topo SET topo = toTopoGeom(ST_Buffer(topo, -10), clearTopoGeom(topo), 0);
 
 -- Get the no-one-lands left by the above operation
 -- I think GRASS calls this "polygon0 layer"
@@ -3757,7 +3757,7 @@ objects and any dependent object in higher hierarchical levels.
 				<title>Examples</title>
         <programlisting>
 -- Shrink all TopoGeometry polygons by 10 meters
-UPDATE nei_topo SET topo = ST_Buffer(clearTopoGeom(topo), -10);
+UPDATE nei_topo SET topo = toTopoGeom(ST_Buffer(topo, -10), clearTopoGeom(topo), 0);
 				</programlisting>
 			</refsection>
 
