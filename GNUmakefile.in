@@ -78,7 +78,7 @@ clean-local:
 # TODO: drop 'test' target..
 test: check
 
-check: check-unit docs-check check-lint
+check: check-unit docs-check check-lint check-spell
 
 ifeq (@SUPPORT_POSTGRESQL@,yes)
 check: check-regress
@@ -285,7 +285,7 @@ ifeq (@TOPOLOGY@,topology)
 	include $(top_srcdir)/topology/test/tests.mk
 endif
 ifeq (@RASTER@,raster)
-	include $(top_srcdir)/raster/test/regress/tests.mk
+	include $(top_builddir)/raster/test/regress/tests.mk
 endif
 
 include $(top_srcdir)/regress/runtest.mk
@@ -304,3 +304,10 @@ ifeq (@TOPOLOGY@,topology)
 	$(MAKE) -C topology/test $@
 endif
 
+
+check-spell:
+ifneq (@CODESPELL@,)
+	cd $(top_srcdir) && @CODESPELL@
+else
+	@echo "SKIP: codespell not installed, cannot check spell"
+endif

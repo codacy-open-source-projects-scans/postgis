@@ -1,15 +1,17 @@
 # Japanese translations for postgis package.
 # Automatically generated, 2023.
 #
-# Teramoto Ikuhiro <yellow@affrc.go.jp>, 2023, 2024.
+# Teramoto Ikuhiro <yellow@affrc.go.jp>, 2023, 2024, 2025.
 # Yoichi Kayama <yoichi.kayama@gmail.com>, 2024.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+# Teramoto Ikuhiro <teramoto.ikuhiro576@naro.go.jp>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: postgis 3.5\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2024-11-19 11:58+0000\n"
-"PO-Revision-Date: 2024-12-12 10:47+0000\n"
-"Last-Translator: Teramoto Ikuhiro <yellow@affrc.go.jp>\n"
+"POT-Creation-Date: 2025-08-21 03:28+0000\n"
+"PO-Revision-Date: 2025-08-25 08:47+0000\n"
+"Last-Translator: Teramoto Ikuhiro <teramoto.ikuhiro576@naro.go.jp>\n"
 "Language-Team: Japanese <https://weblate.osgeo.org/projects/postgis/postgis-"
 "manual/ja/>\n"
 "Language: ja\n"
@@ -174,7 +176,7 @@ msgstr "空間データベースにしたいデータベース上で次のSQLを
 #, no-c-format
 msgid "Spatially enable database without using EXTENSION (discouraged)"
 msgstr ""
-"エクステンションを使わずに空間データベースを有効にする (お勧めできません)"
+"エクステンションを使わずに空間データベースを有効にする (お勧めしません)"
 
 #. Tag: para
 #, no-c-format
@@ -283,8 +285,8 @@ msgid ""
 "the dump with a HARD UPGRADE."
 msgstr ""
 "PostGISをアップグレードしようとする前にデータのバックアップを取ることは、常に"
-"価値のあるものです。pg_dumpで -Fc フラグを使うと、ハードアップグレードによっ"
-"てダンプを常にリストアすることができます。"
+"価値のあるものです。pg_dumpで -Fc フラグを使うと、ハードアップグレードでダン"
+"プを常にリストアすることができます。"
 
 #. Tag: title
 #, no-c-format
@@ -328,8 +330,8 @@ msgid ""
 "version you have installed."
 msgstr ""
 "PostGIS 3以上を実行している場合には、<xref "
-"linkend=\"PostGIS_Extensions_Upgrade\"/>関数を使ってインストールしているもの"
-"のうち最新の版にアップグレードすべきです。"
+"linkend=\"PostGIS_Extensions_Upgrade\"/>関数を使って、インストールしているも"
+"のを最新のバージョンにアップグレードするべきです。"
 
 #. Tag: para
 #, no-c-format
@@ -402,7 +404,7 @@ msgid ""
 msgstr ""
 "PostGISエクステンションを3.0.0より前からアップグレードする場合には、ラスタ機"
 "能が不要なら、安全に削除できる新しい <emphasis>postgis_raster</emphasis>エク"
-"ステンションを持つことになります。次のようにします:"
+"ステンションを持つことになります。削除は次のようにします:"
 
 #. Tag: title
 #, no-c-format
@@ -427,8 +429,8 @@ msgid ""
 "<link linkend=\"hard_upgrade\">HARD UPGRADE</link>."
 msgstr ""
 "ご注意: PostGIS 1.*またはr7429以前のPostGIS 2.*へ移行する場合には、この手続き"
-"を使うことができませんが、<link linkend=\"hard_upgrade\">ハードアップグレード"
-"</link>を実行する必要があります。"
+"を使うことができず、<link linkend=\"hard_upgrade\">ハードアップグレード</"
+"link>を実行する必要があります。"
 
 #. Tag: para
 #, no-c-format
@@ -438,8 +440,8 @@ msgid ""
 "can list them all with:"
 msgstr ""
 "コンパイルとインストール (make install)の実行後に、インストール先フォルダ内に"
-"ある<filename>*_upgrade.sql</filename>のファイルの集合を見つけておくべきで"
-"す。次のコマンドで一覧を得られます:"
+"ある<filename>*_upgrade.sql</filename>のファイル一式を見つけておくべきです。"
+"次のコマンドで一覧を得られます:"
 
 #. Tag: para
 #, no-c-format
@@ -459,7 +461,8 @@ msgstr ""
 "同じ手続きをラスタ、トポロジ、SFCGALエクステンションに適用します。それぞれの"
 "ファイル名は<filename>rtpostgis_upgrade.sql</filename>, "
 "<filename>topology_upgrade.sql</filename>, <filename>sfcgal_upgrade.sql</"
-"filename>になります。必要な場合は次のように実行します:"
+"filename>になります。これらのエクステンションが必要な場合には次のように実行し"
+"ます:"
 
 #. Tag: para
 #, no-c-format
@@ -474,10 +477,10 @@ msgid ""
 "upgrading your version you are using a version too early for a soft upgrade "
 "and need to do a <link linkend=\"hard_upgrade\">HARD UPGRADE</link>."
 msgstr ""
-"求める版へのアップグレードに使う特定の<filename>postgis_upgrade.sql</"
-"filename>が発見できない場合には、ソフトアップグレードを実行するにはあまりに前"
-"の版を使っています。<link linkend=\"hard_upgrade\">ハードアップグレード</"
-"link>が必要です。"
+"アップグレードに使う特定の<filename>postgis_upgrade.sql</filename>が発見でき"
+"ない場合には、ソフトアップグレードを実行するにはあまりに前のバージョンを使っ"
+"ています。<link linkend=\"hard_upgrade\">ハードアップグレード</link>が必要で"
+"す。"
 
 #. Tag: para
 #, no-c-format
@@ -504,11 +507,11 @@ msgid ""
 "Notes</link> appendix reports for each version whether you need a dump/"
 "reload (HARD UPGRADE) to upgrade."
 msgstr ""
-"ハードアップグレードとは、PostGISで利用可能なデータの完全なダンプ/リロードを"
-"意味します。PostGISオブジェクトの内部格納状態が変更される場合や、ソフトアップ"
-"グレードができない場合に、ハードアップグレードが必要です。付録の<link "
-"linkend=\"release_notes\">リリースノート</link>に、版ごとについて、ダンプ/リ"
-"ロード (ハードアップグレード)の要否を記載しています。"
+"ハードアップグレードとは、PostGISで利用可能なデータベースの完全なダンプ/リ"
+"ロードを意味します。PostGISオブジェクトの内部格納状態が変更される場合や、ソフ"
+"トアップグレードができない場合に、ハードアップグレードが必要です。付録の"
+"<link linkend=\"release_notes\">リリースノート</link>に、バージョンごとのダン"
+"プ/リロード (ハードアップグレード)の要否を記載しています。"
 
 #. Tag: para
 #, no-c-format
@@ -519,10 +522,10 @@ msgid ""
 "database with PostGIS installed without getting duplicate symbol errors or "
 "bringing forward deprecated objects."
 msgstr ""
-"ダンプ/リロード作業はpostgis_restoreスクリプトが補助します。このスクリプト"
-"は、PostGIS (古いものを含む)に属する定義を全て飛ばします。また、重複シンボル"
-"エラーや非推奨オブジェクトを持越すことなく、スキーマとデータをPostGISをインス"
-"トールしたデータベースにリストアできます 。"
+"ダンプ/リロード作業はpostgis_restoreスクリプトが補助します。このスクリプトを"
+"使うと、PostGIS (古いものを含む)に属する定義を全て飛ばしてダンプします。ま"
+"た、重複シンボルエラーや非推奨オブジェクトを持越すことなく、スキーマとデータ"
+"をPostGISをインストールしたデータベースにリストアできます 。"
 
 #. Tag: para
 #, no-c-format
@@ -574,10 +577,11 @@ msgid ""
 "If for any reason you really want your own overrides of standard entries "
 "just don't load the spatial_ref_sys.sql file when creating the new db."
 msgstr ""
-"ダンプにあるspatial_ref_sysは、リストアされますが、既にあるspatial_ref_sysを"
-"上書きしません。リストア対象のデータベースに公式データセットの訂正が確実に伝"
-"わるようにするためです。標準のエントリを上書きしたい場合は、newdbを生成する際"
-"にspaltial_ref_sys.sqlファイルをロードしないだけです。"
+"ダンプにあるspatial_ref_sysのエントリはリストアされますが、既にある"
+"spatial_ref_sysのエントリを上書きしません。リストア対象のデータベースに公式"
+"データセットの訂正が確実に伝わるようにするためです。なんらかの理由で標準のエ"
+"ントリを上書きしたい場合には、newdbを生成する際にspaltial_ref_sys.sqlファイル"
+"をロードしないだけです。"
 
 #. Tag: para
 #, no-c-format
@@ -590,11 +594,12 @@ msgid ""
 "functions can be later removed by loading <filename>uninstall_legacy.sql</"
 "filename>."
 msgstr ""
-"データベースが本当に古く、ビューや関数に、長く非推奨になっている関数があるよ"
-"うな場合には、関数やビューを使えるようにする<filename>legacy.sql</filename>を"
-"ロードする必要があるでしょう。ただし、本当に必要な場合に限ります。可能なら、"
-"ビューや関数をダンプせずにアップグレードすることを検討して下さい。非推奨関数"
-"は、<filename>uninstall_legacy.sql</filename>で後から削除することができます。"
+"データベースが本当に古くて、ビューや関数の中に、非推奨になってから長い関数が"
+"あるような場合には、それらの関数やビューを使えるようにする<filename>legacy."
+"sql</filename>をロードする必要があるでしょう。ただし「本当に」必要な場合に限"
+"ります。可能なら、ビューや関数をダンプせずにアップグレードすることを検討して"
+"下さい。非推奨関数は、<filename>uninstall_legacy.sql</filename>で後から削除す"
+"ることができます。"
 
 #. Tag: para
 #, no-c-format
@@ -605,7 +610,7 @@ msgid ""
 msgstr ""
 "バックアップを新しい<varname>newdb</varname>データベースにリストアするには、"
 "postgis_restoreを使います。psqlが予期せぬエラーを標準エラー出力に出すことがあ"
-"ります。これらのログを保存しておいて下さい。"
+"ります。このエラーのログは保存しておいて下さい。"
 
 #. Tag: para
 #, no-c-format
@@ -625,11 +630,11 @@ msgid ""
 msgstr ""
 "ビューまたは関数の中に非推奨のPostGISオブジェクトを使っているものがある場合。"
 "これの訂正には、リストア前に<filename>legacy.sql</filename>スクリプトのロード"
-"を試してみることができます。非推奨オブジェクトをまだ持っている版のPostGISにリ"
-"ストアして、コードを作り替えた後に再び移動させることもできます。"
-"<filename>legacy.sql</filename>を利用する場合は、非推奨関数を使うのをやめた"
-"コードに訂正して、<filename>uninstall_legacy.sql</filename>をロードするのを忘"
-"れないでください。"
+"を試してみることができます。非推奨オブジェクトをまだ持っているバージョンの"
+"PostGISに戻して、コードを作り替えた後に再移行を試みることもできます。"
+"<filename>legacy.sql</filename>を利用する場合は、コードを非推奨関数を使わない"
+"ように訂正し、また<filename>uninstall_legacy.sql</filename>をロードして非推奨"
+"オブジェクトを削除するのを忘れないでください。"
 
 #. Tag: para
 #, no-c-format
@@ -644,13 +649,13 @@ msgid ""
 "SRIDS get converted to the same reserved SRID value )."
 msgstr ""
 "ダンプファイル内のspatial_ref_sysにあるカスタムレコードが不正なSRIDになってい"
-"ることがあります。妥当なSRID値は0より大きく999000より小さくなります。999000か"
-"ら999999の間は内部利用のための予約領域ですが、SRID値 &gt; 999999 の場合は、そ"
-"の値は一切使用できません。全ての不正なSRIDを持つ独自レコードは、SRID値 &gt; "
-"999999 の場合は予約領域に移動して、保持されます。しかし、spatial_ref_sysテー"
-"ブルから、値が保持されるように設定されているチェック制約が外れます。場合に"
-"よっては (複数の不正なSRIDが同じ予約領域のSRID値に変換されるとき)、主キーも外"
-"れます。"
+"る場合。妥当なSRID値は0より大きく999000より小さくなります。999000から999999の"
+"間は内部利用のための予約領域ですが、SRID値 &gt; 999999 の場合は、その値は一切"
+"使用できません。全ての不正なSRIDを持つ独自レコードは、SRID値 &gt; 999999 の場"
+"合はに、予約領域に入るようSRID値が変更されたうえで保持されます。しかし、値を"
+"保持するために設定されているspatial_ref_sysテーブルのチェック制約が外れます。"
+"場合によっては (複数の不正なSRIDが同じ予約領域のSRID値に変換されるとき)、主"
+"キーも外れます。"
 
 #. Tag: para
 #, no-c-format
@@ -662,8 +667,8 @@ msgid ""
 msgstr ""
 "これを修正するために、独自のSRSを妥当な値 (910000..910999の範囲)のSRIDに複写"
 "し、全てのテーブルを新しいSRIDに変更 (<xref linkend=\"UpdateGeometrySRID\"/>)"
-"し、spatial_ref_sysから不正なエントリを削除します。そして、次のようにチェック"
-"制約を再構築します:"
+"して、spatial_ref_sysから不正なエントリを削除します。そして、次のようにチェッ"
+"ク制約を再構築します:"
 
 #. Tag: para
 #, no-c-format
@@ -721,9 +726,9 @@ msgid ""
 "are usually large, so memory-related optimizations generally have more of an "
 "impact on PostGIS than other types of PostgreSQL queries."
 msgstr ""
-"PostGISの調整はPostgreSQLの作業量の調整と非常に似ています。ジオメトリとラスタ"
-"は重く、メモリ関連の最適化は他のPostgreSQLクエリと比べて影響が大きい点だけは"
-"留意して下さい。"
+"PostGISの性能向上のための調整はPostgreSQLの作業量の調整と非常に似ています。追"
+"加して留意すべき点は、ジオメトリとラスタは重大きいのでメモリ関連の最適化は他"
+"のPostgreSQLクエリと比べて影響が大きいことだけです。"
 
 #. Tag: para
 #, no-c-format
@@ -785,9 +790,10 @@ msgid ""
 "they are in an inherited hierarchy and not pay the planner penalty otherwise."
 msgstr ""
 "一般的にテーブルのパーティショニングに使われます。デフォルトとして"
-"\"partition\"に設定されています。継承階層内にあり、プランナにペナルティ以外を"
-"払わないなら、クエリプランナにテーブルの制約条件の解析だけを行わせるので、"
-"PostgreSQL 8.4以上ではこれが理想的です。"
+"\"partition\"に設定されていて、これはPostgreSQL 8.4以上では理想的です。この設"
+"定では、テーブルが継承階層内にある場合には、プランナに対して制約条件の解析だ"
+"けを行うよう強制して、他の場合には、プランナにペナルティを与えないことになる"
+"ためです。"
 
 #. Tag: link
 #, no-c-format
@@ -797,7 +803,7 @@ msgstr "shared_buffers"
 #. Tag: para
 #, no-c-format
 msgid "Default: ~128MB in PostgreSQL 9.6"
-msgstr "デフォルト: PostgreSQL 9.6では128MB以下"
+msgstr "デフォルト: PostgreSQL 9.6では約128MB"
 
 #. Tag: para
 #, no-c-format
@@ -817,7 +823,7 @@ msgid ""
 "setting has additional importance in that it controls the max number of "
 "processes you can have for parallel queries."
 msgstr ""
-"<link xlink:href=\"https://www.postgresql.org/docs/current/static/runtime-"
+"<link xlink:href=\"https://www.postgresql.jp/document/current/html/runtime-"
 "config-resource.html#GUC-MAX-WORKER-PROCESSES\">max_worker_processes</link> "
 "これは、PostgreSQL 9.4以上で有効です。PostgreSQL 9.6以上では、パラレルクエリ"
 "処理に使うプロセス数の最大値の制御で、さらに重要なものとなっています。"
@@ -848,7 +854,7 @@ msgid ""
 "config-resource.html#GUC-WORK-MEM\">work_mem</link> - sets the size of "
 "memory used for sort operations and complex queries"
 msgstr ""
-"<link xlink:href=\"http://www.postgresql.org/docs/current/static/runtime-"
+"<link xlink:href=\"https://www.postgresql.jp/document/current/html/runtime-"
 "config-resource.html#GUC-WORK-MEM\">work_mem</link> - 並べ替えや複雑なクエリ"
 "に使われるメモリのサイズの設定"
 
@@ -874,7 +880,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "If you have lots of RAM and few developers:"
-msgstr "たくさんのRAMを持ち、少数の開発者しかいない場合は次のようにします。"
+msgstr "たくさんのRAMを持ち、少数の開発者しかいない場合は次のようにします:"
 
 #. Tag: para
 #, no-c-format
@@ -885,7 +891,9 @@ msgid ""
 msgstr ""
 "<link xlink:href=\"http://www.postgresql.org/docs/current/static/runtime-"
 "config-resource.html#GUC-MAINTENANCE-WORK-MEM\">maintenance_work_mem</link> "
-"- VACUUM, CREATE INDEX等で使われるメモリのサイズ"
+"(訳注: <link xlink:href=\"https://www.postgresql.jp/document/current/html/"
+"runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM\">日本語訳</link>) - "
+"VACUUM, CREATE INDEX等で使われるメモリのサイズ"
 
 #. Tag: para
 #, no-c-format
@@ -931,7 +939,7 @@ msgstr ""
 "いった関係関数を含むクエリで、複数プロセッサが使われるようにできます。その"
 "時、2倍を超える速度が出る可能性があります。予備のプロセッサが多数ある場合に"
 "は、この値をプロセッサ数に変更するべきです。また、"
-"<code>max_worker_processes</code>をこの値と同じにするようにします。"
+"<code>max_worker_processes</code>を、少なくともこの値まで増やします。"
 
 #. Tag: para
 #, no-c-format
@@ -953,8 +961,8 @@ msgstr ""
 "並列ワーカは、<varname>max_worker_processes</varname>で確立されたプロセスの"
 "プールから取得されます。要求したワーカ数は、実際には実行可能になっていない場"
 "合があることに注意して下さい。これが発生する場合には、想定より少ないワーカで"
-"プランが実行され、非効率になります。これの値を0 (デフォルト値)にすると、パラ"
-"レルクエリ実行が無効になります。"
+"プランが実行されることになり、場合によっては非効率になります。これの値を0 (デ"
+"フォルト値)にすると、パラレルクエリ実行が無効になります。"
 
 #. Tag: title
 #, no-c-format
@@ -971,7 +979,7 @@ msgid ""
 msgstr ""
 "本章では、PostGISのソースアーカイブとソースレポジトリのextrasフォルダにある機"
 "能を記述します。 これらは必ずPostGISバイナリ版に同梱されているものではありま"
-"せんが、通常は実行可能なplpgsqlベースのものまたは標準的なシェルスクリプトで"
+"せんが、通常は実行可能なPL/pgSQLベースのものまたは標準的なシェルスクリプトで"
 "す。"
 
 #. Tag: chapter
@@ -1006,8 +1014,8 @@ msgid ""
 "helper lex and gaz tables."
 msgstr ""
 "住所標準化は単一行の住所のパーサで、入力に住所を取り、テーブルに保存された規"
-"則と、補助テーブルlex (lexicon, 語彙)およびgaz (gazetteer, 地名集)とを基に正"
-"規化します。"
+"則と、補助テーブルのlex (訳注: lexicon, 語彙)およびgaz (訳注: gazetteer, 地名"
+"集)とを基に正規化します。"
 
 #. Tag: para
 #, no-c-format
@@ -1035,7 +1043,7 @@ msgid ""
 "address_standardizer</filename> and is currently self-contained."
 msgstr ""
 "このエクステンションのコードはPostGISの<filename>extensions/"
-"address_standardizer</filename>内にあり、現在は自己充足しています。"
+"address_standardizer</filename>内にあり、現在は単独で機能します。"
 
 #. Tag: para
 #, no-c-format
@@ -1060,10 +1068,9 @@ msgid ""
 "currently does not look for a country code or name, but that could be "
 "introduced in the future."
 msgstr ""
-"パーサは右から左に見ます。最初に郵便番号、州/県、市のMACRO (訳注: マクロ)要素"
-"を見ます。その後、番地または交差点もしくはランドマークを扱う場合には、MICRO "
-"(訳注: マイクロ)要素を見ます。現在は、国別コードや国名を見ませんが、将来的に"
-"は導入できると思います。"
+"パーサは右から左に見ていきます。最初に郵便番号、州/県、市の広域要素を見ます。"
+"その後、番地、交差点またはランドマークを扱う場合には、詳細要素を見ます。現在"
+"は、国別コードや国名を見ませんが、将来的には導入もありえます。"
 
 #. Tag: term
 #, no-c-format
@@ -1123,7 +1130,7 @@ msgid ""
 "is very important especially when designing your own functions."
 msgstr ""
 "本節では住所標準化でインストールされたPostgreSQLデータ型の一覧を挙げます。独"
-"自関数をデザインする時に特に重要となるキャストの振る舞いを記述しています。"
+"自関数をデザインする時に特に重要となるキャストのふるまいを記述しています。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -1171,8 +1178,9 @@ msgid ""
 "is text (token number <code>0</code>): Refers to building number or name. "
 "Unparsed building identifiers and types. Generally blank for most addresses."
 msgstr ""
-"文字列 (トークン番号<code>0</code>): 建物番号や建物名を参照します。解析されて"
-"いない建物識別子と型です。一般的に、ほとんどの住所では空白です。"
+"文字列 (トークン番号 <code>0</code>): 建物番号や建物名を指します。建物識別子"
+"と建物タイプのうち解析されていないものです。一般的に、ほとんどの住所では空白"
+"になります。"
 
 #. Tag: para
 #, no-c-format
@@ -1180,8 +1188,9 @@ msgid ""
 "is a text (token number <code>1</code>): This is the street number on a "
 "street. Example <emphasis>75</emphasis> in <code>75 State Street</code>."
 msgstr ""
-"文字列 (トークン番号<code>1</code>): ストリートの番号です。<code>75 State "
-"Street</code>では <emphasis>75</emphasis>にあたります。"
+"文字列 (トークン番号 <code>1</code>): ストリート上の番号です。<emphasis>75</"
+"emphasis>となっている場合には、たとえば<code>75 State Street</code>から得られ"
+"ます。"
 
 #. Tag: para
 #, no-c-format
@@ -1189,7 +1198,7 @@ msgid ""
 "is text (token number <code>2</code>): STREET NAME PRE-DIRECTIONAL such as "
 "North, South, East, West etc."
 msgstr ""
-"文字列 (トークン番号<code>2</code>): North, South, East, Westといった、スト"
+"文字列 (トークン番号 <code>2</code>): North, South, East, Westといった、スト"
 "リート名の方角前置語です。"
 
 #. Tag: para
@@ -1199,14 +1208,13 @@ msgid ""
 "<emphasis>OLD</emphasis> in <code>3715 OLD HIGHWAY 99</code>."
 msgstr ""
 "文字列 (トークン番号 <code>3</code>): ストリート名の修飾前置語です。"
-"<code>3715 OLD HIGHWAY 99</code>では<emphasis>OLD</emphasis>にあたります。"
+"<emphasis>OLD</emphasis>となっている場合には、たとえば<code>3715 OLD HIGHWAY "
+"99</code>から得られます。"
 
 #. Tag: para
 #, no-c-format
 msgid "is text (token number <code>4</code>): STREET PREFIX TYPE"
-msgstr ""
-"文字列 (トークン番号 <code>4</code>): STREET PREFIX TYPE (ストリート名の前置"
-"詞の種別)"
+msgstr "文字列 (トークン番号 <code>4</code>): ストリート名の前置詞の種別"
 
 #. Tag: para
 #, no-c-format
@@ -1221,8 +1229,8 @@ msgid ""
 "emphasis> in <code>75 State Street</code>."
 msgstr ""
 "文字列 (トークン番号 <code>6</code>): St, Ave, Cir等の後置詞の種別です。スト"
-"リート名に続いて記述されるものです。<code>75 State Street</code>では"
-"<emphasis>STREET</emphasis>が該当します。"
+"リート名に続いて記述されるものです。<emphasis>STREET</emphasis>になっている場"
+"合には、たとえば<code>75 State Street</code>から得られます。"
 
 #. Tag: para
 #, no-c-format
@@ -1232,8 +1240,8 @@ msgid ""
 "<code>3715 TENTH AVENUE WEST</code>."
 msgstr ""
 "文字列 (トークン番号 <code>7</code>): ストリート名に続くNorth, South, East, "
-"Westといった、ストリート名の方角前置語です。<code>3715 TENTH AVENUE WEST</"
-"code>では<emphasis>WEST</emphasis>が該当します。"
+"Westといった、ストリート名の方角後置語です。<emphasis>WEST</emphasis>となって"
+"いる場合には、たとえば<code>3715 TENTH AVENUE WEST</code>から得られます。"
 
 #. Tag: para
 #, no-c-format
@@ -1242,7 +1250,7 @@ msgid ""
 "emphasis> in <code>RR 7</code>."
 msgstr ""
 "文字列 (トークン番号 <code>8</code>): RURAL ROUTE (地方集配路線)。"
-"<emphasis>8</emphasis>が<code>RR 7</code>では該当します。"
+"<emphasis>7</emphasis>が<code>RR 7</code>では該当します。"
 
 #. Tag: para
 #, no-c-format
@@ -1294,8 +1302,8 @@ msgid ""
 "is text Apartment number or Suite Number (token number <code>17</code>): "
 "Example <emphasis>3B</emphasis> in <code>APT 3B</code>."
 msgstr ""
-"文字列 (トークン番号 <code>17</code>): 部屋番号です。<code>APT 3B</code>の"
-"<emphasis>3B</emphasis>が該当します。"
+"文字列 (トークン番号 <code>17</code>): 部屋番号です。<emphasis>3B</emphasis>"
+"となっている場合には、たとえば<code>APT 3B</code>から得られます。"
 
 #. Tag: title
 #, no-c-format
@@ -1336,8 +1344,8 @@ msgid ""
 "by -1 followed by number denoting kind of rule followed by ranking of rule."
 msgstr ""
 "規則テーブルには、住所入力順列トークンから標準化した出力順列への対応付けに関"
-"する規則の集合が入ります。それぞれの規則は、入力トークン、-1 (終端)、出力トー"
-"クン、-1、規則の種類を示す数字、規則の階級、からなります。"
+"する規則の集合が入ります。それぞれの規則は、入力トークンの集合、-1 (終端)、出"
+"力トークンの集合、-1、規則の種類を示す数字、規則の順位、からなります。"
 
 #. Tag: para
 #, no-c-format
@@ -1374,8 +1382,8 @@ msgid ""
 "the rule. The rules are ranked from 0 (lowest) to 17 (highest)."
 msgstr ""
 "ruleには、入力トークンを表現する非負の整数、終端を示す-1、郵便属性を表現する"
-"非負の整数、終端を示す-1、規則種別を表現する整数、規則の階級を示す整数からな"
-"る集合が入ります。規則は0 (最低)から17 (最高)まであります。"
+"非負の整数、終端を示す-1、規則種別を表現する整数、規則の順位を示す整数からな"
+"る集合が入ります。順位は0 (最低)から17 (最高)まであります。"
 
 #. Tag: para
 #, no-c-format
@@ -1388,7 +1396,7 @@ msgstr ""
 "たとえば、<code>2 0 2 22 3 -1 5 5 6 7 3 -1 2 6</code>は、<emphasis>TYPE "
 "NUMBER TYPE DIRECT QUALIF</emphasis>なる入力トークン順列が、<emphasis>STREET "
 "STREET SUFTYP SUFDIR QUALIF</emphasis>なる出力トークン順列に対応付けされ、規"
-"則はARC_Cで、階級は6となります。"
+"則はARC_Cで、順位は6となります。"
 
 #. Tag: para
 #, no-c-format
@@ -1410,14 +1418,15 @@ msgid ""
 "www.pagcgeo.org/docs/html/pagc-12.html#ss12.2\">PAGC Input Tokens</link> are "
 "as follows:"
 msgstr ""
-"個々の規則は、入力トークン順列、終端を示す<code>-1</code>の順です。<link "
-"xlink:href=\"http://www.pagcgeo.org/docs/html/pagc-12.html#ss12.2\">PAGC "
-"Input Tokens</link>から引用した正当な入力トークンは次の通りです:"
+"個々の規則は、入力トークン集合が先にあって、その後で終端を示す<code>-1</code>"
+"が来ます。<link xlink:href=\"http://www.pagcgeo.org/docs/html/pagc-12."
+"html#ss12.2\">PAGC Input Tokens</link>から引用した正当な入力トークンは次の通"
+"りです:"
 
 #. Tag: emphasis
 #, no-c-format
 msgid "Form-Based Input Tokens"
-msgstr "書式ベースの入力トークン"
+msgstr "形式ベースの入力トークン"
 
 #. Tag: para
 #, no-c-format
@@ -1442,8 +1451,8 @@ msgstr "(21) 二つの文字の順列。しばしば識別子に用いられま�
 #, no-c-format
 msgid "(25). Fractions are sometimes used in civic numbers or unit numbers."
 msgstr ""
-"(25) ときどき\"civic nunber\"または\"unit number\" (訳注: 各戸に付けられる番"
-"号)で使われます。"
+"(25) ときどき\"civic nunber\" (訳注: 番地など)または\"unit number\" (訳注: 部"
+"屋番号など)で使われます。"
 
 #. Tag: para
 #, no-c-format
@@ -1521,7 +1530,7 @@ msgstr "(22) 方位を示す語です。たとえば <emphasis>North</emphasis>�
 #. Tag: para
 #, no-c-format
 msgid "(20). Words used to denote milepost addresses."
-msgstr "(20) 距離標の住所を示す語です。"
+msgstr "(20) 距離標を使った住所を示す語です。"
 
 #. Tag: para
 #, no-c-format
@@ -1530,7 +1539,7 @@ msgid ""
 "the <emphasis>Interstate</emphasis> in <emphasis>Interstate 5</emphasis>"
 msgstr ""
 "(6) 高速道路と道路を示す語または略語です。たとえば<emphasis>Interstate 5</"
-"emphasis>の<emphasis>Interstate</emphasis>です。"
+"emphasis>では<emphasis>Interstate</emphasis>が該当します。"
 
 #. Tag: para
 #, no-c-format
@@ -1543,7 +1552,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"(2). Words and abbreviation used to denote street typess. For example: "
+"(2). Words and abbreviations used to denote street types. For example: "
 "<emphasis>ST</emphasis> or <emphasis>AVE</emphasis>."
 msgstr ""
 "(2) ストリート種別を示す語または略語です。たとえば<emphasis>ST</emphasis>や"
@@ -1552,7 +1561,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"(16). Words and abbreviation used to denote internal subaddresses. For "
+"(16). Words and abbreviations used to denote internal subaddresses. For "
 "example, <emphasis>APT</emphasis> or <emphasis>UNIT</emphasis>."
 msgstr ""
 "(16) 内部の部分住所を示す語または略語です。たとえば<emphasis>APT</emphasis>や"
@@ -1579,14 +1588,16 @@ msgid ""
 "(27). A 3 character sequence of letter number letter. Identifies an FSA, the "
 "first 3 characters of a Canadian postal code."
 msgstr ""
-"(27) 英数3文字の順列です。カナダの郵便番号の先頭3文字であるFSAを示します。"
+"(27) 英字、数字、英字からなる3文字列です。カナダの郵便番号の先頭3文字である"
+"FSAを示します。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "(26). A 3 character sequence of number letter number. Identifies an LDU, the "
 "last 3 characters of a Canadian postal code."
-msgstr "(26) 英数3文字の順列です。カナダの郵便番号の末尾3文字です。"
+msgstr ""
+"(26) 英字、数字、英字からなる3文字列です。カナダの郵便番号の末尾3文字です。"
 
 #. Tag: emphasis
 #, no-c-format
@@ -1626,14 +1637,14 @@ msgid ""
 "in <xref linkend=\"rule_types_rank\"/>."
 msgstr ""
 "1番目の-1 (終端)の後に、出力トークンが続き、その後に<code>-1</code>が続きま"
-"す。対応する出力トークンの番号は、<xref linkend=\"stdaddr\"/>に挙げています。"
-"許されるものは、規則の種類に依存します。それぞれの規則種別で有効なトークンは"
+"す。対応する出力トークンの番号は<xref linkend=\"stdaddr\"/>に挙げています。許"
+"されるものは、規則の種類に依存します。それぞれの規則種別で有効なトークンは"
 "<xref linkend=\"rule_types_rank\"/>に挙げています。"
 
 #. Tag: title
 #, no-c-format
 msgid "Rule Types and Rank"
-msgstr "規則種別と階級"
+msgstr "規則種別と順位"
 
 #. Tag: para
 #, no-c-format
@@ -1643,7 +1654,7 @@ msgid ""
 "17 (highest)."
 msgstr ""
 "規則の最後の部分は規則種別で、次に挙げるものの一つが示すものです。この後には"
-"階級が続きます。規則は0 (最低) から17 (最高)までに階級付けされます。"
+"順位が続きます。規則には0 (最低) から17 (最高)までの順位が付けられます。"
 
 #. Tag: para
 #, no-c-format
@@ -1652,7 +1663,7 @@ msgid ""
 "rules for parsing MACRO clauses such as <emphasis>PLACE STATE ZIP</emphasis>"
 msgstr ""
 "(トークン番号 = \"<emphasis role=\"bold\">0</emphasis>\") <emphasis>PLACE "
-"STATE ZIP</emphasis>のようなMACRO節をパースするための規則のクラス。"
+"STATE ZIP</emphasis>のようなMACRO句をパースするための規則のクラス。"
 
 #. Tag: para
 #, no-c-format
@@ -1664,7 +1675,7 @@ msgid ""
 msgstr ""
 "<emphasis role=\"bold\"><varname>MACRO_C</varname>出力トークン</emphasis> "
 "(<link xlink:href=\"http://www.pagcgeo.org/docs/html/pagc-12.html#--r-typ--"
-"\">http://www.pagcgeo.org/docs/html/pagc-12.html#--r-typ--</link>から抜粋)。"
+"\">http://www.pagcgeo.org/docs/html/pagc-12.html#--r-typ--</link>から引用)。"
 
 #. Tag: para
 #, no-c-format
@@ -1692,8 +1703,8 @@ msgid ""
 "(token number \"13\"). (SADS elements \"ZIP CODE\" , \"PLUS 4\" ). This "
 "attribute is used for both the US Zip and the Canadian Postal Codes."
 msgstr ""
-"(トークン番号 \"13\") (SADS elements \"ZIP CODE\" , \"PLUS 4\" ). 米国Zip (郵"
-"便番号)とカナダ郵便番号の両方で使われます。"
+"(トークン番号 \"13\") (SADS要素の\"ZIP CODE\" , \"PLUS 4\" ). 米国Zip (訳注: "
+"郵便番号)とカナダ郵便番号の両方で使われます。"
 
 #. Tag: para
 #, no-c-format
@@ -1703,9 +1714,9 @@ msgid ""
 "pretyp, suftype, qualif) (ie ARC_C plus CIVIC_C). These rules are not used "
 "in the build phase."
 msgstr ""
-"(トークン番号 = \"<emphasis role=\"bold\">1</emphasis>\") 完全なMICRO節 "
+"(トークン番号 = \"<emphasis role=\"bold\">1</emphasis>\") 完全なMICRO句 "
 "(House, street, sufdir, predir, pretyp, suftype, qualif等)をパースするための"
-"規則のクラス (ARC_CとCIVIC_Cの和)。建物フェーズでは使われません。"
+"規則のクラス (ARC_CとCIVIC_Cの和)。構築フェーズでは使われません。"
 
 #. Tag: para
 #, no-c-format
@@ -1747,7 +1758,8 @@ msgid ""
 "These rules are not used in the build phase."
 msgstr ""
 "(トークン番号 = \"<emphasis role=\"bold\">4</emphasis>\") EXTRA属性 (ジオコー"
-"ディングから除かれる属性)をパースするための規則のクラス。"
+"ディングから除かれる属性)をパースするための規則のクラス。構築フェーズでは使わ"
+"れません。"
 
 #. Tag: para
 #, no-c-format
@@ -1899,8 +1911,8 @@ msgid ""
 "A gaz table has at least the following columns in the table. You may add "
 "more columns if you wish for your own purposes."
 msgstr ""
-"gazテーブルは少なくとも次のカラムを持ちます。独自の目的のために追加することが"
-"できます。"
+"gazテーブルは少なくとも次のカラムを持ちます。独自の目的のためにカラムを追加す"
+"ることができます。"
 
 #. Tag: para
 #, no-c-format
@@ -1948,9 +1960,9 @@ msgid ""
 "consisting of standard postal second line of an address e.g <code>city, "
 "state postal_code country</code>."
 msgstr ""
-"二行住所では、郵便住所の標準の1行目である<code>house_num street</code>等で構"
-"成される<varname>micro</varname>と、2行目である<code>city, state postal_code "
-"country</code>等で構成されるmacroからなります。"
+"2行住所では、郵便住所の標準の1行目は<varname>micro</varname>で、"
+"<code>house_num street</code>等で構成され、2行目はmacroで、<code>city, state "
+"postal_code country</code>等で構成されます。"
 
 #. Tag: para
 #, no-c-format
@@ -2297,15 +2309,15 @@ msgstr "Tigerジオコーダ"
 #. Tag: para
 #, no-c-format
 msgid ""
-"A plpgsql based geocoder written to work with the <link xlink:href=\"http://"
-"www.census.gov/geo/www/tiger/\">TIGER (Topologically Integrated Geographic "
+"A plpgsql based geocoder written to work with the <link xlink:href=\"https://"
+"www2.census.gov/geo/tiger/\">TIGER (Topologically Integrated Geographic "
 "Encoding and Referencing system ) / Line and Master Address database export</"
 "link> released by the US Census Bureau."
 msgstr ""
-"米国国勢調査局が公開している<link xlink:href=\"http://www.census.gov/geo/www/"
-"tiger/\">TIGER (Topologically Integrated Geographic Encoding and Referencing "
-"system ) / Line and Master Address database export</link>で動作するよう書かれ"
-"た、PL/pgSQLベースのジオコーダです。"
+"米国統計局が公開している<link xlink:href=\"https://www2.census.gov/geo/tiger/"
+"\">TIGER (Topologically Integrated Geographic Encoding and Referencing "
+"system ) / Line and Master Address database export</link>と連動するように書か"
+"れたPL/pgSQLベースのジオコーダです。"
 
 #. Tag: para
 #, no-c-format
@@ -5067,6 +5079,59 @@ msgstr "Availability: 3.2.0"
 
 #. Tag: refpurpose
 #, no-c-format
+msgid "Returns non-precise vertices in the topology."
+msgstr "トポロジ内の低精度の頂点を返します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Returns all vertices that are not rounded to the topology or given "
+"<varname>gridSize</varname> as a puntal geometry, optionally limiting the "
+"check to the area specified by the <varname>bbox</varname> parameter."
+msgstr ""
+"トポロジまたは与えられた<varname>gridSize</varname>に丸められた頂点のすべてを"
+"点じおめとりで返します。任意で、確認範囲を<varname>bbox</varname>パラメータで"
+"指定される範囲に制限できます。"
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0"
+msgstr "Availability: 3.6.0"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid "Snap topology vertices to precision grid."
+msgstr "トポロジの頂点を精度グリッドにスナップします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snaps all vertices of a topology to the topology precision grid or to the "
+"grid whose size is specified with the <varname>gridSize</varname> parameter, "
+"optionally limiting the operation to the objects intersecting the area "
+"specified by the <varname>bbox</varname> parameter."
+msgstr ""
+"トポロジの全ての頂点をトポロジの精度グリッドにスナップするか、"
+"<varname>gridSize</varname>パラメータで指定したサイズのにグリッドにスナップし"
+"ます。任意に<varname>bbox</varname>パラメータで指定した領域とインタセクとする"
+"ものだけを処理することもできます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snapping could make the topology invalid, so it is recommended to check the "
+"outcome of operation with <xref linkend=\"ValidateTopology\"/>."
+msgstr ""
+"スナップによってトポロジが不正になることがありえるので、処理の結果を<xref "
+"linkend=\"ValidateTopology\"/>で確認することを推奨します。"
+
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"ValidateTopology\"/>"
+msgstr ", <xref linkend=\"ValidateTopology\"/>"
+
+#. Tag: refpurpose
+#, no-c-format
 msgid "Returns a topology record by different means."
 msgstr "異なる方法でトポロジ行を返します。"
 
@@ -5092,6 +5157,58 @@ msgid ""
 msgstr ""
 "トポロジ識別子またはトポロジ関連オブジェクトの識別子を取り、topology.topology"
 "レコードを返します。"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Total disk space used by the specified topology, including all indexes and "
+"TOAST data."
+msgstr ""
+"指定したトポロジが使用するディスク容量の総量を得ます。インデックスやTOASTデー"
+"タも含みます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Takes a topology name and provides the total disk space used by all its "
+"tables, including indexes and TOAST data."
+msgstr ""
+"トポロジ名から、そのトポロジのすべてのテーブルのディスク容量の総量を返しま"
+"す。インデックスとTOASTデータも含みます。"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Upgrades the specified topology to support large ids (int8) for topology and "
+"primitive ids."
+msgstr ""
+"指定したトポロジーに対して、トポロジーIDとプリミティブIDが大きな数 (int8)に対"
+"応するようアップグレードします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Takes a topology name and upgrades it to support large ids (int8) for "
+"topology and primitive ids. The function upgrades the following: - face "
+"(face_id column from int4 to int8, face_id_seq from int4 to int8) - node "
+"(node_id column from int4 to int8, containing_face column from int4 to int8, "
+"node_id_seq from int4 to int8) - edge_data (edge_id column from int4 to "
+"int8, edge_data_edge_id_seq from int4 to int8, left_face and right_face "
+"columns from int4 to int8, start_node and end_node columns from int4 to "
+"int8, next_left_edge and next_right_edge columns from int4 to int8) - "
+"relation (topogeo_id column from int4 to int8, element_id from int4 to int8) "
+"- topology (useslargeids column set to true)"
+msgstr ""
+"トポロジー名を取って、トポロジーIDとプリミティブIDが大きな数 (int8)に対応する"
+"ようアップグレードします。この関数は次のアップグレードを行います: フェイス "
+"(face_idカラムをint4からint8に、face_id_seqをint4からint8に) - ノード "
+"(node_idカラムをint4からint8に、containing_faceカラムをint4からint8に、"
+"node_id_seqをint4からint8に) - edge_data (edge_idカラムをint4からint8に、"
+"edge_data_edge_id_seqをint4からint8に、left_faceカラムとright_faceカラムを"
+"int4からint8に、start_nodeカラムとend_nodeカラムをint4からint8に、"
+"next_left_edgeカラムとnext_right_edgeカラムをint4からint8に) - relation "
+"(topogeo_idカラムをint4からint8に、element_idをint4からint8に) - topology "
+"(useslargeidsカラムをTRUEに設定)"
 
 #. Tag: title
 #, no-c-format
@@ -5179,10 +5296,11 @@ msgstr ""
 #, no-c-format
 msgid ""
 "The <varname>srid</varname> is the <link linkend=\"spatial_ref_sys\">spatial "
-"reference system</link> SRID for the topology."
+"reference system</link> SRID for the topology. The SRID defaults to -1 "
+"(unknown) if not specified."
 msgstr ""
-"<varname>srid</varname>は、このトポロジの<link linkend=\"spatial_ref_sys\">空"
-"間参照系</link>のSRIDです。"
+"<varname>srid</varname>はトポロジーの<link linkend=\"spatial_ref_sys\">空間参"
+"照系</link> のSRIDです。SRIDを指定していない場合のデフォルトは-1 (不明)です。"
 
 #. Tag: para
 #, no-c-format
@@ -5197,6 +5315,26 @@ msgstr ""
 #, no-c-format
 msgid "<varname>hasz</varname> defaults to false if not specified."
 msgstr "<varname>hasz</varname>を指定しない場合のデフォルトはFALSEです。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<varname>topoid</varname> optional explicit identifier (allows deterministic "
+"topology id assignment, needs to be unique)"
+msgstr ""
+"<varname>topoid</varname> 任意パラメータ、明示的な識別子 (トポロジーIDの割当"
+"を決定しますが一意である必要があります)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<varname>useslargeids</varname> optional, defaults to false. If true, the "
+"topology will be created to support large ids (int8) for topology and "
+"primitive ids."
+msgstr ""
+"<varname>useslargeids</varname> 任意パラメータで、デフォルトはFALSEです。TRUE"
+"の場合には、このトポロジーのトポロジーIDとプリミティブIDは大きな数のID "
+"(int8) に対応します。"
 
 #. Tag: para
 #, no-c-format
@@ -7749,6 +7887,15 @@ msgstr ""
 "したり、異なるトポロジのレイヤ (開始トポロジで空間的に単純化されたもの等が挙"
 "げられます)にリンクするのに使えます。"
 
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the target topology already exists and you want it dropped upfront you "
+"can pass the <code>--drop-topology</code> switch (since PostGIS-3.6.0)."
+msgstr ""
+"対象トポロジが既に存在していて事前に削除したいなら <code>--drop-topology</"
+"code> スイッチを渡すことができます (PostGIS 3.6.0以降)。"
+
 #. Tag: title
 #, no-c-format
 msgid "PostGIS Installation"
@@ -7964,12 +8111,12 @@ msgid ""
 "PostgreSQL &min_postgres_version; - &max_postgres_version;. A complete "
 "installation of PostgreSQL (including server headers) is required. "
 "PostgreSQL is available from <link xlink:href=\"https://www.postgresql."
-"org\"> https://www.postgresql.org </link> ."
+"org\"> https://www.postgresql.org </link>18 ."
 msgstr ""
-"PostgreSQL &min_postgres_version; - &max_postgres_version;。PostgreSQLの完全"
-"なインストール (サーバヘッダを含む)が必要です。PostgreSQLは<link xlink:"
-"href=\"http://www.postgresql.org/\"> http://www.postgresql.org/</link>にあり"
-"ます。"
+"PostgreSQL &min_postgres_version; - &max_postgres_version;、18。PostgreSQLの"
+"完全なインストール (サーバプログラムのヘッダファイルを含む)が必要です。"
+"PostgreSQLは <link xlink:href=\"https://www.postgresql.org/\"> https://www."
+"postgresql.org </link>にあります。"
 
 #. Tag: para
 #, no-c-format
@@ -7979,7 +8126,7 @@ msgid ""
 "UsersWikiPostgreSQLPostGIS\">https://trac.osgeo.org/postgis/wiki/"
 "UsersWikiPostgreSQLPostGIS</link>"
 msgstr ""
-"完全なPosgreSQL/PostGIS対応表とPostGIS/GEOS対応表については<link xlink:"
+"完全なPostgreSQL/PostGIS対応表とPostGIS/GEOS対応表については<link xlink:"
 "href=\"http://trac.osgeo.org/postgis/wiki/"
 "UsersWikiPostgreSQLPostGIS\">http://trac.osgeo.org/postgis/wiki/"
 "UsersWikiPostgreSQLPostGIS</link>をご覧ください。"
@@ -8025,15 +8172,14 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"GEOS geometry library, version &min_geos_version; or greater, but GEOS 3.12+ "
+"GEOS geometry library, version &min_geos_version; or greater, but GEOS 3.14+ "
 "is required to take full advantage of all the new functions and features. "
 "GEOS is available for download from <link xlink:href=\"https://libgeos.org/"
 "\"> https://libgeos.org </link>."
 msgstr ""
-"ジオメトリライブラリGEOSの新しい関数と機能の利点を完全に得るには"
-"&min_geos_version;以上で、GEOS 3.12以上が必要です。GEOSは <link xlink:"
-"href=\"https://libgeos.org/\">https://libgeos.org/</link>からダウンロードでき"
-"ます。"
+"ジオメトリライブラリ GEOS、&min_geos_version;以上ですが、新しい関数と機能を完"
+"全に活用するにはGEOS 3.14が必要です。GEOSは<link xlink:href=\"https://"
+"libgeos.org/\"> https://libgeos.org/ </link>からダウンロードできます。"
 
 #. Tag: para
 #, no-c-format
@@ -8112,46 +8258,46 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"SFCGAL, 1.4.1 or higher is required and 1.5.0+ is needed to be able to use "
-"all functionality. SFCGAL can be used to provide additional 2D and 3D "
-"advanced analysis functions to PostGIS cf <xref linkend=\"reference_sfcgal\"/"
-">. And also allow to use SFCGAL rather than GEOS for some 2D functions "
-"provided by both backends (like ST_Intersection or ST_Area, for instance). A "
-"PostgreSQL configuration variable <code>postgis.backend</code> allow end "
-"user to control which backend he want to use if SFCGAL is installed (GEOS by "
+"SFCGAL, 1.4.1 or higher is required and 2.1+ is needed to be able to use all "
+"functionality. SFCGAL can be used to provide additional 2D and 3D advanced "
+"analysis functions to PostGIS cf <xref linkend=\"reference_sfcgal\"/>. And "
+"also allow to use SFCGAL rather than GEOS for some 2D functions provided by "
+"both backends (like ST_Intersection or ST_Area, for instance). A PostgreSQL "
+"configuration variable <code>postgis.backend</code> allow end user to "
+"control which backend he want to use if SFCGAL is installed (GEOS by "
 "default). Nota: SFCGAL 1.2 require at least CGAL 4.3 and Boost 1.54 (cf: "
 "<link xlink:href=\"https://sfcgal.org\">https://sfcgal.org</link>) <link "
 "xlink:href=\"https://gitlab.com/sfcgal/SFCGAL/\">https://gitlab.com/sfcgal/"
 "SFCGAL/</link>."
 msgstr ""
-"SFCGAL 1.4.1 以上が必要ですが、全ての機能を使用できるようにするためには、"
-"1.5.0以上が必要です。SFCGALは、<xref linkend=\"reference_sfcgal\"/>のような、"
-"追加の2次元、3次元の高度な解析機能をPostGISに提供するために使います。また、両"
-"方のバックエンドから提供されている2次元関数 (ST_IntersectionやST_Areaなど)"
-"に、GEOSでなくSFCGALを使用することができるようになります。PostgreSQLのコン"
-"フィギュレーション変数である<code>postgis.backend</code>によって、SFCGALがイ"
-"ンストールされている場合にエンドユーザがどのバックエンドを使うかを制御するこ"
-"とができるようになります (デフォルトはGEOS)。ご注意: SFCGAL 1.2は少なくとも"
-"CGAL 4.3とBoost 1.54 が必要です (<link xlink:href=\"https://sfcgal.org/"
-"\">https://sfcgal.org/</link> 参照) <link xlink:href=\"https://gitlab.com/"
-"sfcgal/SFCGAL/\">https://gitlab.com/sfcgal/SFCGAL/</link>。"
+"SFCGAL。1.4.1以上が必要ですが、全ての機能を使用できるようにするためには、2.1"
+"以上が必要です。SFCGALは、<xref linkend=\"reference_sfcgal\"/>のような、追加"
+"的な2次元や3次元の高度な解析機能をPostGISに提供するために使います。また、"
+"SFCGALとGEOSの両方から提供されている2次元関数 (ST_Intersection, ST_Areaなど)"
+"についてはGEOSでなくSFCGALを使うことができます。PostgreSQLコンフィギュレー"
+"ション変数である<code>postgis.backend</code>によって、SFCGALがインストールさ"
+"れている場合には、エンドユーザがどのバックエンドを使うかを制御することができ"
+"るようになります (デフォルトはGEOS)。ご注意: SFCGAL 1.2は少なくともCGAL 4.3と"
+"Boost 1.54 が必要です (<link xlink:href=\"https://sfcgal.org/\">https://"
+"sfcgal.org/</link> 参照) <link xlink:href=\"https://gitlab.com/sfcgal/SFCGAL/"
+"\">https://gitlab.com/sfcgal/SFCGAL/</link>。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "In order to build the <xref linkend=\"Address_Standardizer\"/> you will also "
-"need PCRE <link xlink:href=\"http://www.pcre.org\">http://www.pcre.org</"
-"link> (which generally is already installed on nix systems). <xref "
+"need PCRE 1 or 2 <link xlink:href=\"http://www.pcre.org\">http://www.pcre."
+"org</link> (which generally is already installed on nix systems). <xref "
 "linkend=\"Address_Standardizer\"/> will automatically be built if it detects "
 "a PCRE library, or you pass in a valid <varname>--with-pcre-dir=/path/to/"
 "pcre</varname> during configure."
 msgstr ""
-"<xref linkend=\"Address_Standardizer\"/>をビルドするには、PCRE <link xlink:"
-"href=\"http://www.pcre.org\">http://www.pcre.org</link> (通常はnixシステムに"
-"はインストールされています)も必要です。PCREライブラリを検出したら<xref "
-"linkend=\"Address_Standardizer\"/>は自動でビルドされます。もしくは、コンフィ"
-"ギュアの際に有効な<varname>--with-pcre-dir=/path/to/pcre</varname>を指定しま"
-"す。"
+"<xref linkend=\"Address_Standardizer\"/>をビルドするには、 PCRE 1 または2のい"
+"ずれかも必要になります <link xlink:href=\"http://www.pcre.org\">http://www."
+"pcre.org</link> (UNIXシステムではインストール済みなのが一般的です)。<xref "
+"linkend=\"Address_Standardizer\"/>は、PCREライブラリが検出されると自動的にビ"
+"ルドされますが、コンフィギュア時に妥当な<varname>--with-pcre-dir=/path/to/"
+"pcre</varname>を渡してもビルドできます。"
 
 #. Tag: para
 #, no-c-format
@@ -8425,13 +8571,13 @@ msgstr "ラスタ機能なしでコンパイルします。"
 
 #. Tag: para
 #, no-c-format
-msgid ""
-"Disable topology support. There is no corresponding library as all logic "
-"needed for topology is in postgis-&last_release_version; library."
-msgstr ""
-"トポロジ対応を無くしてコンパイルします。トポロジに必要なロジックは全て"
-"postgis-&last_release_version;ライブラリ内に作られるので、関連ライブラリはあ"
-"りません。"
+msgid "Disables tiger geocoder support."
+msgstr "Tigerジオコーダー機能を無効にします。"
+
+#. Tag: para
+#, no-c-format
+msgid "Compile without topology support."
+msgstr "トポロジー機能なしでコンパイルします。"
 
 #. Tag: para
 #, no-c-format
@@ -10094,6 +10240,11 @@ msgstr "Artur Zakirov"
 
 #. Tag: member
 #, no-c-format
+msgid "Ayo Adesugba"
+msgstr "Ayo Adesugba"
+
+#. Tag: member
+#, no-c-format
 msgid "Barbara Phillipot"
 msgstr "Barbara Phillipot"
 
@@ -10169,6 +10320,11 @@ msgstr "Dane Springmeyer"
 
 #. Tag: member
 #, no-c-format
+msgid "Daniel Nylander"
+msgstr "Daniel Nylander"
+
+#. Tag: member
+#, no-c-format
 msgid "Dapeng Wang"
 msgstr "Dapeng Wang"
 
@@ -10196,6 +10352,11 @@ msgstr "David Skea"
 #, no-c-format
 msgid "David Techer"
 msgstr "David Techer"
+
+#. Tag: member
+#, no-c-format
+msgid "Denys Kovshun"
+msgstr "Denys Kovshun"
 
 #. Tag: member
 #, no-c-format
@@ -10384,6 +10545,11 @@ msgstr "Kris Jurka"
 
 #. Tag: member
 #, no-c-format
+msgid "Laurențiu Nicola"
+msgstr "Laurențiu Nicola"
+
+#. Tag: member
+#, no-c-format
 msgid "Laurenz Albe"
 msgstr "Laurenz Albe"
 
@@ -10411,6 +10577,11 @@ msgstr "Luca S. Percich"
 #, no-c-format
 msgid "Lucas C. Villa Real"
 msgstr "Lucas C. Villa Real"
+
+#. Tag: member
+#, no-c-format
+msgid "Maksim Korotkov"
+msgstr "Maksim Korotkov"
 
 #. Tag: member
 #, no-c-format
@@ -10466,6 +10637,11 @@ msgstr "Maxime van Noppen"
 #, no-c-format
 msgid "Maxime Schoemans"
 msgstr "Maxime Schoemans"
+
+#. Tag: member
+#, no-c-format
+msgid "Megan Ma"
+msgstr "Megan Ma"
 
 #. Tag: member
 #, no-c-format
@@ -10838,6 +11014,11 @@ msgstr "Paragon Corporation"
 
 #. Tag: link
 #, no-c-format
+msgid "Postgres Pro"
+msgstr "Postgres Pro"
+
+#. Tag: link
+#, no-c-format
 msgid "R3 GIS"
 msgstr "R3 GIS"
 
@@ -10875,6 +11056,11 @@ msgstr "カリフォルニア大デービス校節足動媒介感染症センタ
 #, no-c-format
 msgid "Université Laval"
 msgstr "ラヴァル大学"
+
+#. Tag: link
+#, no-c-format
+msgid "U.S. Census Bureau"
+msgstr "米国国勢調査局"
 
 #. Tag: link
 #, no-c-format
@@ -11029,7 +11215,9 @@ msgstr ""
 "合ジオメトリといった)通常のデータページに適合しない、(データサイズという意味"
 "では)巨大な値を納めるための「拡張部屋」の一種です。詳細情報は <link xlink:"
 "href=\"http://www.postgresql.org/docs/current/static/storage-toast."
-"html\">the PostgreSQL Documentation for TOAST</link>をご覧ください。"
+"html\">the PostgreSQL Documentation for TOAST</link> (訳注: <link xlink:"
+"href=\"https://www.postgresql.jp/document/current/html/storage-toast.html\">"
+"日本語訳</link>)をご覧ください。"
 
 #. Tag: para
 #, no-c-format
@@ -14305,7 +14493,7 @@ msgstr ""
 msgid ""
 "Note that border geometries may be within <varname>eps</varname> distance of "
 "core geometries in more than one cluster. Either assignment would be "
-"correct, so the border geometry will be arbitrarily asssigned to one of the "
+"correct, so the border geometry will be arbitrarily assigned to one of the "
 "available clusters. In this situation it is possible for a correct cluster "
 "to be generated with fewer than <varname>minpoints</varname> geometries. To "
 "ensure deterministic assignment of border geometries (so that repeated calls "
@@ -15955,11 +16143,11 @@ msgstr "オーバラップと頂点不一致により発生した不正エッジ
 #. Tag: para
 #, no-c-format
 msgid ""
-", <xref linkend=\"ST_CoverageUnion\"/>, <xref "
-"linkend=\"ST_CoverageSimplify\"/>"
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageClean\"/"
+">, <xref linkend=\"ST_CoverageSimplify\"/>"
 msgstr ""
-", <xref linkend=\"ST_CoverageUnion\"/>, <xref "
-"linkend=\"ST_CoverageSimplify\"/>"
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageClean\"/"
+">, <xref linkend=\"ST_CoverageSimplify\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -16025,6 +16213,13 @@ msgstr "入力カバレッジ"
 msgid "Simplified coverage"
 msgstr "カバレッジの単純化"
 
+#. Tag: para
+#, no-c-format
+msgid ""
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageClean\"/>"
+msgstr ""
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageClean\"/>"
+
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
@@ -16069,6 +16264,101 @@ msgstr "Availability: 3.4.0 - GEOS 3.8.0以上が必要です"
 #, no-c-format
 msgid "Union result"
 msgstr "結合結果"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+", <xref linkend=\"ST_CoverageSimplify\"/>, <xref "
+"linkend=\"ST_CoverageClean\"/>, <xref linkend=\"ST_Union\"/>"
+msgstr ""
+", <xref linkend=\"ST_CoverageSimplify\"/>, <xref "
+"linkend=\"ST_CoverageClean\"/>, <xref linkend=\"ST_Union\"/>"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Computes a clean (edge matched, non-overlapping, gap-cleared) polygonal "
+"coverage, given a non-clean input."
+msgstr ""
+"きれいな (エッジが合致し、オーバーラップがなく、隙間がない) ポリゴンカバレッ"
+"ジを、きれいでない入力から計算します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A window function which alters the edges of a polygonal coverage to ensure "
+"that none of the polygons overlap, that small gaps are snapped away, and "
+"that all shared edges are exactly identical. The result is a clean coverage "
+"that will pass validation tests like <xref "
+"linkend=\"ST_CoverageInvalidEdges\"/>"
+msgstr ""
+"ポリゴンカバレッジのエッジを変更して、ポリゴンのオーバーラップを無くし、隙間"
+"をスナップして除き、全ての共有エッジが同じものにすることを確実にするウィンド"
+"ウ関数です。結果は <xref linkend=\"ST_CoverageInvalidEdges\"/>のような評価関"
+"数にパスするクリーンなカバレッジです"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <parameter>gapMaximumWidth</parameter> controls the cleaning of gaps "
+"between polygons. Gaps smaller than this tolerance will be closed."
+msgstr ""
+"<parameter>gapMaximumWidth</parameter>は、ポリゴン間の隙間の除去を制御するた"
+"めのものです。この許容値より小さい隙間は塞がれます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <parameter>snappingDistance</parameter> controls the node snapping step, "
+"when nearby vertices are snapped together. The default setting (-1) applies "
+"an automatic snapping distance based on an analysis of the input. Set to 0.0 "
+"to turn off all snapping."
+msgstr ""
+"<parameter>snappingDistance</parameter>は近隣ノードを一つにまとめるスナップの"
+"制御のためのものです。デフォルト設定 (-1) では、入力制御に基づき算出されたス"
+"ナップ距離が自動的に適用されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <parameter>overlapMergeStrategy</parameter> controls the algorithm used "
+"to determine which neighboring polygons to merge overlapping areas into."
+msgstr ""
+"<parameter>overlapMergeStrategy</parameter> は、オーバーラップ領域をマージす"
+"る先の近隣ポリゴンの決定に使われるアルゴリズムを制御します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<code>MERGE_LONGEST_BORDER</code> chooses polygon with longest common border"
+msgstr ""
+"<code>MERGE_LONGEST_BORDER</code> 共通境界線が最も長いポリゴンを選択します"
+
+#. Tag: para
+#, no-c-format
+msgid "<code>MERGE_MAX_AREA</code> chooses polygon with maximum area"
+msgstr "<code>MERGE_MAX_AREA</code> 最大面積のポリゴンを選択します"
+
+#. Tag: para
+#, no-c-format
+msgid "<code>MERGE_MIN_AREA</code> chooses polygon with minimum area"
+msgstr "<code>MERGE_MIN_AREA</code> 最小面積のポリゴンを選択します"
+
+#. Tag: para
+#, no-c-format
+msgid "<code>MERGE_MIN_INDEX</code> chooses polygon with smallest input index"
+msgstr ""
+"<code>MERGE_MIN_INDEX</code> 入力の要素番号が最も小さいポリゴンを選択します"
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0 - requires GEOS &gt;= 3.14.0"
+msgstr "Availability: 3.6.0 - GEOS &gt;= 3.14.0が必要です"
+
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"ST_Union\"/> <xref linkend=\"ST_CoverageSimplify\"/>"
+msgstr ", <xref linkend=\"ST_Union\"/> <xref linkend=\"ST_CoverageSimplify\"/>"
 
 #. Tag: title
 #, no-c-format
@@ -16384,7 +16674,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "1: Symmetric (orientation idependent) output."
+msgid "1: Symmetric (orientation independent) output."
 msgstr "1: 対称となる (方向独立)出力。"
 
 #. Tag: para
@@ -17101,11 +17391,13 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"If the <parameter>tolerance</parameter> parameter is provided, vertices "
-"within the tolerance distance of one another are considered to be duplicates."
+"If a non-zero <parameter>tolerance</parameter> parameter is provided, "
+"vertices within the tolerance distance of one another are considered to be "
+"duplicates. The distance is computed in 2D (XY plane)."
 msgstr ""
-"<parameter>tolerance</parameter>を指定した場合には、他の頂点との距離が許容距"
-"離内にある頂点は重複しているとみなされます。"
+"ゼロでない<parameter>tolerance</parameter>パラメータを与えた場合には、相互に"
+"許容範囲距離内の頂点は重複頂点とみなされます。距離は2次元 (XY平面)で計算され"
+"ます。"
 
 #. Tag: para
 #, no-c-format
@@ -17128,7 +17420,7 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"Removes points that are irrelevant for rendering a specific rectangluar view "
+"Removes points that are irrelevant for rendering a specific rectangular view "
 "of a geometry."
 msgstr ""
 "指定した矩形表示範囲での描画に関係のないジオメトリのポイントを削除します。"
@@ -17137,7 +17429,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Returns a <xref linkend=\"geometry\"/> without points being irrelevant for "
-"rendering the geometry within a given rectangluar view."
+"rendering the geometry within a given rectangular view."
 msgstr ""
 "指定した矩形表示範囲での描画に関係のないポイントを外した<xref "
 "linkend=\"geometry\"/>を返します。"
@@ -17986,38 +18278,6 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"The backend to service a function where GEOS and SFCGAL overlap. Options: "
-"geos or sfcgal. Defaults to geos."
-msgstr ""
-"GEOSとSFCGALで重複する関数を提供するバックエンドです。GEOSまたはSFCGALを選択"
-"します。デフォルトはGEOSです。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"This GUC is only relevant if you compiled PostGIS with sfcgal support. By "
-"default <varname>geos</varname> backend is used for functions where both "
-"GEOS and SFCGAL have the same named function. This variable allows you to "
-"override and make sfcgal the backend to service the request."
-msgstr ""
-"このGUCはSFCGALサポートでPostGISをコンパイルした場合にのみ適切なものとなりま"
-"す。デフォルトでは、<varname>geos</varname>バックエンドはGEOSとSFCGALが同じ名"
-"前の関数を持つ関数で使われます。この変数によって、SFCGALをリクエストを提供す"
-"るバックエンドにすることができます。"
-
-#. Tag: para
-#, no-c-format
-msgid "Sets backend just for life of connection"
-msgstr "バックエンドを接続時にだけ設定します。"
-
-#. Tag: para
-#, no-c-format
-msgid "Sets backend for new connections to database"
-msgstr "データベースへの新規接続にバックエンドを設定します。"
-
-#. Tag: refpurpose
-#, no-c-format
-msgid ""
 "A configuration option to assign the value of GDAL's GDAL_DATA option. If "
 "not set, the environmentally set GDAL_DATA variable is used."
 msgstr ""
@@ -18060,11 +18320,11 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Additional information about GDAL_DATA is available at GDAL's <link xlink:"
-"href=\"http://trac.osgeo.org/gdal/wiki/ConfigOptions\">Configuration "
-"Options</link>."
+"href=\"https://gdal.org/user/configoptions.html\">Configuration Options</"
+"link>."
 msgstr ""
-"GDAL_DATAに関する追加情報報は、GDALの<link xlink:href=\"http://trac.osgeo."
-"org/gdal/wiki/ConfigOptions\">Configuration Options</link>にあります。"
+"GDAL_DATAに関する追加情報報は、GDALの <link xlink:href=\"https://gdal.org/"
+"user/configoptions.html\">Configuration Options</link>.にあります。"
 
 #. Tag: para
 #, no-c-format
@@ -18187,11 +18447,11 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Additional information about GDAL_SKIP is available at GDAL's <link xlink:"
-"href=\"http://trac.osgeo.org/gdal/wiki/ConfigOptions\">Configuration "
-"Options</link>."
+"href=\"https://gdal.org/user/configoptions.html\">Configuration Options</"
+"link>."
 msgstr ""
-"GDAL_SKIPに関する追加情報は、GDALの<link xlink:href=\"http://trac.osgeo.org/"
-"gdal/wiki/ConfigOptions\">Configuration Options</link>にあります。"
+"GDAL_SKIPに関する追加情報は、GDALの<link xlink:href=\"https://gdal.org/user/"
+"configoptions.html\">Configuration Options</link>にあります。"
 
 #. Tag: para
 #, no-c-format
@@ -18316,16 +18576,16 @@ msgstr ""
 #, no-c-format
 msgid ""
 "A string configuration to set options used when working with an out-db "
-"raster. <link xlink:href=\"http://trac.osgeo.org/gdal/wiki/"
-"ConfigOptions\">Configuration options</link> control things like how much "
-"space GDAL allocates to local data cache, whether to read overviews, and "
-"what access keys to use for remote out-db data sources."
+"raster. <link xlink:href=\"https://gdal.org/user/configoptions."
+"html\">Configuration options</link> control things like how much space GDAL "
+"allocates to local data cache, whether to read overviews, and what access "
+"keys to use for remote out-db data sources."
 msgstr ""
 "データベース外ラスタを操作する時に使用するオプションを設定するためのコンフィ"
-"ギュレーション。<link xlink:href=\"http://trac.osgeo.org/gdal/wiki/"
-"ConfigOptions\">Configuration options</link>によって、どれだけGDALがローカル"
-"データキャッシュを確保するか、オーバビューを読むかどうか、リモートのデータ"
-"ベース外データソースを使う際のアクセスキー等を制御します。"
+"ギュレーション。<link xlink:href=\"https://gdal.org/user/configoptions."
+"html\">Configuration options</link>によって、どれだけGDALがローカルデータ"
+"キャッシュを確保するか、オーバビューを読むかどうか、リモートのデータベース外"
+"データソースを使う際のアクセスキー等を制御します。"
 
 #. Tag: para
 #, no-c-format
@@ -18341,6 +18601,25 @@ msgid ""
 msgstr ""
 "<varname>LOCAL</varname>キーワードを使う<emphasis>現在のトランザクション</"
 "emphasis>のための<varname>postgis.gdal_vsi_options</varname>の設定:"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"A boolean configuration to turn logging of GDAL debug messages on and off."
+msgstr "GDALデバッグメッセージのログを取るか取らないかを設定する真偽値。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default, GDAL logging is printed to stderr, and lower level debug "
+"messages are not printed at all. Turning this GUC to true will cause GDAL "
+"logging to be sent into the PostgreSQL logging stream, so you can see more "
+"or less of it by altering the <code>client_min_message</code> PostgreSQL GUC."
+msgstr ""
+"デフォルトでは、ログは標準エラー出力に印字され、低レベルのデバッグメッセージ"
+"は一切出力されません。このGUCをTRUEに変更すると、GDALログがPostgreSQLログスト"
+"リームに出力され、PostgreSQL GUCの<code>client_min_message</code>を変更するこ"
+"とでメッセージ量を多くも少なくもできます。"
 
 #. Tag: title
 #, no-c-format
@@ -23606,13 +23885,15 @@ msgid ""
 "Returns the OGC/ISO <link linkend=\"OpenGISWKBWKT\">Well-Known Binary</link> "
 "(WKB) representation of the geometry. The first function variant defaults to "
 "encoding using server machine endian. The second function variant takes a "
-"text argument specifying the endian encoding, either little-endian ('NDR') "
-"or big-endian ('XDR')."
+"text argument specifying the endian encoding: either 'NDR' for little-"
+"endian; or 'XDR' for big-endian. Supplying unknown arguments will result in "
+"little-endian output."
 msgstr ""
-"ジオメトリのOGC/ISO<link linkend=\"OpenGISWKBWKT\">Well-Knownバイナリ</link> "
-"(WKB)表現を返します。最初の形式では、サーバ機のエンディアンをデフォルトとして"
-"使います。二つ目の形式では、リトルエンディアン ('NDR')またはビッグエンディア"
-"ン ('XDR')を指定する文字列を取ります。"
+"ジオメトリのOGC/ISO <link linkend=\"OpenGISWKBWKT\">Well-Known Binary</link> "
+"(WKB)表現を返します。一つ目の形式はサーバ機のエンディアンをデフォルトとしてバ"
+"イナリを生成するものです。二つ目の形式は、エンディアンを指定する文字列引数を"
+"取ります。リトルエンディアンは 'NDR'、ビッグエンディアンは'XDR'です。それ以外"
+"の値を与えると、リトルエンディアンで出力します。"
 
 #. Tag: para
 #, no-c-format
@@ -23717,13 +23998,15 @@ msgid ""
 "Returns the <link linkend=\"EWKB_EWKT\">Extended Well-Known Binary</link> "
 "(EWKB) representation of the geometry with SRID metadata. The first function "
 "variant defaults to encoding using server machine endian. The second "
-"function variant takes a text argument specifying the endian encoding, "
-"either little-endian ('NDR') or big-endian ('XDR')."
+"function variant takes a text argument specifying the endian encoding: "
+"either 'NDR' for little-endian; or 'XDR' for big-endian. Supplying unknown "
+"arguments will result in little-endian output."
 msgstr ""
-"ジオメトリの、SRIDメタデータを持つ<link linkend=\"EWKB_EWKT\">Extended Well-"
-"Knownバイナリ</link> (EWKB)表現を返します。最初の形式では、サーバ機のエンディ"
-"アンをデフォルトとして使います。二つ目の形式では、リトルエンディアン ('NDR')"
-"またはビッグエンディアン ('XDR')を指定する文字列を取ります。"
+"SRIDメタデータを持つジオメトリの <link linkend=\"EWKB_EWKT\">Extended Well-"
+"Known Binary</link> (EWKB)表現を返します。一つ目の形式はサーバ機のエンディア"
+"ンをデフォルトとしてバイナリを生成するものです。二つ目の形式は、エンディアン"
+"を指定する文字列引数を取ります。リトルエンディアンは 'NDR'、ビッグエンディア"
+"ンは'XDR'です。それ以外の値を与えると、リトルエンディアンで出力します。"
 
 #. Tag: para
 #, no-c-format
@@ -24595,10 +24878,10 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Canonical example for a Web Mercator tile using a computed tile bounds to "
-"query and clip geometry."
+"query and clip geometry. This assumes the data.geom column has srid of 4326."
 msgstr ""
-"クエリを実行してジオメトリをクリップするために計算されたタイル境界を使うウェ"
-"ブメルカトルのタイルの標準的な例です。"
+"問い合わせとジオメトリのクリッピングを行うために計算されたタイル境界を使うWeb"
+"メルカトルのタイルの標準的な例です。data.geomカラムのSRIDは4326です。"
 
 #. Tag: para
 #, no-c-format
@@ -25361,16 +25644,10 @@ msgstr ""
 "これは、重ね合わせ関数では唯一の入力順序を気にしなければならない関数です。"
 "ST_Difference(A, B)は常にAの一部を返します。"
 
-#. Tag: para
+#. Tag: refsection
 #, no-c-format
-msgid ""
-"If the optional <code>gridSize</code> argument is provided, the inputs are "
-"snapped to a grid of the given size, and the result vertices are computed on "
-"that same grid. (Requires GEOS-3.9.0 or higher)"
-msgstr ""
-"任意引数<code>gridSize</code>が与えらえれた場合には、入力は与えられた大きさの"
-"グリッドにスナップされ、結果の￥頂点は同じグリッド上で計算されます "
-"(GEOS-3.9.0以上が必要)。"
+msgid "&overlay_gridsize_arg;"
+msgstr "&overlay_gridsize_arg;"
 
 #. Tag: para
 #, no-c-format
@@ -25423,8 +25700,12 @@ msgstr "次では、3次元ラインストリングの差を求めます。"
 
 #. Tag: para
 #, no-c-format
-msgid ", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>"
-msgstr ", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>"
+msgid ""
+", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>, <xref "
+"linkend=\"ST_ReducePrecision\"/>"
+msgstr ""
+", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>, <xref "
+"linkend=\"ST_ReducePrecision\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -25574,14 +25855,16 @@ msgstr ""
 #, no-c-format
 msgid ""
 ", <xref linkend=\"ST_Difference\"/>, <xref linkend=\"ST_Union\"/>, <xref "
-"linkend=\"ST_Dimension\"/>, <xref linkend=\"ST_Dump\"/>, <xref "
-"linkend=\"ST_Force2D\"/>, <xref linkend=\"ST_SymDifference\"/>, <xref "
-"linkend=\"ST_Intersects\"/>, <xref linkend=\"ST_Multi\"/>"
+"linkend=\"ST_ClipByBox2D\"/>, <xref linkend=\"ST_Dimension\"/>, <xref "
+"linkend=\"ST_Dump\"/>, <xref linkend=\"ST_Force2D\"/>, <xref "
+"linkend=\"ST_SymDifference\"/>, <xref linkend=\"ST_Intersects\"/>, <xref "
+"linkend=\"ST_Multi\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 ", <xref linkend=\"ST_Difference\"/>, <xref linkend=\"ST_Union\"/>, <xref "
-"linkend=\"ST_Dimension\"/>, <xref linkend=\"ST_Dump\"/>, <xref "
-"linkend=\"ST_Force2D\"/>, <xref linkend=\"ST_SymDifference\"/>, <xref "
-"linkend=\"ST_Intersects\"/>, <xref linkend=\"ST_Multi\"/>"
+"linkend=\"ST_ClipByBox2D\"/>, <xref linkend=\"ST_Dimension\"/>, <xref "
+"linkend=\"ST_Dump\"/>, <xref linkend=\"ST_Force2D\"/>, <xref "
+"linkend=\"ST_SymDifference\"/>, <xref linkend=\"ST_Intersects\"/>, <xref "
+"linkend=\"ST_Multi\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -25804,12 +26087,10 @@ msgstr ""
 #, no-c-format
 msgid ""
 "<code>max_vertices</code> must be 5 or more, as 5 points are needed to "
-"represent a closed box. <code>gridSize</code> can be specified to have "
-"clipping work in fixed-precision space (requires GEOS-3.9.0+)."
+"represent a closed box."
 msgstr ""
-"<code>max_vertices</code>は5以上でなければなりません。5点が閉じたボックスに必"
-"要だからです。<code>gridSize</code>は固定精度空間での切り出しに指定できます "
-"(GEOS 3.9.0以上が必要)。"
+"閉じたボックスを表現するために必要なポイント数は5個ですから、"
+"<code>max_vertices</code>は5以上です。"
 
 #. Tag: para
 #, no-c-format
@@ -25911,10 +26192,10 @@ msgstr ""
 #, no-c-format
 msgid ""
 ", <xref linkend=\"ST_Segmentize\"/>, <xref linkend=\"ST_Split\"/>, <xref "
-"linkend=\"ST_NPoints\"/>"
+"linkend=\"ST_NPoints\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 ", <xref linkend=\"ST_Segmentize\"/>, <xref linkend=\"ST_Split\"/>, <xref "
-"linkend=\"ST_NPoints\"/>"
+"linkend=\"ST_NPoints\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -26012,10 +26293,12 @@ msgstr ""
 #, no-c-format
 msgid ""
 ", <xref linkend=\"ST_MemUnion\"/>, <xref linkend=\"ST_MakeValid\"/>, <xref "
-"linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>"
+"linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>, <xref "
+"linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 ", <xref linkend=\"ST_MemUnion\"/>, <xref linkend=\"ST_MakeValid\"/>, <xref "
-"linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>"
+"linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>, <xref "
+"linkend=\"ST_ReducePrecision\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -26088,17 +26371,6 @@ msgstr ""
 "cleverelephant.ca/2009/01/must-faster-unions-in-postgis-14.html\">http://"
 "blog.cleverelephant.ca/2009/01/must-faster-unions-in-postgis-14.html</link>で"
 "紹介されている早いカスケード結合アルゴリズムを使っています。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"A <code>gridSize</code> can be specified to work in fixed-precision space. "
-"The inputs are snapped to a grid of the given size, and the result vertices "
-"are computed on that same grid. (Requires GEOS-3.9.0 or higher)"
-msgstr ""
-"固定精度空間で動作するよう<code>gridSize</code>を指定できます。入力は与えられ"
-"たグリッドにスナップされ、結果の頂点は同じグリッド上で計算されます "
-"(GEOS-3.9.0以上が必要です)。"
 
 #. Tag: para
 #, no-c-format
@@ -26178,11 +26450,11 @@ msgstr "3次元の例 - 混合次元なし"
 msgid ""
 ", <xref linkend=\"ST_UnaryUnion\"/>, <xref linkend=\"ST_MemUnion\"/>, <xref "
 "linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Difference\"/>, <xref "
-"linkend=\"ST_SymDifference\"/>"
+"linkend=\"ST_SymDifference\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 ", <xref linkend=\"ST_UnaryUnion\"/>, <xref linkend=\"ST_MemUnion\"/>, <xref "
 "linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Difference\"/>, <xref "
-"linkend=\"ST_SymDifference\"/>"
+"linkend=\"ST_SymDifference\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 
 #. Tag: title
 #, no-c-format
@@ -26314,14 +26586,15 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"Buffer output is always a valid polygonal geometry. Buffer can handle "
-"invalid inputs, so buffering by distance 0 is sometimes used as a way of "
-"repairing invalid polygons. <xref linkend=\"ST_MakeValid\"/> can also be "
-"used for this purpose."
+"Buffer can handle invalid inputs and the output is always a valid polygonal "
+"geometry. Buffering by distance 0 is sometimes used as a way of repairing "
+"invalid polygons. <xref linkend=\"ST_MakeValid\"/> is more suitable for this "
+"process as it can handle multi-polygons."
 msgstr ""
-"バッファ出力は常に妥当なポリゴンジオメトリです。バッファは不正な入力を処理で"
-"きるので、不正なポリゴンを修復する方法として、距離0のバッファリングが使われま"
-"す。同じ目的の関数としては<xref linkend=\"ST_MakeValid\"/>が使われます。"
+"不正な入力を操作することができ、出力は常に妥当なポリゴンジオメトリです。距離 "
+"0によるバッファ生成は時々不正なポリゴンの修復方法として使われます。. <xref "
+"linkend=\"ST_MakeValid\"/>の方がマルチポリゴンも扱えるので、この目的に使うの"
+"により適切です。"
 
 #. Tag: para
 #, no-c-format
@@ -28129,7 +28402,7 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"Computes a simplifed topology-preserving outer or inner hull of a polygonal "
+"Computes a simplified topology-preserving outer or inner hull of a polygonal "
 "geometry."
 msgstr ""
 "ポリゴンジオメトリに対してトポロジを保存した状態で簡略化した外側または内側の"
@@ -28561,23 +28834,11 @@ msgstr "ラスタ リファレンス"
 #. Tag: para
 #, no-c-format
 msgid ""
-"The functions given below are the ones which a user of PostGIS Raster is "
-"likely to need and which are currently available in PostGIS Raster. There "
-"are other functions which are required support functions to the raster "
-"objects which are not of use to a general user."
+"<varname>raster</varname> is a PostGIS type for storing and analyzing raster "
+"data."
 msgstr ""
-"ここで挙げる関数は、PostGISラスタにとって必要と思われるもので、現在PostGISラ"
-"スタで有効なものです。他に、一般的なユーザが利用しない、ラスタオブジェクトに"
-"対して求められるサポート関数があります。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"<varname>raster</varname> is a new PostGIS type for storing and analyzing "
-"raster data."
-msgstr ""
-"<varname>raster</varname>は、ラスタデータの格納と分析のための新しいPostGIS型"
-"です。"
+"<varname>raster</varname>は、ラスタデータを格納、解析するためのPostGIS型で"
+"す。"
 
 #. Tag: para
 #, no-c-format
@@ -28591,11 +28852,20 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"For the examples in this reference we will be using a raster table of dummy "
-"rasters - Formed with the following code"
+"Some examples in this reference use a raster table of dummy data, created "
+"with the following code:"
 msgstr ""
-"このリファレンスにおける例ではダミーラスタのラスタテーブルを使っています。ラ"
-"スタは次のようなコードで形成しています。"
+"このリファレンスで使うダミーデータのラスタテーブルの作り方は次の通りです:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The functions below are ones which a user of PostGIS Raster is likely to "
+"need. There are other raster support functions which are not of interest to "
+"a general user."
+msgstr ""
+"下に示す関数はPostGISラスタのユーザにとって必要そうなものです。他にも一般的な"
+"ユーザにとって興味のないラスタ対応関数があります。"
 
 #. Tag: title
 #, no-c-format
@@ -28746,20 +29016,19 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"<refpurpose>A composite type used as input into the ST_Reclass function "
-"defining the behavior of reclassification.</refpurpose>"
+"A composite type used as input into the ST_Reclass function defining the "
+"behavior of reclassification."
 msgstr ""
-"<refpurpose>ST_Reclass関数への入力として使用する複合型です。再分類の挙動を定"
-"義します。</refpurpose>"
+"ST_Reclass関数への入力として使われる再分類のふるまいを定義する複合型です。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
-"<para>A composite type used as input into the ST_Reclass function defining "
-"the behavior of reclassification.</para>"
+"A composite type used as input into the <xref linkend=\"RT_ST_Reclass\"/> "
+"function defining the behavior of reclassification."
 msgstr ""
-"<para>ST_Reclass関数への入力として使用する複合型です。再分類の挙動を定義しま"
-"す。</para>"
+"<xref linkend=\"RT_ST_Reclass\"/>関数への入力として使われる再分類のふるまいを"
+"定義する複合型です。"
 
 #. Tag: para
 #, no-c-format
@@ -29327,180 +29596,6 @@ msgstr ""
 
 #. Tag: refpurpose
 #, no-c-format
-msgid ""
-"<refpurpose>Generates a set of vector contours from the provided raster "
-"band, using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
-"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
-"contouring algorithm</link>.</refpurpose>"
-msgstr ""
-"<refpurpose>与えられたラスタバンドから等高線ベクタを生成します。<link xlink:"
-"href=\"https://gdal.org/api/gdal_alg.html?"
-"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL"
-"等高線生成アルゴリズム</link>を使います。</refpurpose>"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"<para>Generates a set of vector contours from the provided raster band, "
-"using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
-"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
-"contouring algorithm</link>.</para>"
-msgstr ""
-"<para>与えられたラスタバンドから等高線ベクタを生成します。<link xlink:"
-"href=\"https://gdal.org/api/gdal_alg.html?"
-"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL"
-"等高線生成アルゴリズム</link>を使います。</para>"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"When the <varname>fixed_levels</varname> parameter is a non-empty array, the "
-"<varname>level_interval</varname> and <varname>level_base</varname> "
-"parameters are ignored."
-msgstr ""
-"<varname>fixed_levels</varname>パラメータが空でない配列である時、"
-"<varname>level_interval</varname>と<varname>level_base</varname>とは無視され"
-"ます。"
-
-#. Tag: para
-#, no-c-format
-msgid "Input parameters are:"
-msgstr "入力パラメータは次の通りです:"
-
-#. Tag: para
-#, no-c-format
-msgid "The raster to generate the contour of"
-msgstr "等高線を生成するラスタ"
-
-#. Tag: para
-#, no-c-format
-msgid "The band to generate the contour of"
-msgstr "等高線を生成するバンド"
-
-#. Tag: para
-#, no-c-format
-msgid "The elevation interval between contours generated"
-msgstr "生成する等高線の標高間隔"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"The \"base\" relative to which contour intervals are applied, this is "
-"normally zero, but could be different. To generate 10m contours at 5, 15, "
-"25, ... the LEVEL_BASE would be 5."
-msgstr ""
-"等高線の標高間隔に適用される相対値の「基礎値」です。通常は0ですが、そうでない"
-"場合もあります。10m等高線であって、5, 15, 25 ...で等高線を生成する場合には、"
-"LEVEL_BASEは5になります。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"If <literal>true</literal>, contour polygons will be created, rather than "
-"polygon lines."
-msgstr ""
-"<literal>true</literal> の場合には、等高線ポリゴンが作られます。ラインストリ"
-"ングではありません。"
-
-#. Tag: para
-#, no-c-format
-msgid "Return values are a set of records with the following attributes:"
-msgstr "返り値は次に示す属性を持つ行の集合です。"
-
-#. Tag: para
-#, no-c-format
-msgid "The geometry of the contour line."
-msgstr "等高線のジオメトリ。"
-
-#. Tag: para
-#, no-c-format
-msgid "A unique identifier given to the contour line by GDAL."
-msgstr "GDALが等高線に与える一意の識別子。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"The raster value the line represents. For an elevation DEM input, this would "
-"be the elevation of the output contour."
-msgstr ""
-"ラインが表現するラスタ値。標高DEM入力の場合、出力等高線の標高となります。"
-
-#. Tag: refpurpose
-#, no-c-format
-msgid ""
-"Interpolates a gridded surface based on an input set of 3-d points, using "
-"the X- and Y-values to position the points on the grid and the Z-value of "
-"the points as the surface elevation."
-msgstr ""
-"X値とY値を使用してグリッド上のポイントを配置し、ポイントのZ値をサーフェス標高"
-"として配置し、3次元ポイントの入力セットに基づいてグリッドサーフェスを補間しま"
-"す。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"Interpolates a gridded surface based on an input set of 3-d points, using "
-"the X- and Y-values to position the points on the grid and the Z-value of "
-"the points as the surface elevation. There are five interpolation algorithms "
-"available: inverse distance, inverse distance nearest-neighbor, moving "
-"average, nearest neighbor, and linear interpolation. See the <link xlink:"
-"href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
-"algorithms\">gdal_grid documentation</link> for more details on the "
-"algorithms and their parameters. For more information on how interpolations "
-"are calculated, see the <link xlink:href=\"https://gdal.org/tutorials/"
-"gdal_grid_tut.html\">GDAL grid tutorial</link>."
-msgstr ""
-"X値とY値を使用してグリッド上のポイントを配置し、ポイントのZ値をサーフェス標高"
-"として配置し、3次元ポイントの入力セットに基づいてグリッドサーフェスを補間しま"
-"す。逆距離、逆距離最近傍、移動平均、最近傍、線形補間の五つの補間アルゴリズム"
-"が使用できます。アルゴリズムとそれらのパラメータに関する詳細情報については"
-"<link xlink:href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
-"algorithms\">gdal_grid documentation</link>を参照して下さい。どのように補間計"
-"算が行われているかの詳細情報については<link xlink:href=\"https://gdal.org/"
-"tutorials/gdal_grid_tut.html\">GDAL grid tutorial</link>をご覧下さい。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"The points to drive the interpolation. Any geometry with Z-values is "
-"acceptable, all points in the input will be used."
-msgstr ""
-"補間を駆動するポイント。Z値を持つジオメトリなら全て受け付けられ、全ての入力ポ"
-"イントが使用されます。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"A string defining the algorithm and algorithm options, in the format used by "
-"<link xlink:href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
-"algorithms\">gdal_grid</link>. For example, for an inverse-distance "
-"interpolation with a smoothing of 2, you would use \"invdist:smoothing=2.0\""
-msgstr ""
-"アルゴリズムとそのオプションを定義する文字列で、<link xlink:href=\"https://"
-"gdal.org/programs/gdal_grid.html#interpolation-algorithms\">gdal_grid</link>"
-"で使われる書式で記述します。たとえば、逆距離補間"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"A raster template to drive the geometry of the output raster. The width, "
-"height, pixel size, spatial extent and pixel type will be read from this "
-"template."
-msgstr ""
-"出力ラスタのジオメトリを駆動するためのラスタテンプレート。幅、高さ、ピクセル"
-"ｙサイズ、空間範囲、ピクセルタイプがこのテンプレートから読み込まれます。"
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"By default the first band in the template raster is used to drive the output "
-"raster, but that can be adjusted with this parameter."
-msgstr ""
-"デフォルトではテンプレートラスタの最初のバンドが出力ラスタの駆動に使われます"
-"が、このパラメータで調整できます。"
-
-#. Tag: refpurpose
-#, no-c-format
 msgid "Change the SRID of all rasters in the user-specified column and table."
 msgstr ""
 "ユーザが指定したカラムとテーブルにあるラスタの全てについてSRIDを変更します。"
@@ -29876,11 +29971,6 @@ msgid ""
 msgstr ""
 "入力ジオメトリとそれに関連付けた値を使ってラスタに変換したもの全てを持つ単一"
 "バンドのラスタを返します。"
-
-#. Tag: para
-#, no-c-format
-msgid "Availability: 3.6.0"
-msgstr "Availability: 3.6.0"
 
 #. Tag: para
 #, no-c-format
@@ -32996,12 +33086,12 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Returns summarystats consisting of count, sum, mean, stddev, min, max for a "
-"given raster band of a raster or raster coverage. Band 1 is assumed is no "
+"given raster band of a raster or raster coverage. Band 1 is assumed if no "
 "band is specified."
 msgstr ""
-"ラスタまたはラスタカバレッジの指定したバンドについて、ピクセル数、合計値、平"
-"均値、標準偏差、最小値、最大値からなる統計情報の概要を返します。バンドを指定"
-"しない場合には、1番と仮定します。"
+"与えられたラスターのバンドまたはラスターカバレッジのcount, sum, mean, "
+"stddev, min, maxからなる統計情報のサマリーです。バンドを指定しない場合には、1"
+"番と仮定します。"
 
 #. Tag: para
 #, no-c-format
@@ -33083,12 +33173,12 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, "
-"max for a given raster band of a set of raster. Band 1 is assumed is no band "
+"max for a given raster band of a set of raster. Band 1 is assumed if no band "
 "is specified."
 msgstr ""
-"集約関数です。ラスタ集合の指定したバンドについて、ピクセル数、合計値、平均"
-"値、標準偏差、最小値、最大値からなる統計情報の概要を返します。バンドを指定し"
-"ない場合には、1番と仮定します。"
+"集約関数。与えられたラスターのバンドの集合のcount, sum, mean, stddev, min, "
+"maxからなる統計情報のサマリーです。バンドを指定しない場合には、1番と仮定しま"
+"す。"
 
 #. Tag: para
 #, no-c-format
@@ -35080,7 +35170,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "1 band version - Creates a new one band raster formed by applying a valid "
-"PostgreSQL function on the input raster band and of pixeltype prodived. Band "
+"PostgreSQL function on the input raster band and of pixeltype provided. Band "
 "1 is assumed if no band is specified."
 msgstr ""
 "1バンド版 - 入力バンドに対する妥当なPostgreSQL関数で形成された、指定したピク"
@@ -35203,7 +35293,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "2 band version - Creates a new one band raster formed by applying a valid "
-"PostgreSQL function on the 2 input raster bands and of pixeltype prodived. "
+"PostgreSQL function on the 2 input raster bands and of pixeltype provided. "
 "Band 1 is assumed if no band is specified. Extent type defaults to "
 "INTERSECTION if not specified."
 msgstr ""
@@ -35428,14 +35518,14 @@ msgstr "ユーザ定義関数に渡される引数です。"
 #, no-c-format
 msgid ""
 "Examples utilize the katrina raster loaded as a single tile described in "
-"<link xlink:href=\"http://trac.osgeo.org/gdal/wiki/frmts_wtkraster."
-"html\">http://trac.osgeo.org/gdal/wiki/frmts_wtkraster.html</link> and then "
-"prepared in the <xref linkend=\"RT_ST_Rescale\"/> examples"
+"<link xlink:href=\"https://gdal.org/user/drivers/raster/postgisraster."
+"html\">https://gdal.org/user/drivers/raster/postgisraster.html</link> and "
+"then prepared in the <xref linkend=\"RT_ST_Rescale\"/> examples"
 msgstr ""
 "単一タイルとしてロードされたカトリーナのラスタを使った例です。<link xlink:"
-"href=\"http://trac.osgeo.org/gdal/wiki/frmts_wtkraster.html\">http://trac."
-"osgeo.org/gdal/wiki/frmts_wtkraster.html</link>に説明があります。また、<xref "
-"linkend=\"RT_ST_Rescale\"/>の例で準備を行っています"
+"href=\"https://gdal.org/user/drivers/raster/postgisraster.html\">https://"
+"gdal.org/user/drivers/raster/postgisraster.html</link>に説明があります。ま"
+"た、<xref linkend=\"RT_ST_Rescale\"/>の例で準備を行っています"
 
 #. Tag: para
 #, no-c-format
@@ -35470,31 +35560,35 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"Creates a new raster formed by applying a valid PostgreSQL algebraic "
-"operation defined by the <varname>reclassexpr</varname> on the input raster "
-"(<varname>rast</varname>). If no <varname>band</varname> is specified band 1 "
-"is assumed. The new raster will have the same georeference, width, and "
-"height as the original raster. Bands not designated will come back "
-"unchanged. Refer to <xref linkend=\"reclassarg\"/> for description of valid "
-"reclassification expressions."
+"Creates a new raster formed by applying a reclassification operation defined "
+"by the <varname>reclassexpr</varname> on the input raster (<varname>rast</"
+"varname>). Refer to <xref linkend=\"reclassarg\"/> for the description of "
+"reclassification expressions. If no <varname>band</varname> is specified "
+"band 1 is assumed."
 msgstr ""
-"入力ラスタ (<varname>rast</varname>)に<varname>reclassexpr</varname>で定義す"
-"る妥当なPostgreSQL代数演算子を適用して新しいラスタを生成します。"
-"<varname>band</varname>が指定されていない場合には、1番と仮定します。新しいラ"
-"スタは、元のラスタと同じ地理参照、幅、高さを持ちます。指示されていないバンド"
-"は変更せずに返ります。妥当な再分類の数式の説明については<xref "
-"linkend=\"reclassarg\"/>を参照して下さい。"
+"<varname>reclassexpr</varname>によって定義される入力ラスター (<varname>rast</"
+"varname>)の再分類処理を適用して新しいラスターを生成します。<varname>band</"
+"varname>を指定しない場合には、1番を仮定します。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
-"The bands of the new raster will have pixel type of <varname>pixeltype</"
-"varname>. If <varname>reclassargset</varname> is passed in then each "
-"reclassarg defines behavior of each band generated."
+"The new raster will have the same georeference, width, and height as the "
+"original raster. The bands of the new raster have pixel type of "
+"<varname>pixeltype</varname>. If <varname>reclassargset</varname> is "
+"specified then each <varname>reclassarg</varname> defines the type of the "
+"target band. Bands not designated are returned unchanged."
 msgstr ""
-"新しいラスタのバンドは<varname>pixeltype</varname>で指定するピクセルタイプに"
-"なります。<varname>reclassargset</varname>を渡した場合は、個々のreclassargが"
-"生成されるバンド毎の挙動を定義します。"
+"新しいラスターは元のラスターと同じジオリファレンス、幅、高さになります。新し"
+"いラスタのバンドは<varname>pixeltype</varname>で指定したピクセルタイプになり"
+"ます。 <varname>reclassargset</varname>を指定すると、しれじれび "
+"<varname>reclassarg</varname> は対象バンドのピクセルタイプを定義します。指定"
+"しないバンドは変更されずに返ります。"
+
+#. Tag: title
+#, no-c-format
+msgid "Example: Basic"
+msgstr "例: 基本"
 
 #. Tag: para
 #, no-c-format
@@ -35548,6 +35642,65 @@ msgstr ""
 ", <xref linkend=\"RT_ST_Band\"/>, <xref linkend=\"RT_ST_BandPixelType\"/>, "
 "<xref linkend=\"RT_ST_MakeEmptyRaster\"/>, <xref linkend=\"reclassarg\"/>, "
 "<xref linkend=\"RT_ST_Value\"/>"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Creates a new raster composed of bands reclassified from original, using a "
+"1:1 mapping from values in the original band to new values in the "
+"destination band."
+msgstr ""
+"元ラスターから再分類したバンドからなる新しいラスタを生成します。元ラスターの"
+"バンド内の値から新たに生成されるラスターのバンド内の値への1対1のマッピングを"
+"使います。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Creates a new raster formed by applying a reclassification operation defined "
+"by the <varname>inputvalues</varname> and <varname>outputvalues</varname> "
+"arrays. Pixel values found in the input array are mapped to the "
+"corresponding value in the output array. All other pixel values are mapped "
+"to the <varname>nodatavalue</varname>."
+msgstr ""
+"<varname>inputvalues</varname>配列と<varname>outputvalues</varname>配列によっ"
+"て定義される再分類処理を適用することで形成される新しいラスタを生成します。入"
+"力配列のピクセル値は対応する出力配列の値にマップされます。他のピクセル値は全"
+"て <varname>nodatavalue</varname>にマップされます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The output pixel type defaults to float, but can be specified using the "
+"<varname>pixeltype</varname> parameter. If no <varname>bandnumber</varname> "
+"is specified band 1 is assumed."
+msgstr ""
+"出力ピクセルタイプのデフォルトは浮動小数点数ですが、 <varname>pixeltype</"
+"varname>パラメータで指定できます。<varname>bandnumber</varname>を指定しな場合"
+"には、1番を仮定します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new raster will have the same georeference, width, and height as the "
+"original raster. Bands not designated are returned unchanged."
+msgstr ""
+"新しいラスターは元ラスターと同じジオリファレンス、同じ幅、同じ高さを持ちま"
+"す。指定されていないバンドは変更されずに返ります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Create a small raster and map its pixels to new values."
+msgstr "小さいラスターを作ってピクセルに新しい値をマップしていきます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+", <xref linkend=\"RT_ST_AddBand\"/>, <xref linkend=\"RT_ST_Band\"/>, <xref "
+"linkend=\"RT_ST_MakeEmptyRaster\"/>"
+msgstr ""
+", <xref linkend=\"RT_ST_AddBand\"/>, <xref linkend=\"RT_ST_Band\"/>, <xref "
+"linkend=\"RT_ST_MakeEmptyRaster\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -36300,6 +36453,180 @@ msgstr ""
 "linkend=\"RT_ST_Slope\"/>, <xref linkend=\"RT_ST_HillShade\"/>, <xref "
 "linkend=\"RT_ST_Aspect\"/>"
 
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Interpolates a gridded surface based on an input set of 3-d points, using "
+"the X- and Y-values to position the points on the grid and the Z-value of "
+"the points as the surface elevation."
+msgstr ""
+"X値とY値を使用してグリッド上のポイントを配置し、ポイントのZ値をサーフェス標高"
+"として配置し、3次元ポイントの入力セットに基づいてグリッドサーフェスを補間しま"
+"す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Interpolates a gridded surface based on an input set of 3-d points, using "
+"the X- and Y-values to position the points on the grid and the Z-value of "
+"the points as the surface elevation. There are five interpolation algorithms "
+"available: inverse distance, inverse distance nearest-neighbor, moving "
+"average, nearest neighbor, and linear interpolation. See the <link xlink:"
+"href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
+"algorithms\">gdal_grid documentation</link> for more details on the "
+"algorithms and their parameters. For more information on how interpolations "
+"are calculated, see the <link xlink:href=\"https://gdal.org/tutorials/"
+"gdal_grid_tut.html\">GDAL grid tutorial</link>."
+msgstr ""
+"X値とY値を使用してグリッド上のポイントを配置し、ポイントのZ値をサーフェス標高"
+"として配置し、3次元ポイントの入力セットに基づいてグリッドサーフェスを補間しま"
+"す。逆距離、逆距離最近傍、移動平均、最近傍、線形補間の五つの補間アルゴリズム"
+"が使用できます。アルゴリズムとそれらのパラメータに関する詳細情報については"
+"<link xlink:href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
+"algorithms\">gdal_grid documentation</link>を参照して下さい。どのように補間計"
+"算が行われているかの詳細情報については<link xlink:href=\"https://gdal.org/"
+"tutorials/gdal_grid_tut.html\">GDAL grid tutorial</link>をご覧下さい。"
+
+#. Tag: para
+#, no-c-format
+msgid "Input parameters are:"
+msgstr "入力パラメータは次の通りです:"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The points to drive the interpolation. Any geometry with Z-values is "
+"acceptable, all points in the input will be used."
+msgstr ""
+"補間を駆動するポイント。Z値を持つジオメトリなら全て受け付けられ、全ての入力ポ"
+"イントが使用されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A string defining the algorithm and algorithm options, in the format used by "
+"<link xlink:href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
+"algorithms\">gdal_grid</link>. For example, for an inverse-distance "
+"interpolation with a smoothing of 2, you would use \"invdist:smoothing=2.0\""
+msgstr ""
+"アルゴリズムとそのオプションを定義する文字列で、<link xlink:href=\"https://"
+"gdal.org/programs/gdal_grid.html#interpolation-algorithms\">gdal_grid</link>"
+"で使われる書式で記述します。たとえば、逆距離補間"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A raster template to drive the geometry of the output raster. The width, "
+"height, pixel size, spatial extent and pixel type will be read from this "
+"template."
+msgstr ""
+"出力ラスタのジオメトリを駆動するためのラスタテンプレート。幅、高さ、ピクセル"
+"ｙサイズ、空間範囲、ピクセルタイプがこのテンプレートから読み込まれます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default the first band in the template raster is used to drive the output "
+"raster, but that can be adjusted with this parameter."
+msgstr ""
+"デフォルトではテンプレートラスタの最初のバンドが出力ラスタの駆動に使われます"
+"が、このパラメータで調整できます。"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"<refpurpose>Generates a set of vector contours from the provided raster "
+"band, using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
+"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
+"contouring algorithm</link>.</refpurpose>"
+msgstr ""
+"<refpurpose>与えられたラスタバンドから等高線ベクタを生成します。<link xlink:"
+"href=\"https://gdal.org/api/gdal_alg.html?"
+"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL"
+"等高線生成アルゴリズム</link>を使います。</refpurpose>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<para>Generates a set of vector contours from the provided raster band, "
+"using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
+"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
+"contouring algorithm</link>.</para>"
+msgstr ""
+"<para>与えられたラスタバンドから等高線ベクタを生成します。<link xlink:"
+"href=\"https://gdal.org/api/gdal_alg.html?"
+"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL"
+"等高線生成アルゴリズム</link>を使います。</para>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the <varname>fixed_levels</varname> parameter is a non-empty array, the "
+"<varname>level_interval</varname> and <varname>level_base</varname> "
+"parameters are ignored."
+msgstr ""
+"<varname>fixed_levels</varname>パラメータが空でない配列である時、"
+"<varname>level_interval</varname>と<varname>level_base</varname>とは無視され"
+"ます。"
+
+#. Tag: para
+#, no-c-format
+msgid "The raster to generate the contour of"
+msgstr "等高線を生成するラスタ"
+
+#. Tag: para
+#, no-c-format
+msgid "The band to generate the contour of"
+msgstr "等高線を生成するバンド"
+
+#. Tag: para
+#, no-c-format
+msgid "The elevation interval between contours generated"
+msgstr "生成する等高線の標高間隔"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The \"base\" relative to which contour intervals are applied, this is "
+"normally zero, but could be different. To generate 10m contours at 5, 15, "
+"25, ... the LEVEL_BASE would be 5."
+msgstr ""
+"等高線の標高間隔に適用される相対値の「基礎値」です。通常は0ですが、そうでない"
+"場合もあります。10m等高線であって、5, 15, 25 ...で等高線を生成する場合には、"
+"LEVEL_BASEは5になります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If <literal>true</literal>, contour polygons will be created, rather than "
+"polygon lines."
+msgstr ""
+"<literal>true</literal> の場合には、等高線ポリゴンが作られます。ラインストリ"
+"ングではありません。"
+
+#. Tag: para
+#, no-c-format
+msgid "Return values are a set of records with the following attributes:"
+msgstr "返り値は次に示す属性を持つ行の集合です。"
+
+#. Tag: para
+#, no-c-format
+msgid "The geometry of the contour line."
+msgstr "等高線のジオメトリ。"
+
+#. Tag: para
+#, no-c-format
+msgid "A unique identifier given to the contour line by GDAL."
+msgstr "GDALが等高線に与える一意の識別子。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The raster value the line represents. For an elevation DEM input, this would "
+"be the elevation of the output contour."
+msgstr ""
+"ラインが表現するラスタ値。標高DEM入力の場合、出力等高線の標高となります。"
+
 #. Tag: title
 #, no-c-format
 msgid "Raster Processing: Raster to Geometry"
@@ -36561,6 +36888,40 @@ msgid ""
 msgstr ""
 "Changed: 2.1.0 以前の版では、時々ポリゴンを返しましたが、常にマルチポリゴンを"
 "返すように変更しました。"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Calculates the fraction of each raster cell that is covered by a given "
+"geometry."
+msgstr ""
+"ラスタ上の個々のセルのうち与えられたジオメトリで覆われたものの断片を計算しま"
+"す。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Calculates the fraction of each raster cell that is covered by a given "
+"geometry. The first argument is a raster, which defines the grid geometry to "
+"use for the calculation. The extent and cell size are read from the raster "
+"parameter. The second argument is a geometry, which is overlaid with the "
+"grid, and each grid populated based on overlaying the geometry on the grid. "
+"For polygons, the value returned for each cell is the proportion of its area "
+"that is covered by the geometry. For linestrings, the value returned for "
+"each cell is the length contained in the cell."
+msgstr ""
+"ラスタ上の個々のセルのうち与えられたジオメトリで覆われている割合を計算しま"
+"す。一つ目の引数はラスタで、計算に使うジオメトリグリッドを定義します。範囲と"
+"セルサイズはこのラスタから読みます。二つ目の引数はジオメトリです。グリッドを"
+"覆っていて、個々のグリッドの値は、ジオメトリが覆うグリッドに基づいて設定され"
+"ます。ポリゴンについては、個々のセルについて返される値は、ジオメトリに覆われ"
+"た領域の割合です。ラインストリングについては、個々のセルから返される値はセル"
+"に含まれる長さです。"
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0 Requires GEOS 3.14 or higher."
+msgstr "Availability: 3.6.0 GEOS 3.14以上が必要です。"
 
 #. Tag: title
 #, no-c-format
@@ -37113,7 +37474,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Enhanced: 2.1.0 addition of Aggegrate variant"
+msgid "Enhanced: 2.1.0 addition of Aggregate variant"
 msgstr "Enhanced: 2.1.0 集約関数版の追加"
 
 #. Tag: title
@@ -37338,17 +37699,16 @@ msgstr ""
 #, no-c-format
 msgid ""
 "To control this behavior, GDAL provides the following environment variable: "
-"<link xlink:href=\"https://trac.osgeo.org/gdal/wiki/"
-"ConfigOptions#GDAL_DISABLE_READDIR_ON_OPEN\">GDAL_DISABLE_READDIR_ON_OPEN</"
-"link>. Set <varname>GDAL_DISABLE_READDIR_ON_OPEN</varname> to <varname>TRUE</"
-"varname> to disable directory scanning."
+"<link xlink:href=\"https://gdal.org/user/configoptions.html#config-"
+"GDAL_DISABLE_READDIR_ON_OPEN\">GDAL_DISABLE_READDIR_ON_OPEN</link>. Set "
+"<varname>GDAL_DISABLE_READDIR_ON_OPEN</varname> to <varname>TRUE</varname> "
+"to disable directory scanning."
 msgstr ""
-"この振る舞いを制御するために、GDALには<link xlink:href=\"https://trac.osgeo."
-"org/gdal/wiki/"
-"ConfigOptions#GDAL_DISABLE_READDIR_ON_OPEN\">GDAL_DISABLE_READDIR_ON_OPEN</"
-"link>という環境変数があります。<varname>GDAL_DISABLE_READDIR_ON_OPEN</"
-"varname>を<varname>TRUE</varname>に設定すると、ディレクトリのスキャンを無効に"
-"します。"
+"この振る舞いを制御するために、GDALには<link xlink:href=\"https://gdal.org/"
+"user/configoptions.html#config-"
+"GDAL_DISABLE_READDIR_ON_OPEN\">GDAL_DISABLE_READDIR_ON_OPEN</link>という環境"
+"変数があります。<varname>GDAL_DISABLE_READDIR_ON_OPEN</varname>を"
+"<varname>TRUE</varname>に設定すると、ディレクトリのスキャンを無効にします。"
 
 #. Tag: para
 #, no-c-format
@@ -39658,9 +40018,9 @@ msgid ""
 "linkend=\"ST_MakeSolid\"/>. Areal geometries have no volume. Here is an "
 "example to demonstrate."
 msgstr ""
-"WKTで閉じた面を生成した時、それは立体でなく面として扱われるます。立体にするに"
-"は<xref linkend=\"ST_MakeSolid\"/>を使います。面ジオメトリは堆積を持ちませ"
-"ん。例を挙げます。"
+"WKTで閉じた面を生成する時、それは立体でなく面として扱われます。立体にするには"
+"<xref linkend=\"ST_MakeSolid\"/>を使います。面ジオメトリは体積を持ちません。"
+"例を挙げます。"
 
 #. Tag: para
 #, no-c-format
@@ -40192,6 +40552,11 @@ msgstr ""
 msgid "A polygon and its approximate medial axis"
 msgstr "ポリゴンと近似的な中心軸"
 
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"CG_StraightSkeletonPartition\"/>"
+msgstr ", <xref linkend=\"CG_StraightSkeletonPartition\"/>"
+
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
@@ -40307,8 +40672,14 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid ", <xref linkend=\"CG_StraightSkeleton\"/>"
-msgstr ", <xref linkend=\"CG_StraightSkeleton\"/>"
+msgid ""
+", <xref linkend=\"CG_ExtrudeStraightSkeleton\"/>, <xref "
+"linkend=\"CG_StraightSkeleton\"/>, <xref "
+"linkend=\"CG_StraightSkeletonPartition\"/>"
+msgstr ""
+", <xref linkend=\"CG_ExtrudeStraightSkeleton\"/>, <xref "
+"linkend=\"CG_StraightSkeleton\"/>, <xref "
+"linkend=\"CG_StraightSkeletonPartition\"/>"
 
 #. Tag: para
 #, no-c-format
@@ -40554,6 +40925,15 @@ msgstr "任意引数use_distance_as_mを使用するにはSFCGAL &gt;= 1.3.8が�
 
 #. Tag: para
 #, no-c-format
+msgid ""
+"Note that valid inputs with rings that touch at a single point will raise an "
+"error."
+msgstr ""
+"リング同士が1点で接触する妥当な入力ではエラーが発生することに注意してくださ"
+"い。"
+
+#. Tag: para
+#, no-c-format
 msgid "Straight Skeleton of polygon"
 msgstr "ポリゴンのストレートスケルトン"
 
@@ -40726,6 +41106,11 @@ msgstr ""
 msgid "Availability: 3.6.0 - requires SFCGAL &gt;= 2.0.0."
 msgstr "Availability: 3.6.0 - SFCGAL &gt;= 2.0.0が必要です。"
 
+#. Tag: para
+#, no-c-format
+msgid "Straight Skeleton Partition of polygon"
+msgstr "ポリゴンのストレートスケルトン分割"
+
 #. Tag: refpurpose
 #, no-c-format
 msgid "Computes a 3D buffer around a geometry."
@@ -40738,16 +41123,22 @@ msgid ""
 "with a specified <parameter>radius</parameter>. The buffer is constructed in "
 "3D space, creating a volumetric representation of the geometry's "
 "surroundings. The <parameter>segments</parameter> parameter defines the "
-"number of segments used to approximate the curved sections of the buffer. "
-"The <parameter>buffer_type</parameter> specifies the type of buffer to "
-"create: 0: Rounded buffer (default) 1: Flat buffer 2: Square buffer"
+"number of segments used to approximate the curved sections of the buffer, "
+"with a minimum value of 4 segments required. The <parameter>buffer_type</"
+"parameter> specifies the type of buffer to create: 0: Rounded buffer "
+"(default) 1: Flat buffer 2: Square buffer"
 msgstr ""
-"入力ジオメトリ<parameter>geom</parameter>の周りに指定した<parameter>radius</"
-"parameter>で3次元バッファを生成します。バッファは3次元空間内に生成され、ジオ"
-"メトリの周囲の立体表現を生成します。<parameter>segments</parameter>パラメータ"
-"は、バッファの曲線部の近似分割数を指定するものです。<parameter>buffer_type</"
-"parameter>は、バッファ生成タイプを指定します。0: 球形バッファ (デフォルト) "
-"1: 平面バッファ 2: 四角形バッファ (訳注: ST_Bufferの端点処理を参照して下さい)"
+"入力ジオメトリ<parameter>geom</parameter> まわりに<parameter>radius</"
+"parameter>で指定した3次元バッファを生成します。バッファは3次元空間に構築さ"
+"れ、ジオメトリの周囲の立体表現を生成します。 <parameter>segments</parameter>"
+"パラメータでバッファの曲線の近似に使われる辺の数を決めます。4辺分割が最低値と"
+"して必要です。<parameter>buffer_type</parameter>で生成バッファのタイプを指定"
+"します。0: 円バッファ (デフォルト) 1: 平面バッファ 2: 正方形バッファ"
+
+#. Tag: para
+#, no-c-format
+msgid "Input geometry must be a Point or LineString."
+msgstr "入力ジオメトリはPOINTまたはLINESTRINGでなければなりません。"
 
 #. Tag: para
 #, no-c-format
@@ -41012,6 +41403,195 @@ msgstr ""
 "入力ジオメトリ<parameter>geom</parameter>を、 X値に<parameter>deltaX</"
 "parameter>を、Y値に<parameter>deltaY</parameter>を、Z値に<parameter>deltaZ</"
 "parameter>を、それぞれ足します。"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Reduces the complexity of a geometry while preserving essential features and "
+"Z/M values."
+msgstr "主要な地物とZ/M値を維持しつつジオメトリの複雑さを減らします。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Simplifies a geometry using SFCGAL's simplification algorithm, which reduces "
+"the number of points or vertices while preserving the essential features of "
+"the geometry. This function preserves Z and M values during simplification."
+msgstr ""
+"SFCGALの単純化アルゴリズムを使ってジオメトリを単純化します。ジオメトリの主要"
+"な特徴を保存しつつポイントや頂点の数を減らします。この関数はZ値やM値の保存も"
+"します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The algorithm is based on constrained triangulation and uses the <link xlink:"
+"href=\"https://doc.cgal.org/latest/Polyline_simplification_2/index."
+"html\">CGAL Polyline Simplification 2</link> library with additional "
+"handling to preserve Z and M coordinates. When topology is preserved and "
+"geometries intersect, Z and M values are interpolated at intersection points."
+msgstr ""
+"アルゴリズムは制約付き三角分割を基にしていて、Z値とM値の保存のための追加操作"
+"を持つ<link xlink:href=\"https://doc.cgal.org/latest/"
+"Polyline_simplification_2/index.html\">CGAL Polyline Simplification 2</link>"
+"ライブラリを使っています。トポロジが保存され、ジオメトリどうしがインタセクト"
+"しているとき、Z値とM値はインタセクトしているポイントで補間されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This function works well with 3D terrain-like geometries (2.5D) but is not "
+"designed for vertical surfaces like walls."
+msgstr ""
+"この関数は3次元地形のようなジオメトリ (2.5次元)で動作しますが、壁のような垂直"
+"なサーフェス向けには作られていません。"
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0 - requires SFCGAL &gt;= 2.1.0"
+msgstr "Availability: 3.6.0 - SFCGAL &gt;= 2.1.0が必要"
+
+#. Tag: title
+#, no-c-format
+msgid "Parameters"
+msgstr "パラメータ"
+
+#. Tag: para
+#, no-c-format
+msgid "Input geometry"
+msgstr "入力ジオメトリ"
+
+#. Tag: parameter
+#, no-c-format
+msgid "threshold"
+msgstr "threshold"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum distance threshold (in geometry unit) for simplification. The higher "
+"this value, the more simplified the resulting geometry will be."
+msgstr ""
+"単純化に関する最大距離のしきい値 (ジオメトリの単位)。この値が大きいほど結果ジ"
+"オメトリが単純になります。"
+
+#. Tag: parameter
+#, no-c-format
+msgid "preserveTopology"
+msgstr "preserveTopology"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If set to true, the function ensures that the topology of the geometry is "
+"preserved. When geometries intersect in this mode, Z and M values at "
+"intersection points are interpolated. The default value is false."
+msgstr ""
+"TRUEに設定すると、この関数はジオメトリのトポロジを確実に保存します。このモー"
+"ドでジオメトリがインタセクとするとき、インタセクとするポイントにおけるZ値とM"
+"値は補完値になります。デフォルト値はFALSEです。"
+
+#. Tag: title
+#, no-c-format
+msgid "Return Value"
+msgstr "返り値"
+
+#. Tag: para
+#, no-c-format
+msgid "Returns a simplified geometry with preserved Z and M values."
+msgstr "Z値とM値を保存した単純化されたジオメトリが返ります。"
+
+#. Tag: para
+#, no-c-format
+msgid "Originals geometries"
+msgstr "元のジオメトリ"
+
+#. Tag: para
+#, no-c-format
+msgid "Simplification with 0.5 and topology preserved"
+msgstr "0.5かつトポロジ保存を指定して単純化したもの"
+
+#. Tag: para
+#, no-c-format
+msgid "Simplification with 0.5 without topology preservation"
+msgstr "0.5だがトポロジ保存なしで単純化したもの"
+
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"ST_SimplifyPreserveTopology\"/>"
+msgstr ", <xref linkend=\"ST_SimplifyPreserveTopology\"/>"
+
+#. Tag: refpurpose
+#, no-c-format
+msgid "Computes a 3D Alpha-wrapping strictly enclosing a geometry."
+msgstr "厳密にジオメトリを囲む3次元アルファラッピングを計算します。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Computes the <link xlink:href=\"https://doc.cgal.org/latest/Alpha_wrap_3/"
+"index.html\">3D Alpha Wrapping</link> of the points in a geometry. An alpha "
+"wrapping is a watertight and orientable surface mesh that strictly encloses "
+"the input. It can be seen as an extension or refinement of an <link "
+"linkend=\"CG_AlphaShape\">alpha-shape</link>."
+msgstr ""
+"ジオメトリのポイントから<link xlink:href=\"https://doc.cgal.org/latest/"
+"Alpha_wrap_3/index.html\">3Dアルファラッピング</link>を計算します。アルファ"
+"ラッピングは、入力を厳密に囲む水漏れのない方向つきサーフェスメッシュです。"
+"<link linkend=\"CG_AlphaShape\">アルファシェイプ</link>の拡張または改良とみる"
+"ことができます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <varname>relative_alpha</varname> parameter controls which features will "
+"appear in the output. It can can have values from 0 to infinity. Smaller "
+"relative_alpha values result in simpler outputs, but they are less accurate "
+"representations of the original input."
+msgstr ""
+"<varname>relative_alpha</varname>パラメータで、出力に現れる地物を制御します。"
+"0から無限大を取ります。relative_alphaが小さいほど、より単純な出力になります"
+"が、元の入力より精度の低い表現になります。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <varname>relative_offset</varname> parameter controls the tightness of "
+"the result. It can can have values from 0 to infinity. If this parameter is "
+"set to 0, its value is automatically determined based on the relative_alpha "
+"parameter."
+msgstr ""
+"<varname>relative_offset</varname>パラメータで、結果の余裕を制御します。0から"
+"無限大まで値を取ることができます。このパラメータが0に設定されると、値は自動的"
+"にrelative_alphaパラメータを基に決定されます。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Alpha wrapping of a MultiPoint (same example As <xref "
+"linkend=\"CG_OptimalAlphaShape\"/>)"
+msgstr ""
+"MULTIPOINTのアルファラッピング (<xref linkend=\"CG_OptimalAlphaShape\"/>と同"
+"じ例です)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Alpha wrapping of a MultiPoint (same example as <xref "
+"linkend=\"ST_ConcaveHull\"/>)"
+msgstr ""
+"MULTIPOINTのアルファラッピング (<xref linkend=\"ST_ConcaveHull\"/>と同じ例で"
+"す)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Effect of the <varname>relative_alpha</varname> parameter with values 5, 10 "
+"and 20. A value of 5 results in a coarse output. Increasing the parameter up "
+"to 20 significantly improves the precision and granularity of the result."
+msgstr ""
+"<varname>relative_alpha</varname>パラメータ値の5, 10, 20の効果。5の時は荒い出"
+"力です。20まで上がっていくと、結果の精度と粒度が大幅に改善されます。"
 
 #. Tag: title
 #, no-c-format
@@ -43194,13 +43774,295 @@ msgstr "リリースノート"
 
 #. Tag: title
 #, no-c-format
-msgid "PostGIS 3.6.0"
-msgstr "PostGIS 3.6.0"
+msgid "PostGIS 3.6.0rc2"
+msgstr "PostGIS 3.6.0rc2"
 
 #. Tag: para
 #, no-c-format
-msgid "2025/xx/xx"
-msgstr "2025/xx/xx"
+msgid "2025/08/25"
+msgstr "2025/08/25"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This version requires PostgreSQL 12-18beta3, GEOS 3.8 or higher, and Proj "
+"6.1+. To take advantage of all features, GEOS 3.14+ is needed. To take "
+"advantage of all SFCGAL features, SFCGAL 2.2+ is needed."
+msgstr ""
+"このバージョンでは、PostgreSQL 12-18beta3、GEOS 3.,8以上、Proj 6.1以上が必要"
+"です。全ての機能を活用するには、GEOS 3.14以上が必要です。SFCGAL機能を活用する"
+"には、SFCGAL 2.2以上が必要です。"
+
+#. Tag: para
+#, no-c-format
+msgid "Many thanks to our translation teams, in particular:"
+msgstr "翻訳チームに感謝します、特に次の方々です:"
+
+#. Tag: para
+#, no-c-format
+msgid "Teramoto Ikuhiro (Japanese Team)"
+msgstr "Teramoto Ikuhiroさん (日本語チーム)"
+
+#. Tag: para
+#, no-c-format
+msgid "Daniel Nylander (Swedish Team)"
+msgstr "Daniel Nylanderさん (スウェーデン語チーム)"
+
+#. Tag: para
+#, no-c-format
+msgid "Dapeng Wang, Zuo Chenwei from HighGo (Chinese Team)"
+msgstr "HighGoのDapeng Wangさん、Zuo Chenweiさん (中国語チーム)"
+
+#. Tag: para
+#, no-c-format
+msgid "Denys Kovshun (Ukrainian Team)"
+msgstr "Denys Kovshunさん (ウクライナ語チーム)"
+
+#. Tag: title
+#, no-c-format
+msgid "Breaking Changes"
+msgstr "大幅な変更"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5799\">#5799</"
+"link>, make ST_TileEnvelope clips envelopes to tile plane extent (Paul "
+"Ramsey)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5799\">#5799</"
+"link>, ST_TileEnvelopeがエンベロープをタイル平面範囲にクリップするようにしま"
+"した (Paul Ramseyさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5829\">#5829</"
+"link>, remove constraint checking from geometry_columns view (Paul Ramsey)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5829\">#5829</"
+"link>, geometry_columnsビューから制約条件チェックを外しました (Paul Ramseyさ"
+"ん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3373\">#3373</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/255\">GT-255</link>, [topology] Support for upgrading domains (Ayo "
+"Adesugba, U.S. Census Bureau)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3373\">#3373</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/255\">GT-255</link>, [topology] ドメインのアップグレードへの対応 (Ayo "
+"Adesugbaさん、米国国勢調査局)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/252\">GT-252</link>, ST_NumGeometries/ST_GeometryN treat TIN and "
+"PolyhedralSurface as unitary geometries, use ST_NumPatches/ST_PatchN for "
+"patch access (Loïc Bartoletti)"
+msgstr ""
+"<link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/252\">GT-252</link>, ST_NumGeometries/ST_GeometryN でTINと多面体サー"
+"フェスを単一ジオメトリとして扱うように変更、面の数を数えるにはST_NumPatches/"
+"ST_PatchNを使います (Loïc Bartolettiさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3110\">#3110</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/242\">GT-242</link>, [topology] Support for bigint (Ayo Adesugba, U.S. "
+"Census Bureau)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3110\">#3110</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/242\">GT-242</link>, [topology] BIGINTへの対応 (Ayo Adesugbaさん、米国"
+"国勢調査局)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5359\">#5359</"
+"link>, <link xlink:href=\"https://trac.osgeo.org/postgis/"
+"ticket/5897\">#5897</link>, <link xlink:href=\"https://git.osgeo.org/gitea/"
+"postgis/postgis/pulls/260\">GT-260</link> [tiger_geocoder] Use @extschema:"
+"extension@ for PG &gt;= 16 to schema qualify dependent extensions, switch to "
+"use typmod for tiger tables (Regina Obe)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5359\">#5359</"
+"link>, <link xlink:href=\"https://trac.osgeo.org/postgis/"
+"ticket/5897\">#5897</link>, <link xlink:href=\"https://git.osgeo.org/gitea/"
+"postgis/postgis/pulls/260\">GT-260</link> [tiger_geocoder] PG &gt;= 16の依存"
+"エクステンションのスキーマ修飾での@extschema:extension@の使用、TIGERのテーブ"
+"ルでのtypemod使用への切替え (Regina Obe)"
+
+#. Tag: title
+#, no-c-format
+msgid "Removed / Deprecate signatures"
+msgstr "シグネチャーの削除/廃止"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5498\">#5498</link> "
+"Drop st_approxquantile(raster, double precision), wasn't usable as it "
+"triggered is not unique error when used (Regina Obe)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5498\">#5498</link> "
+"使用時に一意でないエラーで使用できなかったためst_approxquantile(raster, "
+"double precision)を削除 (Regina Obeさん)"
+
+#. Tag: title
+#, no-c-format
+msgid "New Features"
+msgstr "新機能"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/803\">GH-803</"
+"link>, [sfcgal] ADD CG_Simplify function (Loïc Bartoletti)"
+msgstr ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/803\">GH-803</"
+"link>, [sfcgal] CG_Simplify関数が追加されました (Loïc Bartolettiさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/805\">GH-805</"
+"link>, [sfcgal] Add M support for SFCGAL &gt;= 1.5.0 (Loïc Bartoletti)"
+msgstr ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/805\">GH-805</"
+"link>, [sfcgal] SFCGAL &gt;= 1.5.0 でM値に対応するようになりました (Loïc "
+"Bartolettiさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/801\">GH-801</"
+"link>, [sfcgal] ADD CG_3DAlphaWrapping function (Jean Felder)"
+msgstr ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/801\">GH-801</"
+"link>, [sfcgal] CG_3DAlphaWrapping 関数が追加されました (Jean Felderさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5894\">#5894</"
+"link>, [topology] TotalTopologySize (Sandro Santilli)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5894\">#5894</"
+"link>, [topology] TotalTopologySize (Sandro Santilliさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5890\">#5890</"
+"link>, [topology] ValidateTopologyPrecision, MakeTopologyPrecise (Sandro "
+"Santilli)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5890\">#5890</"
+"link>, [topology] ValidateTopologyPrecision, MakeTopologyPrecise (Sandro "
+"Santilliさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5861\">#5861</"
+"link>, [topology] Add --drop-topology switch to pgtopo_import (Sandro "
+"Santilli)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5861\">#5861</"
+"link>, [topology] pgtopo_importに--drop-topology スイッチ追加 (Sandro "
+"Santilliさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/1247\">#1247</"
+"link>, [raster] ST_AsRasterAgg (Sandro Santilli)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/1247\">#1247</"
+"link>, [raster] ST_AsRasterAgg (Sandro Santilliさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5784\">#5784</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/223\">GT-223</link> Export circ_tree_distance_tree_internal for "
+"mobilitydb use (Maxime Schoemans)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5784\">#5784</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/223\">GT-223</link> MobilityDBでの利用のための"
+"circ_tree_distance_tree_internalのエクスポート (Maxime Schoemansさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/228\">GT-228</link> [sfcgal] Add new functions (Scale, Translate, "
+"Rotate, Buffer 3D and Straight Skeleton Partition) from SFCGAL 2 (Loïc "
+"Bartoletti)"
+msgstr ""
+"<link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/228\">GT-228</link> [sfcgal] SFCGAL 2から作られた新しい関数 (Scale, "
+"Translate, Rotate, Buffer 3D, Straight Skeleton Partition) (Loïc Bartolettiさ"
+"ん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"[raster] New GUC postgis.gdal_cpl_debug, enables GDAL debugging messages and "
+"routes them into the PostgreSQL logging system. (Paul Ramsey)"
+msgstr ""
+"[raster] GDALのデバッグ用メッセージを有効にして、PostgreSQLログシステムに送る"
+"ための新しいGUCのpostgis.gdal_cpl_debug (Paul Ramseyさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5841\">#5841</"
+"link>, Change interrupt handling to remove use of pqsignal to support PG 18 "
+"(Paul Ramsey)"
+msgstr ""
+"PostgreSQL 18対応のため、割込処理でpqsignalの利用を削除するように変更しまし"
+"た (Paul Ramseyさん)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add ST_CoverageClean to edge match and gap remove polygonal coverages (Paul "
+"Ramsey) from GEOS 3.14 (Martin Davis)"
+msgstr ""
+"ポリゴンカバレッジのエッジの適合と隙間の除去を行うST_CoverageCleanの追加 "
+"(Paul Ramseyさん)、GEOS 3.14 (Martin Davisさん) を利用"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3110\">#3110</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/242\">GT-242</link> [topology] Support for bigint (Ayo Adesugba, U.S. "
+"Census Bureau)"
+msgstr ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3110\">#3110</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/242\">GT-242</link> [トポロジー] bigintに対応 (Ayo Adesugbaさん, 米国国"
+"勢調査局)"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"[raster] Add ST_ReclassExact to quickly remap values in raster (Paul Ramsey)"
+msgstr ""
+"[raster] 素早くラスタの値の再割り当てを行うST_ReclassExactを追加 (Paul Ramsey"
+"さん)"
 
 #. Tag: title
 #, no-c-format
@@ -49254,6 +50116,20 @@ msgstr "この関数は3次元に対応し、Z値を削除しません。"
 
 #. Tag: para
 #, no-c-format
+msgid ""
+"If the optional <code>gridSize</code> parameter is given (GEOS-3.9.0 or "
+"higher required), all result vertices are guaranteed to fall on a grid of "
+"the specified size. For the operation to give predictable results all the "
+"input vertices must fall already on the specified grid, see <xref "
+"linkend=\"ST_ReducePrecision\"/>."
+msgstr ""
+"元の<code>gridSize</code>を与える場合には (GEOS-3.9.0以上では必要)、全ての結"
+"果頂点が指定されたサイズのグリッドに落ちることが保証されます。予測できる結果"
+"を得るには、全ての入力頂点が既に指定したグリッドに落ちている必要があります。"
+"<xref linkend=\"ST_ReducePrecision\"/>をご覧ください。"
+
+#. Tag: para
+#, no-c-format
 msgid "New in this release"
 msgstr "このリリースの新機能"
 
@@ -49291,6 +50167,463 @@ msgstr "2.5次元/3次元対応"
 #, no-c-format
 msgid "Supports geography"
 msgstr "ジオグラフィ対応"
+
+#, no-c-format
+#~ msgid ""
+#~ "Disable topology support. There is no corresponding library as all logic "
+#~ "needed for topology is in postgis-&last_release_version; library."
+#~ msgstr ""
+#~ "トポロジ対応を無くしてコンパイルします。トポロジに必要なロジックは全て"
+#~ "postgis-&last_release_version;ライブラリ内に作られるので、関連ライブラリは"
+#~ "ありません。"
+
+#, no-c-format
+#~ msgid "PostGIS 3.6.0"
+#~ msgstr "PostGIS 3.6.0"
+
+#, no-c-format
+#~ msgid "2025/xx/xx"
+#~ msgstr "2025/xx/xx"
+
+#, no-c-format
+#~ msgid "PostGIS 3.6.0rc1"
+#~ msgstr "PostGIS 3.6.0rc1"
+
+#, no-c-format
+#~ msgid "2025/08/18"
+#~ msgstr "2025/08/18"
+
+#, no-c-format
+#~ msgid "PostGIS 3.6.0beta1"
+#~ msgstr "PostGIS 3.6.0beta1"
+
+#, no-c-format
+#~ msgid "2025/07/19"
+#~ msgstr "2025/07/19"
+
+#, no-c-format
+#~ msgid ""
+#~ "This version requires PostgreSQL 12-18beta2, GEOS 3.8 or higher, and Proj "
+#~ "6.1+. To take advantage of all features, GEOS 3.14+ is needed. To take "
+#~ "advantage of all SFCGAL features, SFCGAL 2.2+ is needed."
+#~ msgstr ""
+#~ "このバージョンではPostgreSQL 12-18beta2、GEOS 3.8以上、Proj 6.1以上が必要"
+#~ "です。全ての機能を活用するにはGEOS 3.14以上が必要です。SFCGALの全ての機能"
+#~ "を活用するにはSFCGAL 2.2以上が必要です。"
+
+#, no-c-format
+#~ msgid "Add ST_ReclassExact to quickly remap values in raster (Paul Ramsey)"
+#~ msgstr "素早いラスタ値の再設定を行うST_ReclassExactを追加 (Paul Ramseyさん)"
+
+#, no-c-format
+#~ msgid ""
+#~ "PostgreSQL &min_postgres_version; - &max_postgres_version;. A complete "
+#~ "installation of PostgreSQL (including server headers) is required. "
+#~ "PostgreSQL is available from <link xlink:href=\"https://www.postgresql."
+#~ "org\"> https://www.postgresql.org </link> ."
+#~ msgstr ""
+#~ "PostgreSQL &min_postgres_version; - &max_postgres_version;。PostgreSQLの完"
+#~ "全なインストール (サーバヘッダを含む)が必要です。PostgreSQLは<link xlink:"
+#~ "href=\"http://www.postgresql.org/\"> http://www.postgresql.org/</link>にあ"
+#~ "ります。"
+
+#, no-c-format
+#~ msgid ""
+#~ "GEOS geometry library, version &min_geos_version; or greater, but GEOS "
+#~ "3.12+ is required to take full advantage of all the new functions and "
+#~ "features. GEOS is available for download from <link xlink:href=\"https://"
+#~ "libgeos.org/\"> https://libgeos.org </link>."
+#~ msgstr ""
+#~ "ジオメトリライブラリGEOSの新しい関数と機能の利点を完全に得るには"
+#~ "&min_geos_version;以上で、GEOS 3.12以上が必要です。GEOSは <link xlink:"
+#~ "href=\"https://libgeos.org/\">https://libgeos.org/</link>からダウンロード"
+#~ "できます。"
+
+#, no-c-format
+#~ msgid "2025/07/xx"
+#~ msgstr "2025/07/xx"
+
+#, no-c-format
+#~ msgid ""
+#~ "This version requires PostgreSQL 12-18beta1, GEOS 3.8 or higher, and Proj "
+#~ "6.1+. To take advantage of all features, GEOS 3.12+ is needed. To take "
+#~ "advantage of all SFCGAL features, SFCGAL 2.1+ is needed."
+#~ msgstr ""
+#~ "このバージョンはPostgreSQL 12-18beta1、GEOS 3.8以上、Proj 6.1以上が必要で"
+#~ "す。全ての機能を利用するには、GEOS 3.12以上が必要です。全てのSFCGAL機能を"
+#~ "利用するには、SFCGAL 2.1以上が必要です。"
+
+#, no-c-format
+#~ msgid ""
+#~ "<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3373\">#3373</"
+#~ "link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+#~ "pulls/255\">GT-255</link> [topology] Support for upgrading domains (Ayo "
+#~ "Adesugba, U.S. Census Bureau)"
+#~ msgstr ""
+#~ "<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3373\">#3373</"
+#~ "link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+#~ "pulls/255\">GT-255</link> [トポロジー] アップグレード時にドメインのアップ"
+#~ "グレードに対応 (Ayo Adesugbaさん, 米国国勢調査局)"
+
+#, no-c-format
+#~ msgid ""
+#~ "The <varname>srid</varname> is the <link "
+#~ "linkend=\"spatial_ref_sys\">spatial reference system</link> SRID for the "
+#~ "topology."
+#~ msgstr ""
+#~ "<varname>srid</varname>は、このトポロジの<link "
+#~ "linkend=\"spatial_ref_sys\">空間参照系</link>のSRIDです。"
+
+#, no-c-format
+#~ msgid "PostGIS 3.6.0alpha1"
+#~ msgstr "PostGIS 3.6.0alpha1"
+
+#, no-c-format
+#~ msgid "2025/05/17"
+#~ msgstr "2025/05/17"
+
+#, no-c-format
+#~ msgid ""
+#~ "<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5784\">#5784</"
+#~ "link>, GT-223 Export circ_tree_distance_tree_internal for mobilitydb use "
+#~ "(Maxime Schoemans)"
+#~ msgstr ""
+#~ "<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5784\">#5784</"
+#~ "link>, GT-223 MobilityDB利用のためのcirc_tree_distance_tree_internalのエク"
+#~ "スポート (Maxime Schoemansさん)"
+
+#, no-c-format
+#~ msgid ""
+#~ ", <xref linkend=\"ST_CoverageUnion\"/>, <xref "
+#~ "linkend=\"ST_CoverageSimplify\"/>"
+#~ msgstr ""
+#~ ", <xref linkend=\"ST_CoverageUnion\"/>, <xref "
+#~ "linkend=\"ST_CoverageSimplify\"/>"
+
+#, no-c-format
+#~ msgid ""
+#~ "Returns the OGC/ISO <link linkend=\"OpenGISWKBWKT\">Well-Known Binary</"
+#~ "link> (WKB) representation of the geometry. The first function variant "
+#~ "defaults to encoding using server machine endian. The second function "
+#~ "variant takes a text argument specifying the endian encoding, either "
+#~ "little-endian ('NDR') or big-endian ('XDR')."
+#~ msgstr ""
+#~ "ジオメトリのOGC/ISO<link linkend=\"OpenGISWKBWKT\">Well-Knownバイナリ</"
+#~ "link> (WKB)表現を返します。最初の形式では、サーバ機のエンディアンをデフォ"
+#~ "ルトとして使います。二つ目の形式では、リトルエンディアン ('NDR')またはビッ"
+#~ "グエンディアン ('XDR')を指定する文字列を取ります。"
+
+#, no-c-format
+#~ msgid ""
+#~ "Returns the <link linkend=\"EWKB_EWKT\">Extended Well-Known Binary</link> "
+#~ "(EWKB) representation of the geometry with SRID metadata. The first "
+#~ "function variant defaults to encoding using server machine endian. The "
+#~ "second function variant takes a text argument specifying the endian "
+#~ "encoding, either little-endian ('NDR') or big-endian ('XDR')."
+#~ msgstr ""
+#~ "ジオメトリの、SRIDメタデータを持つ<link linkend=\"EWKB_EWKT\">Extended "
+#~ "Well-Knownバイナリ</link> (EWKB)表現を返します。最初の形式では、サーバ機の"
+#~ "エンディアンをデフォルトとして使います。二つ目の形式では、リトルエンディア"
+#~ "ン ('NDR')またはビッグエンディアン ('XDR')を指定する文字列を取ります。"
+
+#, no-c-format
+#~ msgid ""
+#~ "Buffer output is always a valid polygonal geometry. Buffer can handle "
+#~ "invalid inputs, so buffering by distance 0 is sometimes used as a way of "
+#~ "repairing invalid polygons. <xref linkend=\"ST_MakeValid\"/> can also be "
+#~ "used for this purpose."
+#~ msgstr ""
+#~ "バッファ出力は常に妥当なポリゴンジオメトリです。バッファは不正な入力を処理"
+#~ "できるので、不正なポリゴンを修復する方法として、距離0のバッファリングが使"
+#~ "われます。同じ目的の関数としては<xref linkend=\"ST_MakeValid\"/>が使われま"
+#~ "す。"
+
+#, no-c-format
+#~ msgid ""
+#~ "The functions given below are the ones which a user of PostGIS Raster is "
+#~ "likely to need and which are currently available in PostGIS Raster. There "
+#~ "are other functions which are required support functions to the raster "
+#~ "objects which are not of use to a general user."
+#~ msgstr ""
+#~ "ここで挙げる関数は、PostGISラスタにとって必要と思われるもので、現在PostGIS"
+#~ "ラスタで有効なものです。他に、一般的なユーザが利用しない、ラスタオブジェク"
+#~ "トに対して求められるサポート関数があります。"
+
+#, no-c-format
+#~ msgid ""
+#~ "<varname>raster</varname> is a new PostGIS type for storing and analyzing "
+#~ "raster data."
+#~ msgstr ""
+#~ "<varname>raster</varname>は、ラスタデータの格納と分析のための新しいPostGIS"
+#~ "型です。"
+
+#, no-c-format
+#~ msgid ""
+#~ "For the examples in this reference we will be using a raster table of "
+#~ "dummy rasters - Formed with the following code"
+#~ msgstr ""
+#~ "このリファレンスにおける例ではダミーラスタのラスタテーブルを使っています。"
+#~ "ラスタは次のようなコードで形成しています。"
+
+#, no-c-format
+#~ msgid ""
+#~ "<refpurpose>A composite type used as input into the ST_Reclass function "
+#~ "defining the behavior of reclassification.</refpurpose>"
+#~ msgstr ""
+#~ "<refpurpose>ST_Reclass関数への入力として使用する複合型です。再分類の挙動を"
+#~ "定義します。</refpurpose>"
+
+#, no-c-format
+#~ msgid ""
+#~ "<para>A composite type used as input into the ST_Reclass function "
+#~ "defining the behavior of reclassification.</para>"
+#~ msgstr ""
+#~ "<para>ST_Reclass関数への入力として使用する複合型です。再分類の挙動を定義し"
+#~ "ます。</para>"
+
+#, no-c-format
+#~ msgid ""
+#~ "Returns summarystats consisting of count, sum, mean, stddev, min, max for "
+#~ "a given raster band of a raster or raster coverage. Band 1 is assumed is "
+#~ "no band is specified."
+#~ msgstr ""
+#~ "ラスタまたはラスタカバレッジの指定したバンドについて、ピクセル数、合計値、"
+#~ "平均値、標準偏差、最小値、最大値からなる統計情報の概要を返します。バンドを"
+#~ "指定しない場合には、1番と仮定します。"
+
+#, no-c-format
+#~ msgid ""
+#~ "Aggregate. Returns summarystats consisting of count, sum, mean, stddev, "
+#~ "min, max for a given raster band of a set of raster. Band 1 is assumed is "
+#~ "no band is specified."
+#~ msgstr ""
+#~ "集約関数です。ラスタ集合の指定したバンドについて、ピクセル数、合計値、平均"
+#~ "値、標準偏差、最小値、最大値からなる統計情報の概要を返します。バンドを指定"
+#~ "しない場合には、1番と仮定します。"
+
+#, no-c-format
+#~ msgid ""
+#~ "Creates a new raster formed by applying a valid PostgreSQL algebraic "
+#~ "operation defined by the <varname>reclassexpr</varname> on the input "
+#~ "raster (<varname>rast</varname>). If no <varname>band</varname> is "
+#~ "specified band 1 is assumed. The new raster will have the same "
+#~ "georeference, width, and height as the original raster. Bands not "
+#~ "designated will come back unchanged. Refer to <xref "
+#~ "linkend=\"reclassarg\"/> for description of valid reclassification "
+#~ "expressions."
+#~ msgstr ""
+#~ "入力ラスタ (<varname>rast</varname>)に<varname>reclassexpr</varname>で定義"
+#~ "する妥当なPostgreSQL代数演算子を適用して新しいラスタを生成します。"
+#~ "<varname>band</varname>が指定されていない場合には、1番と仮定します。新しい"
+#~ "ラスタは、元のラスタと同じ地理参照、幅、高さを持ちます。指示されていないバ"
+#~ "ンドは変更せずに返ります。妥当な再分類の数式の説明については<xref "
+#~ "linkend=\"reclassarg\"/>を参照して下さい。"
+
+#, no-c-format
+#~ msgid ""
+#~ "The bands of the new raster will have pixel type of <varname>pixeltype</"
+#~ "varname>. If <varname>reclassargset</varname> is passed in then each "
+#~ "reclassarg defines behavior of each band generated."
+#~ msgstr ""
+#~ "新しいラスタのバンドは<varname>pixeltype</varname>で指定するピクセルタイプ"
+#~ "になります。<varname>reclassargset</varname>を渡した場合は、個々の"
+#~ "reclassargが生成されるバンド毎の挙動を定義します。"
+
+#, no-c-format
+#~ msgid ""
+#~ "SFCGAL, 1.4.1 or higher is required and 1.5.0+ is needed to be able to "
+#~ "use all functionality. SFCGAL can be used to provide additional 2D and 3D "
+#~ "advanced analysis functions to PostGIS cf <xref "
+#~ "linkend=\"reference_sfcgal\"/>. And also allow to use SFCGAL rather than "
+#~ "GEOS for some 2D functions provided by both backends (like "
+#~ "ST_Intersection or ST_Area, for instance). A PostgreSQL configuration "
+#~ "variable <code>postgis.backend</code> allow end user to control which "
+#~ "backend he want to use if SFCGAL is installed (GEOS by default). Nota: "
+#~ "SFCGAL 1.2 require at least CGAL 4.3 and Boost 1.54 (cf: <link xlink:"
+#~ "href=\"https://sfcgal.org\">https://sfcgal.org</link>) <link xlink:"
+#~ "href=\"https://gitlab.com/sfcgal/SFCGAL/\">https://gitlab.com/sfcgal/"
+#~ "SFCGAL/</link>."
+#~ msgstr ""
+#~ "SFCGAL 1.4.1 以上が必要ですが、全ての機能を使用できるようにするためには、"
+#~ "1.5.0以上が必要です。SFCGALは、<xref linkend=\"reference_sfcgal\"/>のよう"
+#~ "な、追加の2次元、3次元の高度な解析機能をPostGISに提供するために使います。"
+#~ "また、両方のバックエンドから提供されている2次元関数 (ST_Intersectionや"
+#~ "ST_Areaなど)に、GEOSでなくSFCGALを使用することができるようになります。"
+#~ "PostgreSQLのコンフィギュレーション変数である<code>postgis.backend</code>に"
+#~ "よって、SFCGALがインストールされている場合にエンドユーザがどのバックエンド"
+#~ "を使うかを制御することができるようになります (デフォルトはGEOS)。ご注意: "
+#~ "SFCGAL 1.2は少なくともCGAL 4.3とBoost 1.54 が必要です (<link xlink:"
+#~ "href=\"https://sfcgal.org/\">https://sfcgal.org/</link> 参照) <link xlink:"
+#~ "href=\"https://gitlab.com/sfcgal/SFCGAL/\">https://gitlab.com/sfcgal/"
+#~ "SFCGAL/</link>。"
+
+#, no-c-format
+#~ msgid ""
+#~ "In order to build the <xref linkend=\"Address_Standardizer\"/> you will "
+#~ "also need PCRE <link xlink:href=\"http://www.pcre.org\">http://www.pcre."
+#~ "org</link> (which generally is already installed on nix systems). <xref "
+#~ "linkend=\"Address_Standardizer\"/> will automatically be built if it "
+#~ "detects a PCRE library, or you pass in a valid <varname>--with-pcre-dir=/"
+#~ "path/to/pcre</varname> during configure."
+#~ msgstr ""
+#~ "<xref linkend=\"Address_Standardizer\"/>をビルドするには、PCRE <link "
+#~ "xlink:href=\"http://www.pcre.org\">http://www.pcre.org</link> (通常はnixシ"
+#~ "ステムにはインストールされています)も必要です。PCREライブラリを検出したら"
+#~ "<xref linkend=\"Address_Standardizer\"/>は自動でビルドされます。もしくは、"
+#~ "コンフィギュアの際に有効な<varname>--with-pcre-dir=/path/to/pcre</varname>"
+#~ "を指定します。"
+
+#, no-c-format
+#~ msgid ""
+#~ "Generates a 3D buffer around the input geometry <parameter>geom</"
+#~ "parameter> with a specified <parameter>radius</parameter>. The buffer is "
+#~ "constructed in 3D space, creating a volumetric representation of the "
+#~ "geometry's surroundings. The <parameter>segments</parameter> parameter "
+#~ "defines the number of segments used to approximate the curved sections of "
+#~ "the buffer. The <parameter>buffer_type</parameter> specifies the type of "
+#~ "buffer to create: 0: Rounded buffer (default) 1: Flat buffer 2: Square "
+#~ "buffer"
+#~ msgstr ""
+#~ "入力ジオメトリ<parameter>geom</parameter>の周りに指定した"
+#~ "<parameter>radius</parameter>で3次元バッファを生成します。バッファは3次元"
+#~ "空間内に生成され、ジオメトリの周囲の立体表現を生成します。"
+#~ "<parameter>segments</parameter>パラメータは、バッファの曲線部の近似分割数"
+#~ "を指定するものです。<parameter>buffer_type</parameter>は、バッファ生成タイ"
+#~ "プを指定します。0: 球形バッファ (デフォルト) 1: 平面バッファ 2: 四角形バッ"
+#~ "ファ (訳注: ST_Bufferの端点処理を参照して下さい)"
+
+#, no-c-format
+#~ msgid ""
+#~ "A plpgsql based geocoder written to work with the <link xlink:"
+#~ "href=\"http://www.census.gov/geo/www/tiger/\">TIGER (Topologically "
+#~ "Integrated Geographic Encoding and Referencing system ) / Line and Master "
+#~ "Address database export</link> released by the US Census Bureau."
+#~ msgstr ""
+#~ "米国国勢調査局が公開している<link xlink:href=\"http://www.census.gov/geo/"
+#~ "www/tiger/\">TIGER (Topologically Integrated Geographic Encoding and "
+#~ "Referencing system ) / Line and Master Address database export</link>で動"
+#~ "作するよう書かれた、PL/pgSQLベースのジオコーダです。"
+
+#, no-c-format
+#~ msgid ""
+#~ "If the <parameter>tolerance</parameter> parameter is provided, vertices "
+#~ "within the tolerance distance of one another are considered to be "
+#~ "duplicates."
+#~ msgstr ""
+#~ "<parameter>tolerance</parameter>を指定した場合には、他の頂点との距離が許容"
+#~ "距離内にある頂点は重複しているとみなされます。"
+
+#, no-c-format
+#~ msgid ""
+#~ "The backend to service a function where GEOS and SFCGAL overlap. Options: "
+#~ "geos or sfcgal. Defaults to geos."
+#~ msgstr ""
+#~ "GEOSとSFCGALで重複する関数を提供するバックエンドです。GEOSまたはSFCGALを選"
+#~ "択します。デフォルトはGEOSです。"
+
+#, no-c-format
+#~ msgid ""
+#~ "This GUC is only relevant if you compiled PostGIS with sfcgal support. By "
+#~ "default <varname>geos</varname> backend is used for functions where both "
+#~ "GEOS and SFCGAL have the same named function. This variable allows you to "
+#~ "override and make sfcgal the backend to service the request."
+#~ msgstr ""
+#~ "このGUCはSFCGALサポートでPostGISをコンパイルした場合にのみ適切なものとなり"
+#~ "ます。デフォルトでは、<varname>geos</varname>バックエンドはGEOSとSFCGALが"
+#~ "同じ名前の関数を持つ関数で使われます。この変数によって、SFCGALをリクエスト"
+#~ "を提供するバックエンドにすることができます。"
+
+#, no-c-format
+#~ msgid "Sets backend just for life of connection"
+#~ msgstr "バックエンドを接続時にだけ設定します。"
+
+#, no-c-format
+#~ msgid "Sets backend for new connections to database"
+#~ msgstr "データベースへの新規接続にバックエンドを設定します。"
+
+#, no-c-format
+#~ msgid ""
+#~ "Canonical example for a Web Mercator tile using a computed tile bounds to "
+#~ "query and clip geometry."
+#~ msgstr ""
+#~ "クエリを実行してジオメトリをクリップするために計算されたタイル境界を使う"
+#~ "ウェブメルカトルのタイルの標準的な例です。"
+
+#, no-c-format
+#~ msgid ""
+#~ "If the optional <code>gridSize</code> argument is provided, the inputs "
+#~ "are snapped to a grid of the given size, and the result vertices are "
+#~ "computed on that same grid. (Requires GEOS-3.9.0 or higher)"
+#~ msgstr ""
+#~ "任意引数<code>gridSize</code>が与えらえれた場合には、入力は与えられた大き"
+#~ "さのグリッドにスナップされ、結果の￥頂点は同じグリッド上で計算されます "
+#~ "(GEOS-3.9.0以上が必要)。"
+
+#, no-c-format
+#~ msgid ", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>"
+#~ msgstr ", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>"
+
+#, no-c-format
+#~ msgid ""
+#~ ", <xref linkend=\"ST_Difference\"/>, <xref linkend=\"ST_Union\"/>, <xref "
+#~ "linkend=\"ST_Dimension\"/>, <xref linkend=\"ST_Dump\"/>, <xref "
+#~ "linkend=\"ST_Force2D\"/>, <xref linkend=\"ST_SymDifference\"/>, <xref "
+#~ "linkend=\"ST_Intersects\"/>, <xref linkend=\"ST_Multi\"/>"
+#~ msgstr ""
+#~ ", <xref linkend=\"ST_Difference\"/>, <xref linkend=\"ST_Union\"/>, <xref "
+#~ "linkend=\"ST_Dimension\"/>, <xref linkend=\"ST_Dump\"/>, <xref "
+#~ "linkend=\"ST_Force2D\"/>, <xref linkend=\"ST_SymDifference\"/>, <xref "
+#~ "linkend=\"ST_Intersects\"/>, <xref linkend=\"ST_Multi\"/>"
+
+#, no-c-format
+#~ msgid ""
+#~ "<code>max_vertices</code> must be 5 or more, as 5 points are needed to "
+#~ "represent a closed box. <code>gridSize</code> can be specified to have "
+#~ "clipping work in fixed-precision space (requires GEOS-3.9.0+)."
+#~ msgstr ""
+#~ "<code>max_vertices</code>は5以上でなければなりません。5点が閉じたボックス"
+#~ "に必要だからです。<code>gridSize</code>は固定精度空間での切り出しに指定で"
+#~ "きます (GEOS 3.9.0以上が必要)。"
+
+#, no-c-format
+#~ msgid ""
+#~ ", <xref linkend=\"ST_Segmentize\"/>, <xref linkend=\"ST_Split\"/>, <xref "
+#~ "linkend=\"ST_NPoints\"/>"
+#~ msgstr ""
+#~ ", <xref linkend=\"ST_Segmentize\"/>, <xref linkend=\"ST_Split\"/>, <xref "
+#~ "linkend=\"ST_NPoints\"/>"
+
+#, no-c-format
+#~ msgid ""
+#~ ", <xref linkend=\"ST_MemUnion\"/>, <xref linkend=\"ST_MakeValid\"/>, "
+#~ "<xref linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>"
+#~ msgstr ""
+#~ ", <xref linkend=\"ST_MemUnion\"/>, <xref linkend=\"ST_MakeValid\"/>, "
+#~ "<xref linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>"
+
+#, no-c-format
+#~ msgid ""
+#~ "A <code>gridSize</code> can be specified to work in fixed-precision "
+#~ "space. The inputs are snapped to a grid of the given size, and the result "
+#~ "vertices are computed on that same grid. (Requires GEOS-3.9.0 or higher)"
+#~ msgstr ""
+#~ "固定精度空間で動作するよう<code>gridSize</code>を指定できます。入力は与え"
+#~ "られたグリッドにスナップされ、結果の頂点は同じグリッド上で計算されます "
+#~ "(GEOS-3.9.0以上が必要です)。"
+
+#, no-c-format
+#~ msgid ""
+#~ ", <xref linkend=\"ST_UnaryUnion\"/>, <xref linkend=\"ST_MemUnion\"/>, "
+#~ "<xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Difference\"/>, "
+#~ "<xref linkend=\"ST_SymDifference\"/>"
+#~ msgstr ""
+#~ ", <xref linkend=\"ST_UnaryUnion\"/>, <xref linkend=\"ST_MemUnion\"/>, "
+#~ "<xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Difference\"/>, "
+#~ "<xref linkend=\"ST_SymDifference\"/>"
+
+#, no-c-format
+#~ msgid ", <xref linkend=\"CG_StraightSkeleton\"/>"
+#~ msgstr ", <xref linkend=\"CG_StraightSkeleton\"/>"
 
 #, no-c-format
 #~ msgid "Availability: 3.6.0 - requires SFCGAL >= 2.0.0."
@@ -49426,24 +50759,8 @@ msgstr "ジオグラフィ対応"
 #~ "るにはSFCGAL 1.5.0以上が必要です。"
 
 #, no-c-format
-#~ msgid "Many thanks to our translation teams, in particular:"
-#~ msgstr "翻訳チームに感謝します、特に次の方々です:"
-
-#, no-c-format
-#~ msgid "Dapeng Wang, Zuo Chenwei from HighGo (Chinese Team)"
-#~ msgstr "HighGoのDapeng Wangさん、Zuo Chenweiさん (中国語チーム)"
-
-#, no-c-format
-#~ msgid "Teramoto Ikuhiro (Japanese Team)"
-#~ msgstr "Teramoto Ikuhiroさん (日本語チーム)"
-
-#, no-c-format
 #~ msgid "Vincent Bre (French Team)"
 #~ msgstr "Vincent Breさん (フランス語チーム)"
-
-#, no-c-format
-#~ msgid "Breaking Changes"
-#~ msgstr "大幅な変更"
 
 #, no-c-format
 #~ msgid ""

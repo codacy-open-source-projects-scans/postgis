@@ -1546,8 +1546,9 @@ Datum ST_ClipByBox2d(PG_FUNCTION_ARGS)
 	bbox2 = (GBOX *)PG_GETARG_POINTER(box2d_idx);
 	bbox2->flags = 0;
 
-	/* if bbox1 is covered by bbox2, return lwgeom1 */
-	if (gbox_contains_2d(bbox2, &bbox1))
+	/* If bbox1 is strictly contained by bbox2, return input geometry */
+	if (bbox2->xmin < bbox1.xmin && bbox2->xmax > bbox1.xmax &&
+	    bbox2->ymin < bbox1.ymin && bbox2->ymax > bbox1.ymax)
 	{
 		PG_RETURN_DATUM(PG_GETARG_DATUM(geom_idx));
 	}
@@ -1982,13 +1983,6 @@ Datum polygonize_garray(PG_FUNCTION_ARGS)
 	GEOSGeometry *geos_result;
 	const GEOSGeometry **vgeoms;
 	int32_t srid = SRID_UNKNOWN;
-#if POSTGIS_DEBUG_LEVEL >= 3
-	static int call=1;
-#endif
-
-#if POSTGIS_DEBUG_LEVEL >= 3
-	call++;
-#endif
 
 	if (PG_ARGISNULL(0))
 		PG_RETURN_NULL();

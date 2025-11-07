@@ -391,7 +391,7 @@ create_linestring(SHPDUMPERSTATE *state, LWLINE *lwlinestring)
 		zpts[i] = p4d.z;
 		mpts[i] = p4d.m;
 
-		LWDEBUGF(4, "Linestring - Point: %g %g %g %g", i, xpts[i], ypts[i], zpts[i], mpts[i]);
+		LWDEBUGF(4, "Linestring - Point: [%u] %g %g %g %g", i, xpts[i], ypts[i], zpts[i], mpts[i]);
 	}
 
 	obj = SHPCreateObject(state->outshptype, -1, 0, NULL, NULL, lwlinestring->points->npoints, xpts, ypts, zpts, mpts);
@@ -1383,7 +1383,7 @@ ShpDumperOpenTable(SHPDUMPERSTATE *state)
 		    state->table);
 	}
 
-	LWDEBUGF(3, "query is: %s\n", query);
+	LWDEBUGF(3, "query is: %s\n", stringbuffer_getstring(&sb));
 
 	res = PQexec(state->conn, stringbuffer_getstring(&sb));
 	stringbuffer_release(&sb);
@@ -1414,7 +1414,10 @@ ShpDumperOpenTable(SHPDUMPERSTATE *state)
 	if ( getenv("PGCLIENTENCODING") )
 	{
 		char *codepage = encoding2codepage(getenv("PGCLIENTENCODING"));
+		if (!codepage)
+			return SHPDUMPERERR;
 		state->dbf = DBFCreateEx(state->shp_file, codepage);
+		free(codepage);
 	}
 	else
 	{
@@ -2080,7 +2083,7 @@ int ShpLoaderGenerateShapeRow(SHPDUMPERSTATE *state)
 				hexewkb = convert_bytes_to_hex((unsigned char *)val, hexewkb_len);
 			}
 
-			LWDEBUGF(4, "HexEWKB - length: %d  value: %s", strlen(hexewkb), hexewkb);
+			LWDEBUGF(4, "HexEWKB - length: %lu  value: %s", strlen(hexewkb), hexewkb);
 
 			/* Deserialize the LWGEOM */
 			lwgeom = lwgeom_from_hexwkb(hexewkb, LW_PARSER_CHECK_NONE);
@@ -2246,6 +2249,9 @@ quote_identifier(const char *s)
 {
 	char	   *result = malloc(strlen(s) * 2 + 3);
 	char	   *r = result;
+
+	if (result == NULL)
+		return NULL;
 
 	*r++ = '"';
 	while (*s)

@@ -186,6 +186,11 @@ case $host_os in
 esac
 AC_SUBST([MINGWBUILD])
 
+AC_PATH_PROG([CODESPELL], [codespell], [])
+if test "x$CODESPELL" = "x"; then
+	AC_MSG_WARN([codespell is not installed so spelling cannot be checked])
+fi
+
 AC_PATH_PROG([PERL], [perl], [])
 if test "x$PERL" = "x"; then
         AC_MSG_ERROR([Perl was not found. Building PostGIS requires Perl.])
@@ -1330,8 +1335,19 @@ if test $ENABLE_DEBUG -eq 1; then
 else
   CFLAGS="$CFLAGS -O2"
   if test $ENABLE_LTO -eq 1; then
-    _LT_COMPILER_OPTION([if $compiler supports -flto],[_cv_flto],[-flto],[],[CFLAGS="$CFLAGS -flto"],[])
-    _LT_LINKER_OPTION([if $compiler supports -flto],[_cv_flto],[[-flto]],[LDFLAGS="$LDFLAGS -flto"])
+    if test "$GCC" = yes; then
+      _LT_COMPILER_OPTION([if $compiler supports -flto=auto],[_cv_flto_auto],[-flto=auto],[],[CFLAGS="$CFLAGS -flto=auto"],[])
+      if test "$_cv_flto_auto" != yes; then
+        _LT_COMPILER_OPTION([if $compiler supports -flto],[_cv_flto],[-flto],[],[CFLAGS="$CFLAGS -flto"],[])
+      fi
+      _LT_LINKER_OPTION([if the linker supports -flto=auto],[_cv_ld_flto_auto],[[-flto=auto]],[LDFLAGS="$LDFLAGS -flto=auto"])
+      if test "$_cv_ld_flto_auto" != yes; then
+        _LT_LINKER_OPTION([if the linker supports -flto],[_cv_ld_flto],[[-flto]],[LDFLAGS="$LDFLAGS -flto"])
+      fi
+    else
+      _LT_COMPILER_OPTION([if $compiler supports -flto],[_cv_flto],[-flto],[],[CFLAGS="$CFLAGS -flto"],[])
+      _LT_LINKER_OPTION([if $compiler supports -flto],[_cv_flto],[[-flto]],[LDFLAGS="$LDFLAGS -flto"])
+    fi
   fi
 fi
 
@@ -1483,6 +1499,23 @@ fi
 
 AC_SUBST([ADDRESS_STANDARDIZER])
 
+dnl ====================================
+dnl tiger_geocoder stuff
+dnl ====================================
+AC_ARG_WITH([tiger],
+    [AS_HELP_STRING([--without-tiger],
+                    [Disable the tiger geocoder extension])],
+    [], [])
+
+if test "x$with_tiger" != "xno"; then
+    TIGER="tiger"
+    AC_MSG_RESULT([TIGER: Tiger geocoder support requested])
+else
+    AC_MSG_RESULT([TIGER: Tiger geocoder support disabled])
+fi
+
+AC_SUBST([TIGER])
+
 CPPFLAGS="$PGSQL_CPPFLAGS $GEOS_CPPFLAGS $PROJ_CPPFLAGS $PROTOBUF_CPPFLAGS $XML2_CPPFLAGS $SFCGAL_CPPFLAGS $JSON_CPPFLAGS $PCRE_CPPFLAGS $CPPFLAGS"
 dnl AC_MSG_RESULT([CPPFLAGS: $CPPFLAGS])
 
@@ -1522,7 +1555,6 @@ if test "x$with_interrupt_tests" = "xno"; then
 fi
 
 AC_SUBST([INTERRUPTTESTS])
-
 
 
 dnl ===========================================================================
@@ -1581,8 +1613,9 @@ if test "x$with_raster" != "xno"; then
 	LIBGDAL_DEPLIBS_LDFLAGS=""
 
 	dnl GDAL version constants, update here
-	GDAL_MIN_VERSION=2.0.0
-	GDAL_MIN_VERSION_NUMBER=180 dnl TODO: Use GDAL version calculation MAJOR*1000+MINOR*100+REV*10+BUILD
+	GDAL_MIN_VERSION=2.4.0
+	dnl Compare to POSTGIS_GDAL_VERSION
+	GDAL_MIN_VERSION_NUMBER=20400
 
 	AC_ARG_WITH(
 		[gdalconfig],
@@ -1608,13 +1641,12 @@ if test "x$with_raster" != "xno"; then
 		GDAL_MINOR_VERSION=`$GDAL_CONFIG --version | cut -d. -f2 | sed 's/[[^0-9]]//g'`
 		GDAL_PATCH_VERSION=`$GDAL_CONFIG --version | cut -d. -f3 | sed 's/[[^0-9]]//g'`
 		GDAL_FULL_VERSION=`$GDAL_CONFIG --version`
-		POSTGIS_GDAL_VERSION="$GDAL_MAJOR_VERSION$GDAL_MINOR_VERSION"
-		GDAL_VERSION_NUMBER="$GDAL_MAJOR_VERSION$GDAL_MINOR_VERSION$GDAL_PATCH_VERSION"
+		POSTGIS_GDAL_VERSION=`echo $GDAL_FULL_VERSION | $PERL -nle 'printf "%d%02d%02d\n",$1,$2,$3 if /(\d+)\.(\d+)\.(\d+)/'`
 
 		AC_MSG_RESULT([$GDAL_FULL_VERSION])
 
 		dnl Ensure we are using minimum required version of GDAL
-		if test ! "$GDAL_VERSION_NUMBER" -ge "$GDAL_MIN_VERSION_NUMBER" ; then
+		if test ! "$POSTGIS_GDAL_VERSION" -ge "$GDAL_MIN_VERSION_NUMBER" ; then
 			AC_MSG_ERROR([PostGIS raster requires GDAL >= $GDAL_MIN_VERSION. Use --without-raster to build without raster support.])
 		fi
 
@@ -1700,6 +1732,7 @@ if test "x$with_raster" != "xno"; then
 		raster/test/Makefile \
 		raster/test/cunit/Makefile \
 		raster/test/regress/Makefile \
+		raster/test/regress/tests.mk \
 		raster/scripts/Makefile \
 		raster/scripts/python/Makefile"
 
@@ -1905,6 +1938,7 @@ AC_CONFIG_FILES([GNUmakefile
    libpgcommon/Makefile
    libpgcommon/cunit/Makefile
    postgis/Makefile
+   postgis/cunit/Makefile
    postgis/sqldefines.h
    sfcgal/Makefile
    $SFCGAL_MAKEFILE_LIST
@@ -1963,7 +1997,7 @@ AC_MSG_RESULT([  GEOS config:          ${GEOS_CONFIG_SRC}])
 AC_MSG_RESULT([  GEOS version:         ${GEOS_VERSION} (${POSTGIS_GEOS_VERSION})])
 if test "x$RASTER" = "xraster"; then
     AC_MSG_RESULT([  GDAL config:          ${GDAL_CONFIG}])
-    AC_MSG_RESULT([  GDAL version:         ${GDAL_FULL_VERSION}])
+    AC_MSG_RESULT([  GDAL version:         ${GDAL_FULL_VERSION}] (${POSTGIS_GDAL_VERSION}))
 fi
 if test "x$SFCGAL" = "xsfcgal"; then
     AC_MSG_RESULT([  SFCGAL config:        ${SFCGAL_CONFIG}])
@@ -2020,6 +2054,12 @@ if test "x$ADDRESS_STANDARDIZER" = "xaddress_standardizer"; then
     AC_MSG_RESULT([  Address Standardizer support:       enabled])
 else
     AC_MSG_RESULT([  Address Standardizer support:       disabled])
+fi
+
+if test "x$TIGER" = "xtiger"; then
+    AC_MSG_RESULT([  PostGIS Tiger Geocoder:                   enabled])
+else
+    AC_MSG_RESULT([  PostGIS Tiger Geocoder:                   disabled])
 fi
 
 AC_MSG_RESULT()

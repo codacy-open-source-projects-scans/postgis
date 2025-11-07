@@ -4,6 +4,7 @@
   before_script:
     - apt-get update -qq && apt-get install -y
         autoconf
+        codespell
         bison
         build-essential
         docbook-xsl-ns
@@ -47,6 +48,7 @@
 test:
   image: debian:bookworm
   <<: *build_definition
-#test32:
-#  image: i386/debian:bookworm
-#  <<: *build_definition
+
+test32:
+  image: i386/debian:bookworm
+  <<: *build_definition

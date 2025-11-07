@@ -1,5 +1,9 @@
+labels:
+  platform: linux/amd64
+when:
+  event: [push, pull_request, tag]
 variables:
-  - &test_image 'docker.osgeo.org/postgis/build-test:trisquel11'
+  - &test_image 'repo.osgeo.org/postgis/build-test:universal'
   - common_doc_paths: &common_doc_paths
       # related config files
       - ".woodpecker/docs.yml"
@@ -30,9 +34,6 @@ steps:
       - ../configure --without-pg --without-protobuf --without-raster
       - make postgis_revision.h
       - xmllint --version
-    when:
-        - event: push
-          path: *when_path_full
 
   check-xml:
     image: *test_image
@@ -41,8 +42,7 @@ steps:
     commands:
       - make -C build-docs/doc check
     when:
-      - path: *when_path
-        event: [tag, pull_request, push]
+      - path: *when_path_full
   build-images:
     image: *test_image
     pull: true
@@ -51,7 +51,6 @@ steps:
       - make -C build-docs/doc images
     when:
       - path: *when_path_full
-        event: [tag, pull_request, push]
   build-html:
     image: *test_image
     pull: true
@@ -60,7 +59,6 @@ steps:
       - make -C build-docs/doc html
     when:
       - path: *when_path
-        event: [tag, pull_request, push]
   build-cheatsheets:
     image: *test_image
     pull: true
@@ -69,7 +67,6 @@ steps:
       - make -C build-docs/doc/ cheatsheets
     when:
       - path: *when_path_full
-        event: [tag, pull_request, push]
   build-chunked-html:
     image: *test_image
     pull: true
@@ -78,7 +75,6 @@ steps:
       - make -C build-docs/doc html
     when:
       - path: *when_path
-        event: [tag, pull_request, push]
   build-pdf:
     image: *test_image
     pull: true
@@ -87,7 +83,6 @@ steps:
       - make -C build-docs/doc/ pdf
     when:
       - path: *when_path
-        event: [tag, pull_request, push]
 
   # DO NOT EDIT PAST THIS LINE, use update-docs-localized.sh to update #
 ### TARGET check-xml
@@ -98,8 +93,7 @@ steps:
       - make -C build-docs/doc/po/it_IT local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/it_IT/*.po"
 
@@ -110,8 +104,7 @@ steps:
       - make -C build-docs/doc/po/pt_BR local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pt_BR/*.po"
 
@@ -122,8 +115,7 @@ steps:
       - make -C build-docs/doc/po/fr local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/fr/*.po"
 
@@ -134,8 +126,7 @@ steps:
       - make -C build-docs/doc/po/es local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/es/*.po"
 
@@ -146,8 +137,7 @@ steps:
       - make -C build-docs/doc/po/pl local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pl/*.po"
 
@@ -158,8 +148,7 @@ steps:
       - make -C build-docs/doc/po/ka local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ka/*.po"
 
@@ -170,10 +159,20 @@ steps:
       - make -C build-docs/doc/po/ko_KR local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ko_KR/*.po"
+
+  check-xml-da:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/da local-check-xml
+    depends_on: prepare
+    when:
+       - path:
+          include:
+            - "doc/po/da/*.po"
 
   check-xml-de:
     image: *test_image
@@ -182,8 +181,7 @@ steps:
       - make -C build-docs/doc/po/de local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/de/*.po"
 
@@ -194,8 +192,7 @@ steps:
       - make -C build-docs/doc/po/ja local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ja/*.po"
 
@@ -206,8 +203,7 @@ steps:
       - make -C build-docs/doc/po/ru local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ru/*.po"
 
@@ -218,8 +214,7 @@ steps:
       - make -C build-docs/doc/po/zh_Hans local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/zh_Hans/*.po"
 
@@ -230,10 +225,20 @@ steps:
       - make -C build-docs/doc/po/ro local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ro/*.po"
+
+  check-xml-sv:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/sv local-check-xml
+    depends_on: prepare
+    when:
+       - path:
+          include:
+            - "doc/po/sv/*.po"
 
   check-xml-uk:
     image: *test_image
@@ -242,10 +247,20 @@ steps:
       - make -C build-docs/doc/po/uk local-check-xml
     depends_on: prepare
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/uk/*.po"
+
+  check-xml-be:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/be local-check-xml
+    depends_on: prepare
+    when:
+       - path:
+          include:
+            - "doc/po/be/*.po"
 
 ### TARGET html
   html-it_IT:
@@ -255,8 +270,7 @@ steps:
       - make -C build-docs/doc/po/it_IT local-html
     depends_on: check-xml-it_IT
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/it_IT/*.po"
 
@@ -267,8 +281,7 @@ steps:
       - make -C build-docs/doc/po/pt_BR local-html
     depends_on: check-xml-pt_BR
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pt_BR/*.po"
 
@@ -279,8 +292,7 @@ steps:
       - make -C build-docs/doc/po/fr local-html
     depends_on: check-xml-fr
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/fr/*.po"
 
@@ -291,8 +303,7 @@ steps:
       - make -C build-docs/doc/po/es local-html
     depends_on: check-xml-es
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/es/*.po"
 
@@ -303,8 +314,7 @@ steps:
       - make -C build-docs/doc/po/pl local-html
     depends_on: check-xml-pl
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pl/*.po"
 
@@ -315,8 +325,7 @@ steps:
       - make -C build-docs/doc/po/ka local-html
     depends_on: check-xml-ka
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ka/*.po"
 
@@ -327,10 +336,20 @@ steps:
       - make -C build-docs/doc/po/ko_KR local-html
     depends_on: check-xml-ko_KR
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ko_KR/*.po"
+
+  html-da:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/da local-html
+    depends_on: check-xml-da
+    when:
+       - path:
+          include:
+            - "doc/po/da/*.po"
 
   html-de:
     image: *test_image
@@ -339,8 +358,7 @@ steps:
       - make -C build-docs/doc/po/de local-html
     depends_on: check-xml-de
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/de/*.po"
 
@@ -351,8 +369,7 @@ steps:
       - make -C build-docs/doc/po/ja local-html
     depends_on: check-xml-ja
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ja/*.po"
 
@@ -363,8 +380,7 @@ steps:
       - make -C build-docs/doc/po/ru local-html
     depends_on: check-xml-ru
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ru/*.po"
 
@@ -375,8 +391,7 @@ steps:
       - make -C build-docs/doc/po/zh_Hans local-html
     depends_on: check-xml-zh_Hans
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/zh_Hans/*.po"
 
@@ -387,10 +402,20 @@ steps:
       - make -C build-docs/doc/po/ro local-html
     depends_on: check-xml-ro
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ro/*.po"
+
+  html-sv:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/sv local-html
+    depends_on: check-xml-sv
+    when:
+       - path:
+          include:
+            - "doc/po/sv/*.po"
 
   html-uk:
     image: *test_image
@@ -399,10 +424,20 @@ steps:
       - make -C build-docs/doc/po/uk local-html
     depends_on: check-xml-uk
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/uk/*.po"
+
+  html-be:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/be local-html
+    depends_on: check-xml-be
+    when:
+       - path:
+          include:
+            - "doc/po/be/*.po"
 
 ### TARGET cheatsheets
   cheatsheets-it_IT:
@@ -412,8 +447,7 @@ steps:
       - make -C build-docs/doc/po/it_IT local-cheatsheets
     depends_on: check-xml-it_IT
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/it_IT/*.po"
 
@@ -424,8 +458,7 @@ steps:
       - make -C build-docs/doc/po/pt_BR local-cheatsheets
     depends_on: check-xml-pt_BR
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pt_BR/*.po"
 
@@ -436,8 +469,7 @@ steps:
       - make -C build-docs/doc/po/fr local-cheatsheets
     depends_on: check-xml-fr
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/fr/*.po"
 
@@ -448,8 +480,7 @@ steps:
       - make -C build-docs/doc/po/es local-cheatsheets
     depends_on: check-xml-es
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/es/*.po"
 
@@ -460,8 +491,7 @@ steps:
       - make -C build-docs/doc/po/pl local-cheatsheets
     depends_on: check-xml-pl
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pl/*.po"
 
@@ -472,8 +502,7 @@ steps:
       - make -C build-docs/doc/po/ka local-cheatsheets
     depends_on: check-xml-ka
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ka/*.po"
 
@@ -484,10 +513,20 @@ steps:
       - make -C build-docs/doc/po/ko_KR local-cheatsheets
     depends_on: check-xml-ko_KR
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ko_KR/*.po"
+
+  cheatsheets-da:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/da local-cheatsheets
+    depends_on: check-xml-da
+    when:
+       - path:
+          include:
+            - "doc/po/da/*.po"
 
   cheatsheets-de:
     image: *test_image
@@ -496,8 +535,7 @@ steps:
       - make -C build-docs/doc/po/de local-cheatsheets
     depends_on: check-xml-de
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/de/*.po"
 
@@ -508,8 +546,7 @@ steps:
       - make -C build-docs/doc/po/ja local-cheatsheets
     depends_on: check-xml-ja
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ja/*.po"
 
@@ -520,8 +557,7 @@ steps:
       - make -C build-docs/doc/po/ru local-cheatsheets
     depends_on: check-xml-ru
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ru/*.po"
 
@@ -532,8 +568,7 @@ steps:
       - make -C build-docs/doc/po/zh_Hans local-cheatsheets
     depends_on: check-xml-zh_Hans
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/zh_Hans/*.po"
 
@@ -544,10 +579,20 @@ steps:
       - make -C build-docs/doc/po/ro local-cheatsheets
     depends_on: check-xml-ro
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ro/*.po"
+
+  cheatsheets-sv:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/sv local-cheatsheets
+    depends_on: check-xml-sv
+    when:
+       - path:
+          include:
+            - "doc/po/sv/*.po"
 
   cheatsheets-uk:
     image: *test_image
@@ -556,10 +601,20 @@ steps:
       - make -C build-docs/doc/po/uk local-cheatsheets
     depends_on: check-xml-uk
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/uk/*.po"
+
+  cheatsheets-be:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/be local-cheatsheets
+    depends_on: check-xml-be
+    when:
+       - path:
+          include:
+            - "doc/po/be/*.po"
 
 ### TARGET check-cheatsheets
   check-cheatsheets-it_IT:
@@ -569,8 +624,7 @@ steps:
       - make -C build-docs/doc/po/it_IT local-check-cheatsheets
     depends_on: [ cheatsheets-it_IT, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/it_IT/*.po"
 
@@ -581,8 +635,7 @@ steps:
       - make -C build-docs/doc/po/pt_BR local-check-cheatsheets
     depends_on: [ cheatsheets-pt_BR, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pt_BR/*.po"
 
@@ -593,8 +646,7 @@ steps:
       - make -C build-docs/doc/po/fr local-check-cheatsheets
     depends_on: [ cheatsheets-fr, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/fr/*.po"
 
@@ -605,8 +657,7 @@ steps:
       - make -C build-docs/doc/po/es local-check-cheatsheets
     depends_on: [ cheatsheets-es, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/es/*.po"
 
@@ -617,8 +668,7 @@ steps:
       - make -C build-docs/doc/po/pl local-check-cheatsheets
     depends_on: [ cheatsheets-pl, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/pl/*.po"
 
@@ -629,8 +679,7 @@ steps:
       - make -C build-docs/doc/po/ka local-check-cheatsheets
     depends_on: [ cheatsheets-ka, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ka/*.po"
 
@@ -641,10 +690,20 @@ steps:
       - make -C build-docs/doc/po/ko_KR local-check-cheatsheets
     depends_on: [ cheatsheets-ko_KR, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ko_KR/*.po"
+
+  check-cheatsheets-da:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/da local-check-cheatsheets
+    depends_on: [ cheatsheets-da, build-cheatsheets ]
+    when:
+       - path:
+          include:
+            - "doc/po/da/*.po"
 
   check-cheatsheets-de:
     image: *test_image
@@ -653,8 +712,7 @@ steps:
       - make -C build-docs/doc/po/de local-check-cheatsheets
     depends_on: [ cheatsheets-de, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/de/*.po"
 
@@ -665,8 +723,7 @@ steps:
       - make -C build-docs/doc/po/ja local-check-cheatsheets
     depends_on: [ cheatsheets-ja, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ja/*.po"
 
@@ -677,8 +734,7 @@ steps:
       - make -C build-docs/doc/po/ru local-check-cheatsheets
     depends_on: [ cheatsheets-ru, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ru/*.po"
 
@@ -689,8 +745,7 @@ steps:
       - make -C build-docs/doc/po/zh_Hans local-check-cheatsheets
     depends_on: [ cheatsheets-zh_Hans, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/zh_Hans/*.po"
 
@@ -701,10 +756,20 @@ steps:
       - make -C build-docs/doc/po/ro local-check-cheatsheets
     depends_on: [ cheatsheets-ro, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/ro/*.po"
+
+  check-cheatsheets-sv:
+    image: *test_image
+    pull: true
+    commands:
+      - make -C build-docs/doc/po/sv local-check-cheatsheets
+    depends_on: [ cheatsheets-sv, build-cheatsheets ]
+    when:
+       - path:
+          include:
+            - "doc/po/sv/*.po"
 
   check-cheatsheets-uk:
     image: *test_image
@@ -713,165 +778,18 @@ steps:
       - make -C build-docs/doc/po/uk local-check-cheatsheets
     depends_on: [ cheatsheets-uk, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
             - "doc/po/uk/*.po"
 
-### TARGET pdf
-  pdf-it_IT:
+  check-cheatsheets-be:
     image: *test_image
     pull: true
     commands:
-      - make -C build-docs/doc/po/it_IT local-pdf
-    depends_on: [ build-images, check-xml-it_IT ]
+      - make -C build-docs/doc/po/be local-check-cheatsheets
+    depends_on: [ cheatsheets-be, build-cheatsheets ]
     when:
-      - event: push
-        path:
+       - path:
           include:
-            - "doc/po/it_IT/*.po"
-
-  pdf-pt_BR:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/pt_BR local-pdf
-    depends_on: [ build-images, check-xml-pt_BR ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/pt_BR/*.po"
-
-  pdf-fr:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/fr local-pdf
-    depends_on: [ build-images, check-xml-fr ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/fr/*.po"
-
-  pdf-es:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/es local-pdf
-    depends_on: [ build-images, check-xml-es ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/es/*.po"
-
-  pdf-pl:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/pl local-pdf
-    depends_on: [ build-images, check-xml-pl ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/pl/*.po"
-
-  pdf-ka:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/ka local-pdf
-    depends_on: [ build-images, check-xml-ka ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/ka/*.po"
-
-  pdf-ko_KR:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/ko_KR local-pdf
-    depends_on: [ build-images, check-xml-ko_KR ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/ko_KR/*.po"
-
-  pdf-de:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/de local-pdf
-    depends_on: [ build-images, check-xml-de ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/de/*.po"
-
-  pdf-ja:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/ja local-pdf
-    depends_on: [ build-images, check-xml-ja ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/ja/*.po"
-
-  pdf-ru:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/ru local-pdf
-    depends_on: [ build-images, check-xml-ru ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/ru/*.po"
-
-  pdf-zh_Hans:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/zh_Hans local-pdf
-    depends_on: [ build-images, check-xml-zh_Hans ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/zh_Hans/*.po"
-
-  pdf-ro:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/ro local-pdf
-    depends_on: [ build-images, check-xml-ro ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/ro/*.po"
-
-  pdf-uk:
-    image: *test_image
-    pull: true
-    commands:
-      - make -C build-docs/doc/po/uk local-pdf
-    depends_on: [ build-images, check-xml-uk ]
-    when:
-      - event: push
-        path:
-          include:
-            - "doc/po/uk/*.po"
+            - "doc/po/be/*.po"
 

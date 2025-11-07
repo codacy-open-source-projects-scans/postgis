@@ -1,26 +1,30 @@
 # Spanish translations for postgis package.
 # Automatically generated, 2023.
 #
+# DeepL <noreply-mt-deepl@weblate.org>, 2025.
+# Paulo Cesar Coronado <paulocoronado@udistrital.edu.co>, 2025.
+# juan sebastian jimenez aldana <jusjimeneza@udistrital.edu.co>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: postgis 3.5\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2024-11-19 11:58+0000\n"
-"PO-Revision-Date: 2023-09-22 19:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Spanish <https://weblate.osgeo.org/projects/postgis/postgis-"
-"manual/es/>\n"
+"POT-Creation-Date: 2025-08-21 03:28+0000\n"
+"PO-Revision-Date: 2025-10-24 17:47+0000\n"
+"Last-Translator: juan sebastian jimenez aldana <jusjimeneza@udistrital.edu."
+"co>\n"
+"Language-Team: Spanish <https://weblate.osgeo.org/projects/postgis/"
+"postgis-manual/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0\n"
+"X-Generator: Weblate 5.4.3\n"
 
 #. Tag: chapter
 #, no-c-format
 msgid "&database_tuning;"
-msgstr ""
+msgstr "&database_tuning;"
 
 #. Tag: title
 #, no-c-format
@@ -30,7 +34,7 @@ msgstr "Administración de PostGIS"
 #. Tag: title
 #, no-c-format
 msgid "Configuring raster support"
-msgstr ""
+msgstr "Configuración del soporte raster"
 
 #. Tag: para
 #, no-c-format
@@ -38,6 +42,8 @@ msgid ""
 "If you enabled raster support you may want to read below how to properly "
 "configure it."
 msgstr ""
+"Si ha activado el soporte raster, le recomendamos que lea a continuación "
+"cómo configurarlo correctamente."
 
 #. Tag: para
 #, no-c-format
@@ -49,16 +55,25 @@ msgid ""
 "For PostGIS 2.2, you can use the more cross-platform approach of setting the "
 "corresponding <xref linkend=\"PostGIS_GUC\"/>."
 msgstr ""
+"A partir de PostGIS 2.1.3, los raster fuera de la base de datos y todos los "
+"controladores raster están desactivados de manera predeterminada. Para "
+"volver a habilitarlos, es necesario establecer las siguientes variables de "
+"entorno <varname>POSTGIS_GDAL_ENABLED_DRIVERS</varname> y "
+"<varname>POSTGIS_ENABLE_OUTDB_RASTERS</varname> en el entorno del servidor. "
+"Para PostGIS 2.2, puede utilizar el enfoque más multiplataforma de "
+"establecer las correspondientes <xref linkend=\"PostGIS_GUC\"/>."
 
 #. Tag: para
 #, no-c-format
 msgid "If you want to enable offline raster:"
-msgstr ""
+msgstr "Si desea activar raster sin conexión:"
 
 #. Tag: para
 #, no-c-format
 msgid "Any other setting or no setting at all will disable out of db rasters."
 msgstr ""
+"Cualquier otro ajuste, o ningún ajuste, desactivará los rasters fuera de la "
+"db."
 
 #. Tag: para
 #, no-c-format
@@ -66,6 +81,8 @@ msgid ""
 "In order to enable all GDAL drivers available in your GDAL install, set this "
 "environment variable as follows"
 msgstr ""
+"Para habilitar todos los controladores de GDAL disponibles en su instalación "
+"de GDAL, configure esta variable de entorno del siguiente modo"
 
 #. Tag: para
 #, no-c-format
@@ -73,11 +90,13 @@ msgid ""
 "If you want to only enable specific drivers, set your environment variable "
 "as follows:"
 msgstr ""
+"Si sólo desea habilitar controladores específicos, configure su variable de "
+"entorno de la siguiente manera:"
 
 #. Tag: para
 #, no-c-format
 msgid "If you are on windows, do not quote the driver list"
-msgstr ""
+msgstr "Si está en windows, no cite la lista de controladores"
 
 #. Tag: para
 #, no-c-format
@@ -88,9 +107,15 @@ msgid ""
 "<replaceable>main</replaceable>/environment</filename> where 10 refers to "
 "version of PostgreSQL and main refers to the cluster."
 msgstr ""
+"La configuración de las variables de entorno varía en función del sistema "
+"operativo. Para PostgreSQL instalado en Ubuntu o Debian a través de apt-"
+"postgresql, la forma preferida es editar <filename>/etc/postgresql/"
+"<replaceable>10</replaceable>/<replaceable>main</replaceable>/environment</"
+"filename> donde 10 se refiere a la versión de PostgreSQL y main se refiere "
+"al cluster."
 
 #. Tag: para
-#, no-c-format
+#, fuzzy, no-c-format
 msgid ""
 "On windows, if you are running as a service, you can set via System "
 "variables which for Windows 7 you can get to by right-clicking on Computer-"
@@ -99,6 +124,14 @@ msgid ""
 "clicking <emphasis>Advanced System Settings -&gt;Advanced-&gt;Environment "
 "Variables</emphasis> and adding new system variables."
 msgstr ""
+"En Windows, si se ejecuta como un servicio, se puede configurar a través de "
+"las variables del sistema, a las que se puede acceder en Windows 7 haciendo "
+"clic con el botón derecho del ratón en Equipo-&gt; Propiedades Configuración "
+"avanzada del sistema o en el explorador navegando hasta <varname>Panel de "
+"control\\Todos los elementos del panel de control\\Sistema</varname>. A "
+"continuación, haga clic en <emphasis>Configuración avanzada del sistema -&gt "
+"> Avanzadas -&gt> Variables de entorno <emphasis> y añada nuevas variables "
+"del sistema."
 
 #. Tag: para
 #, no-c-format
@@ -106,16 +139,18 @@ msgid ""
 "After you set the environment variables, you'll need to restart your "
 "PostgreSQL service for the changes to take effect."
 msgstr ""
+"Después de configurar las variables de entorno, deberá reiniciar el servicio "
+"PostgreSQL para que los cambios surtan efecto."
 
 #. Tag: title
 #, no-c-format
 msgid "Creating spatial databases"
-msgstr ""
+msgstr "Creación de bases de datos espaciales"
 
 #. Tag: title
 #, no-c-format
 msgid "Spatially enable database using EXTENSION"
-msgstr ""
+msgstr "Habilitar la base de datos espacial mediante EXTENSION"
 
 #. Tag: para
 #, no-c-format
@@ -124,6 +159,9 @@ msgid ""
 "extensions/postgis modules, you can turn a database into a spatial one using "
 "the EXTENSION mechanism."
 msgstr ""
+"Si utiliza PostgreSQL 9.1+ y ha compilado e instalado los módulos extensions/"
+"postgis, puede convertir a una base de datos en espacial utilizando el "
+"mecanismo EXTENSION."
 
 #. Tag: para
 #, no-c-format
@@ -132,17 +170,24 @@ msgid ""
 "the functions and comments. Raster and topology are packaged as a separate "
 "extension."
 msgstr ""
+"El núcleo de la extensión postgis incluye geometría, geografía, "
+"spatial_ref_sys y todas las funciones y comentarios. Raster y topología se "
+"empaquetan como una extensión separada."
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Run the following SQL snippet in the database you want to enable spatially:"
 msgstr ""
+"Ejecute el siguiente fragmento de SQL en la base de datos que desee "
+"habilitar espacialmente:"
 
 #. Tag: title
 #, no-c-format
 msgid "Spatially enable database without using EXTENSION (discouraged)"
 msgstr ""
+"Habilitar espacialmente la base de datos sin utilizar EXTENSION "
+"(desaconsejado)"
 
 #. Tag: para
 #, no-c-format
@@ -151,6 +196,9 @@ msgid ""
 "installed in the PostgreSQL extension directory (for example during testing, "
 "development or in a restricted environment)."
 msgstr ""
+"Por lo general, esto sólo es necesario si no puede o no quiere tener PostGIS "
+"instalado en el directorio de extensión de PostgreSQL (por ejemplo, durante "
+"las pruebas, el desarrollo o en un entorno restringido)."
 
 #. Tag: para
 #, no-c-format
@@ -159,6 +207,9 @@ msgid ""
 "by loading the various sql files located in <filename>[prefix]/share/"
 "contrib</filename> as specified during the build phase."
 msgstr ""
+"Para agregar objetos PostGIS y definiciones de funciones a su base de datos, "
+"cargue los distintos archivos sql ubicados en <filename>[prefix]/share/"
+"contrib</filename>, tal y como se especifica durante la fase de compilación."
 
 #. Tag: para
 #, no-c-format
@@ -168,6 +219,11 @@ msgid ""
 "objects are in the <filename>rtpostgis.sql</filename> script. Topology "
 "objects are in the <filename>topology.sql</filename> script."
 msgstr ""
+"Los objetos principales de PostGIS (tipos geométricos y geográficos, y sus "
+"funciones de soporte) se encuentran en el script <filename>postgis.sql</"
+"filename>. Los objetos ráster se encuentran en el script <filename>rtpostgis."
+"sql</filename>. Los objetos topológicos se encuentran en el script "
+"<filename>topology.sql</filename>."
 
 #. Tag: para
 #, no-c-format
@@ -177,6 +233,11 @@ msgid ""
 "populate the <varname>spatial_ref_sys</varname> table. This will permit you "
 "to perform ST_Transform() operations on geometries."
 msgstr ""
+"Para obtener un conjunto completo de identificadores de definición del "
+"sistema de coordenadas EPSG, también puede cargar el archivo de definiciones "
+"<filename>spatial_ref_sys.sql</filename> y rellenar la tabla "
+"<varname>spatial_ref_sys</varname>. Esto le permitirá realizar operaciones "
+"ST_Transform() en geometrías."
 
 #. Tag: para
 #, no-c-format
@@ -186,16 +247,20 @@ msgid ""
 "by simply typing <command>\\dd [function_name]</command> from a "
 "<command>psql</command> terminal window."
 msgstr ""
+"Si desea añadir comentarios a las funciones de PostGIS, los encontrará en el "
+"script <filename>postgis_comments.sql</filename>. Los comentarios se pueden "
+"ver simplemente escribiendo <command>\\dd [nombre_función]</command> desde "
+"una ventana de terminal <command>psql</command>."
 
 #. Tag: para
 #, no-c-format
 msgid "Run the following Shell commands in your terminal:"
-msgstr ""
+msgstr "Ejecute los siguientes comandos Shell en su terminal:"
 
 #. Tag: title
 #, no-c-format
 msgid "Upgrading spatial databases"
-msgstr ""
+msgstr "Actualización de bases de datos espaciales"
 
 #. Tag: para
 #, no-c-format
@@ -203,6 +268,9 @@ msgid ""
 "Upgrading existing spatial databases can be tricky as it requires "
 "replacement or introduction of new PostGIS object definitions."
 msgstr ""
+"Actualizar las bases de datos espaciales existentes puede resultar "
+"complicado, ya que requiere sustituir o introducir nuevas definiciones de "
+"objetos PostGIS."
 
 #. Tag: para
 #, no-c-format
@@ -210,6 +278,9 @@ msgid ""
 "Unfortunately not all definitions can be easily replaced in a live database, "
 "so sometimes your best bet is a dump/reload process."
 msgstr ""
+"Desafortunadamente, no todas las definiciones se pueden reemplazar "
+"fácilmente en una base de datos activa, por lo que a veces la mejor opción "
+"es un proceso de volcado/recarga."
 
 #. Tag: para
 #, no-c-format
@@ -217,6 +288,9 @@ msgid ""
 "PostGIS provides a SOFT UPGRADE procedure for minor or bugfix releases, and "
 "a HARD UPGRADE procedure for major releases."
 msgstr ""
+"PostGIS proporciona un procedimiento de ACTUALIZACIÓN SUAVE para versiones "
+"menores o correcciones de errores, y un procedimiento de ACTUALIZACIÓN "
+"COMPLETA para versiones principales."
 
 #. Tag: para
 #, no-c-format
@@ -225,11 +299,14 @@ msgid ""
 "data. If you use the -Fc flag to pg_dump you will always be able to restore "
 "the dump with a HARD UPGRADE."
 msgstr ""
+"Antes de intentar actualizar PostGIS, siempre es recomendable hacer una "
+"copia de seguridad de sus datos. Si utiliza el indicador -Fc con pg_dump, "
+"siempre podrá restaurar el volcado con una ACTUALIZACIÓN DURO."
 
 #. Tag: title
 #, no-c-format
 msgid "Soft upgrade"
-msgstr ""
+msgstr "Actualización suave"
 
 #. Tag: para
 #, no-c-format
@@ -239,11 +316,15 @@ msgid ""
 "way, you are advised to switch your install to extensions because the script "
 "way is no longer supported."
 msgstr ""
+"Si instaló su base de datos utilizando extensiones, también deberá "
+"actualizarla utilizando el modelo de extensiones. Si la instaló utilizando "
+"el antiguo método de script sql, le recomendamos que cambie su instalación a "
+"extensiones, ya que el método de script ya no es compatible."
 
 #. Tag: title
 #, no-c-format
 msgid "Soft Upgrade 9.1+ using extensions"
-msgstr ""
+msgstr "Actualización suave 9.1+ utilizando extensiones"
 
 #. Tag: para
 #, no-c-format
@@ -252,6 +333,9 @@ msgid ""
 "upgrade using extensions as well. Doing a minor upgrade with extensions, is "
 "fairly painless."
 msgstr ""
+"Si instaló PostGIS originalmente con extensiones, entonces también deberá "
+"actualizarlo utilizando extensiones. Realizar una actualización menor con "
+"extensiones es bastante sencillo."
 
 #. Tag: para
 #, no-c-format
@@ -260,11 +344,14 @@ msgid ""
 "linkend=\"PostGIS_Extensions_Upgrade\"/> function to upgrade to the latest "
 "version you have installed."
 msgstr ""
+"Si utiliza PostGIS 3 o superior, debe utilizar la función <xref linkend="
+"\"PostGIS_Extensions_Upgrade\"/> para actualizar a la última versión que "
+"tenga instalada."
 
 #. Tag: para
 #, no-c-format
 msgid "If you are running PostGIS 2.5 or lower, then do the following:"
-msgstr ""
+msgstr "Si utiliza PostGIS 2.5 o una versión anterior, haga lo siguiente:"
 
 #. Tag: para
 #, no-c-format
@@ -272,11 +359,13 @@ msgid ""
 "If you have multiple versions of PostGIS installed, and you don't want to "
 "upgrade to the latest, you can explicitly specify the version as follows:"
 msgstr ""
+"Si tiene varias versiones de PostGIS instaladas y no desea actualizar a la "
+"última, puede especificar explícitamente la versión de la siguiente manera:"
 
 #. Tag: para
 #, no-c-format
 msgid "If you get an error notice something like:"
-msgstr ""
+msgstr "Si recibe un aviso de error similar al siguiente:"
 
 #. Tag: para
 #, no-c-format
@@ -285,11 +374,15 @@ msgid ""
 "<xref linkend=\"create_new_db_extensions\"/> and then restore your backup on "
 "top of this new database."
 msgstr ""
+"A continuación, deberá realizar una copia de seguridad de su base de datos, "
+"crear una nueva tal y como se describe en <xref linkend="
+"\"create_new_db_extensions\"/> y, a continuación, restaurar su copia de "
+"seguridad sobre esta nueva base de datos."
 
 #. Tag: para
 #, no-c-format
 msgid "If you get a notice message like:"
-msgstr ""
+msgstr "Si recibe un mensaje de aviso como:"
 
 #. Tag: para
 #, no-c-format
@@ -300,6 +393,11 @@ msgid ""
 "in that case you can append \"next\" to the version string, and next time "
 "you'll need to drop the \"next\" suffix again:"
 msgstr ""
+"Entonces todo estará ya actualizado y podrá ignorarlo sin problema. "
+"<emphasis role=\"bold\">UNLESS</emphasis> que esté intentando actualizar de "
+"una versión de desarrollo a la siguiente (que no tiene un nuevo número de "
+"versión); en ese caso, puede añadir «next» a la cadena de la versión, y la "
+"próxima vez tendrá que eliminar el sufijo «next» de nuevo:"
 
 #. Tag: para
 #, no-c-format
@@ -309,6 +407,10 @@ msgid ""
 "the backup just has <code>CREATE EXTENSION postgis</code> and thus picks up "
 "the newest latest version during restore."
 msgstr ""
+"Si instaló PostGIS originalmente sin especificar una versión, a menudo puede "
+"omitir la reinstalación de la extensión postgis antes de restaurar, ya que "
+"la copia de seguridad solo tiene <code>CREATE EXTENSION postgis</code> y, "
+"por lo tanto, toma la última versión más reciente durante la restauración."
 
 #. Tag: para
 #, no-c-format
@@ -317,11 +419,15 @@ msgid ""
 "will have a new extension <emphasis>postgis_raster</emphasis> which you can "
 "safely drop, if you don't need raster support. You can drop as follows:"
 msgstr ""
+"Si está actualizando la extensión PostGIS desde una versión anterior a la "
+"3.0.0, tendrá una nueva extensión <emphasis>postgis_raster</emphasis> que "
+"puede eliminar de forma segura si no necesita compatibilidad con ráster. "
+"Puede eliminarla de la siguiente manera:"
 
 #. Tag: title
 #, no-c-format
 msgid "Soft Upgrade Pre 9.1+ or without extensions"
-msgstr ""
+msgstr "Actualización suave Pre 9.1+ o sin extensiones"
 
 #. Tag: para
 #, no-c-format
@@ -330,6 +436,9 @@ msgid ""
 "extensions. If you have extensions and try to upgrade with this approach "
 "you'll get messages like:"
 msgstr ""
+"Esta sección solo se aplica a aquellos que hayan instalado PostGIS sin "
+"utilizar extensiones. Si tiene extensiones e intenta actualizar con este "
+"método, aparecerán mensajes como:"
 
 #. Tag: para
 #, no-c-format
@@ -338,6 +447,9 @@ msgid ""
 "prior to r7409, you cannot use this procedure but would rather need to do a "
 "<link linkend=\"hard_upgrade\">HARD UPGRADE</link>."
 msgstr ""
+"NOTA: si está migrando de PostGIS 1.* a PostGIS 2.* o de PostGIS 2.* "
+"anterior a r7409, no puede utilizar este procedimiento, sino que deberá "
+"realizar una <link linkend=\"hard_upgrade\">HARD UPGRADE</link>."
 
 #. Tag: para
 #, no-c-format
@@ -346,6 +458,9 @@ msgid ""
 "<filename>*_upgrade.sql</filename> files in the installation folders. You "
 "can list them all with:"
 msgstr ""
+"Después de compilar e instalar (make install), debería encontrar un conjunto "
+"de archivos <filename>*_upgrade.sql</filename> en las carpetas de "
+"instalación. Puede enumerarlos todos con:"
 
 #. Tag: para
 #, no-c-format
@@ -353,6 +468,8 @@ msgid ""
 "Load them all in turn, starting from <filename>postgis_upgrade.sql</"
 "filename>."
 msgstr ""
+"Cárguelos todos por orden, empezando por <filename>postgis_upgrade."
+"sql</filename>."
 
 #. Tag: para
 #, no-c-format
@@ -362,11 +479,16 @@ msgid ""
 "<filename>topology_upgrade.sql</filename> and <filename>sfcgal_upgrade.sql</"
 "filename> respectively. If you need them:"
 msgstr ""
+"El mismo procedimiento se aplica a las extensiones raster, topology y "
+"sfcgal, con archivos de actualización denominados <filename>rtpostgis_upgrade"
+".sql</filename>, <filename>topology_upgrade.sql</filename> y "
+"<filename>sfcgal_upgrade.sql</filename>, respectivamente. Si los necesita:"
 
 #. Tag: para
 #, no-c-format
 msgid "You are advised to switch to an extension based install by running"
 msgstr ""
+"Se recomienda cambiar a una instalación basada en extensiones ejecutando"
 
 #. Tag: para
 #, no-c-format
@@ -375,6 +497,10 @@ msgid ""
 "upgrading your version you are using a version too early for a soft upgrade "
 "and need to do a <link linkend=\"hard_upgrade\">HARD UPGRADE</link>."
 msgstr ""
+"Si no encuentra el archivo <filename>postgis_upgrade.sql</filename> "
+"específico para actualizar su versión, significa que está utilizando una "
+"versión demasiado antigua para realizar una actualización suave y debe "
+"realizar una <link linkend=\"hard_upgrade\">HARD UPGRADE</link>."
 
 #. Tag: para
 #, no-c-format
@@ -383,11 +509,14 @@ msgid ""
 "about the need to run this kind of upgrade using a \"procs need upgrade\" "
 "message."
 msgstr ""
+"La función <xref linkend=\"PostGIS_Full_Version\"/> debería informarle sobre "
+"la necesidad de ejecutar este tipo de actualización mediante un mensaje «"
+"procs need upgrade» (los procedimientos necesitan actualización)."
 
 #. Tag: title
 #, no-c-format
 msgid "Hard upgrade"
-msgstr ""
+msgstr "Actualización difícil"
 
 #. Tag: para
 #, no-c-format
@@ -398,6 +527,13 @@ msgid ""
 "Notes</link> appendix reports for each version whether you need a dump/"
 "reload (HARD UPGRADE) to upgrade."
 msgstr ""
+"Por ACTUALIZACIÓN COMPLETA nos referimos al volcado/recarga completa de "
+"bases de datos habilitadas para PostGIS. Necesita una ACTUALIZACIÓN COMPLETA "
+"cuando cambia el almacenamiento interno de los objetos PostGIS o cuando no "
+"es posible realizar una ACTUALIZACIÓN PARCIAL. El apéndice <link linkend="
+"\"release_notes\">Notas de la versión</link> indica para cada versión si es "
+"necesario realizar un volcado/recarga (ACTUALIZACIÓN COMPLETA) para "
+"actualizar."
 
 #. Tag: para
 #, no-c-format
@@ -408,6 +544,11 @@ msgid ""
 "database with PostGIS installed without getting duplicate symbol errors or "
 "bringing forward deprecated objects."
 msgstr ""
+"El proceso de volcado/recarga cuenta con la ayuda del script "
+"postgis_restore, que se encarga de omitir del volcado todas las definiciones "
+"que pertenecen a PostGIS (incluidas las antiguas), lo que le permite "
+"restaurar sus esquemas y datos en una base de datos con PostGIS instalado "
+"sin obtener errores de símbolos duplicados ni transferir objetos obsoletos."
 
 #. Tag: para
 #, no-c-format
@@ -416,11 +557,14 @@ msgid ""
 "href=\"http://trac.osgeo.org/postgis/wiki/UsersWikiWinUpgrade\">Windows Hard "
 "upgrade</link>."
 msgstr ""
+"Las instrucciones complementarias para usuarios de Windows están disponibles "
+"en <link xlink:href=\"http://trac.osgeo.org/postgis/wiki/"
+"UsersWikiWinUpgrade\">Windows Hard upgrade</link>."
 
 #. Tag: para
 #, no-c-format
 msgid "The Procedure is as follows:"
-msgstr ""
+msgstr "El procedimiento es el siguiente:"
 
 #. Tag: para
 #, no-c-format
@@ -430,6 +574,10 @@ msgid ""
 "output. The user can be the owner of the db, need not be postgres super "
 "account."
 msgstr ""
+"Cree un volcado con «formato personalizado» de la base de datos que desea "
+"actualizar (llamémosla <varname>olddb</varname>) e incluya blobs binarios "
+"(-b) y salida detallada (-v). El usuario puede ser el propietario de la base "
+"de datos, no es necesario que sea la cuenta superusuario de Postgres."
 
 #. Tag: para
 #, no-c-format
@@ -439,6 +587,10 @@ msgid ""
 "linkend=\"create_new_db\"/> and <xref linkend=\"create_new_db_extensions\"/> "
 "for instructions on how to do this."
 msgstr ""
+"Realice una nueva instalación de PostGIS en una nueva base de datos; nos "
+"referiremos a esta base de datos como <varname>newdb</varname>. Consulte "
+"<xref linkend=\"create_new_db\"/> y <xref linkend=\"create_new_db_extensions"
+"\"/> para obtener instrucciones sobre cómo hacerlo."
 
 #. Tag: para
 #, no-c-format
@@ -449,6 +601,12 @@ msgid ""
 "If for any reason you really want your own overrides of standard entries "
 "just don't load the spatial_ref_sys.sql file when creating the new db."
 msgstr ""
+"Las entradas spatial_ref_sys que se encuentren en su volcado se restaurarán, "
+"pero no sustituirán a las existentes en spatial_ref_sys. Esto es para "
+"garantizar que las correcciones del conjunto oficial se propaguen "
+"correctamente a las bases de datos restauradas. Si por cualquier motivo "
+"desea realmente sustituir las entradas estándar, simplemente no cargue el "
+"archivo spatial_ref_sys.sql al crear la nueva base de datos."
 
 #. Tag: para
 #, no-c-format
@@ -461,6 +619,13 @@ msgid ""
 "functions can be later removed by loading <filename>uninstall_legacy.sql</"
 "filename>."
 msgstr ""
+"Si su base de datos es muy antigua o sabe que ha estado utilizando funciones "
+"obsoletas en sus vistas y funciones, es posible que tenga que cargar "
+"<filename>legacy.sql</filename> para que todas sus funciones y vistas, etc., "
+"vuelvan a funcionar correctamente. Haga esto solo si es realmente necesario. "
+"Si es posible, considere actualizar sus vistas y funciones antes de realizar "
+"el volcado. Las funciones obsoletas se pueden eliminar posteriormente "
+"cargando <filename>uninstall_legacy.sql</filename>."
 
 #. Tag: para
 #, no-c-format
@@ -469,11 +634,15 @@ msgid ""
 "postgis_restore. Unexpected errors, if any, will be printed to the standard "
 "error stream by psql. Keep a log of those."
 msgstr ""
+"Restaure su copia de seguridad en su nueva base de datos <varname>newdb</"
+"varname> utilizando postgis_restore. Si se produce algún error inesperado, "
+"psql lo imprimirá en el flujo de errores estándar. Mantenga un registro de "
+"dichos errores."
 
 #. Tag: para
 #, no-c-format
 msgid "Errors may arise in the following cases:"
-msgstr ""
+msgstr "Pueden surgir errores en los siguientes casos:"
 
 #. Tag: para
 #, no-c-format
@@ -486,6 +655,13 @@ msgid ""
 "to fix your code to stop using deprecated functions and drop them loading "
 "<filename>uninstall_legacy.sql</filename>."
 msgstr ""
+"Algunas de sus vistas o funciones utilizan objetos PostGIS obsoletos. Para "
+"solucionar esto, puede intentar cargar el script <filename>legacy.sql</"
+"filename> antes de restaurar o tendrá que restaurar a una versión de PostGIS "
+"que aún contenga esos objetos e intentar la migración de nuevo después de "
+"portar su código. Si la forma <filename>legacy.sql</filename> le funciona, "
+"no olvide corregir su código para dejar de utilizar funciones obsoletas y "
+"eliminarlas cargando <filename>uninstall_legacy.sql</filename>."
 
 #. Tag: para
 #, no-c-format
@@ -499,6 +675,16 @@ msgid ""
 "invariant to hold and possibly also its primary key ( when multiple invalid "
 "SRIDS get converted to the same reserved SRID value )."
 msgstr ""
+"Algunos registros personalizados de spatial_ref_sys en el archivo de volcado "
+"tienen un valor SRID no válido. Los valores SRID válidos son mayores que 0 y "
+"menores que 999000. Los valores en el rango 999000.999999 están reservados "
+"para uso interno, mientras que los valores &gt;999999 no se pueden utilizar "
+"en absoluto. Todos los registros personalizados con SRID no válidos se "
+"conservarán, y los valores &gt; 999999 se moverán al rango reservado, pero "
+"la tabla spatial_ref_sys perdería una restricción de verificación que "
+"garantiza que se mantenga esa invariante y, posiblemente, también su clave "
+"principal (cuando varios SRID no válidos se convierten al mismo valor SRID "
+"reservado)."
 
 #. Tag: para
 #, no-c-format
@@ -508,6 +694,11 @@ msgid ""
 "new srid (see <xref linkend=\"UpdateGeometrySRID\"/>), delete the invalid "
 "entry from spatial_ref_sys and re-construct the check(s) with:"
 msgstr ""
+"Para solucionar esto, debe copiar su SRS personalizado a un SRID con un "
+"valor válido (tal vez en el rango 910000..910999), convertir todas sus "
+"tablas al nuevo srid (consulte <xref linkend=\"UpdateGeometrySRID\"/>), "
+"eliminar la entrada no válida de spatial_ref_sys y reconstruir las "
+"verificaciones con:"
 
 #. Tag: para
 #, no-c-format
@@ -517,6 +708,10 @@ msgid ""
 "IGN </link> cartography, you will have probably SRIDs out of range and you "
 "will see, when importing your database, issues like this :"
 msgstr ""
+"Si está actualizando una base de datos antigua que contiene cartografía "
+"francesa <link xlink:href=\"https://en.wikipedia.org/wiki/Institut_g%C3%"
+"A9ographique_national\"> IGN </link>, es probable que los SRID estén fuera "
+"de rango y que, al importar la base de datos, aparezcan problemas como este:"
 
 #. Tag: para
 #, no-c-format
@@ -525,11 +720,14 @@ msgid ""
 "IGN from the sql which is resulting from postgis_restore. So, after having "
 "run :"
 msgstr ""
+"En este caso, puede intentar seguir los siguientes pasos: primero, elimine "
+"completamente el IGN del sql que resulta de postgis_restore. Por lo tanto, "
+"después de ejecutar:"
 
 #. Tag: para
 #, no-c-format
 msgid "run this command :"
-msgstr ""
+msgstr "corre este comando:"
 
 #. Tag: para
 #, no-c-format
@@ -540,11 +738,16 @@ msgid ""
 "Put_IGN_SRS_into_Postgis.sql\"> this script </link> After these operations, "
 "import your data :"
 msgstr ""
+"Cree su nueva base de datos, active las extensiones Postgis necesarias e "
+"inserte correctamente el sistema francés IGN con: <link xlink:href=\"https"
+"://raw.githubusercontent.com/Remi-C/IGN_spatial_ref_for_PostGIS/master/"
+"Put_IGN_SRS_into_Postgis.sql\"> este script </link> Después de estas "
+"operaciones, importe sus datos:"
 
 #. Tag: title
 #, no-c-format
 msgid "Performance Tuning"
-msgstr ""
+msgstr "Optimización del rendimiento"
 
 #. Tag: para
 #, no-c-format
@@ -554,6 +757,11 @@ msgid ""
 "are usually large, so memory-related optimizations generally have more of an "
 "impact on PostGIS than other types of PostgreSQL queries."
 msgstr ""
+"El ajuste del rendimiento de PostGIS es muy similar al ajuste de cualquier "
+"carga de trabajo de PostgreSQL. La única consideración adicional es que las "
+"geometrías y las ráster suelen ser grandes, por lo que las optimizaciones "
+"relacionadas con la memoria suelen tener un mayor impacto en PostGIS que en "
+"otros tipos de consultas de PostgreSQL."
 
 #. Tag: para
 #, no-c-format
@@ -562,6 +770,9 @@ msgid ""
 "href=\"https://wiki.postgresql.org/wiki/"
 "Tuning_Your_PostgreSQL_Server\">Tuning your PostgreSQL Server</link>."
 msgstr ""
+"Para obtener información general sobre cómo optimizar PostgreSQL, consulte "
+"<link xlink:href=\"https://wiki.postgresql.org/wiki/"
+"Tuning_Your_PostgreSQL_Server\">Ajustar su servidor PostgreSQL</link>."
 
 #. Tag: para
 #, no-c-format
@@ -570,6 +781,9 @@ msgid ""
 "touching <code>postgresql.conf</code> or <code>postgresql.auto.conf</code> "
 "by using the <code>ALTER SYSTEM</code> command."
 msgstr ""
+"Para PostgreSQL 9.4+, la configuración se puede establecer a nivel del "
+"servidor sin tocar <code>postgresql.conf</code> o <code>postgresql.auto."
+"conf</code> utilizando el comando <code>ALTER SYSTEM</code>."
 
 #. Tag: para
 #, no-c-format
@@ -577,16 +791,19 @@ msgid ""
 "In addition to the Postgres settings, PostGIS has some custom settings which "
 "are listed in <xref linkend=\"PostGIS_GUC\"/>."
 msgstr ""
+"Además de la configuración de Postgres, PostGIS tiene algunas "
+"configuraciones personalizadas que se enumeran en <xref linkend=\"PostGIS_GUC"
+"\"/>."
 
 #. Tag: title
 #, no-c-format
 msgid "Startup"
-msgstr ""
+msgstr "Inicio"
 
 #. Tag: para
 #, no-c-format
 msgid "These settings are configured in <code>postgresql.conf</code>:"
-msgstr ""
+msgstr "Estos ajustes se configuran en <code>postgresql.conf</code>:"
 
 #. Tag: link
 #, fuzzy, no-c-format
@@ -596,7 +813,7 @@ msgstr "constraint_exclusion"
 #. Tag: para
 #, no-c-format
 msgid "Default: partition"
-msgstr ""
+msgstr "Predeterminado: partición"
 
 #. Tag: para
 #, no-c-format
@@ -606,16 +823,21 @@ msgid ""
 "force the planner to only analyze tables for constraint consideration if "
 "they are in an inherited hierarchy and not pay the planner penalty otherwise."
 msgstr ""
+"Esto se utiliza generalmente para la partición de tablas. El valor "
+"predeterminado es «partición», lo cual es ideal para PostgreSQL 8.4 y "
+"versiones posteriores, ya que obliga al planificador a analizar las tablas "
+"solo para considerar las restricciones si se encuentran en una jerarquía "
+"heredada y, en caso contrario, no paga la penalización del planificador."
 
 #. Tag: link
 #, no-c-format
 msgid "shared_buffers"
-msgstr ""
+msgstr "buffers_compartidos"
 
 #. Tag: para
 #, no-c-format
 msgid "Default: ~128MB in PostgreSQL 9.6"
-msgstr ""
+msgstr "Predeterminado: ~128 MB en PostgreSQL 9.6"
 
 #. Tag: para
 #, no-c-format
@@ -623,6 +845,8 @@ msgid ""
 "Set to about 25% to 40% of available RAM. On windows you may not be able to "
 "set as high."
 msgstr ""
+"Configúre entre el 25 % y el 40 % de la RAM disponible. En Windows es "
+"posible que no pueda configurar un valor tan alto."
 
 #. Tag: para
 #, no-c-format
@@ -633,6 +857,12 @@ msgid ""
 "setting has additional importance in that it controls the max number of "
 "processes you can have for parallel queries."
 msgstr ""
+"<link xlink:href=\"https://www.postgresql.org/docs/current/static/runtime-"
+"config-resource.html#GUC-MAX-WORKER-PROCESSES\">max_worker_processes</link> "
+"Esta configuración solo está disponible para PostgreSQL 9.4+. Para "
+"PostgreSQL 9.6+, esta configuración tiene una importancia adicional, ya que "
+"controla el número máximo de procesos que se pueden tener para consultas "
+"paralelas."
 
 #. Tag: para
 #, no-c-format
@@ -645,6 +875,8 @@ msgid ""
 "Sets the maximum number of background processes that the system can support. "
 "This parameter can only be set at server start."
 msgstr ""
+"Establece el número máximo de procesos en segundo plano que el sistema puede "
+"admitir. Este parámetro solo se puede configurar al iniciar el servidor."
 
 #. Tag: title
 #, no-c-format
@@ -1301,14 +1533,14 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"(2). Words and abbreviation used to denote street typess. For example: "
+"(2). Words and abbreviations used to denote street types. For example: "
 "<emphasis>ST</emphasis> or <emphasis>AVE</emphasis>."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
 msgid ""
-"(16). Words and abbreviation used to denote internal subaddresses. For "
+"(16). Words and abbreviations used to denote internal subaddresses. For "
 "example, <emphasis>APT</emphasis> or <emphasis>UNIT</emphasis>."
 msgstr ""
 
@@ -1963,8 +2195,8 @@ msgstr "Geocodificador Tiger"
 #. Tag: para
 #, no-c-format
 msgid ""
-"A plpgsql based geocoder written to work with the <link xlink:href=\"http://"
-"www.census.gov/geo/www/tiger/\">TIGER (Topologically Integrated Geographic "
+"A plpgsql based geocoder written to work with the <link xlink:href=\"https://"
+"www2.census.gov/geo/tiger/\">TIGER (Topologically Integrated Geographic "
 "Encoding and Referencing system ) / Line and Master Address database export</"
 "link> released by the US Census Bureau."
 msgstr ""
@@ -4330,6 +4562,50 @@ msgstr ""
 
 #. Tag: refpurpose
 #, no-c-format
+msgid "Returns non-precise vertices in the topology."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Returns all vertices that are not rounded to the topology or given "
+"<varname>gridSize</varname> as a puntal geometry, optionally limiting the "
+"check to the area specified by the <varname>bbox</varname> parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0"
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid "Snap topology vertices to precision grid."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snaps all vertices of a topology to the topology precision grid or to the "
+"grid whose size is specified with the <varname>gridSize</varname> parameter, "
+"optionally limiting the operation to the objects intersecting the area "
+"specified by the <varname>bbox</varname> parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Snapping could make the topology invalid, so it is recommended to check the "
+"outcome of operation with <xref linkend=\"ValidateTopology\"/>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"ValidateTopology\"/>"
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
 msgid "Returns a topology record by different means."
 msgstr ""
 
@@ -4350,6 +4626,42 @@ msgstr ""
 msgid ""
 "Takes a layer identifier or the identifier of a topology-related object and "
 "returns a topology.layer record."
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Total disk space used by the specified topology, including all indexes and "
+"TOAST data."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Takes a topology name and provides the total disk space used by all its "
+"tables, including indexes and TOAST data."
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Upgrades the specified topology to support large ids (int8) for topology and "
+"primitive ids."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Takes a topology name and upgrades it to support large ids (int8) for "
+"topology and primitive ids. The function upgrades the following: - face "
+"(face_id column from int4 to int8, face_id_seq from int4 to int8) - node "
+"(node_id column from int4 to int8, containing_face column from int4 to int8, "
+"node_id_seq from int4 to int8) - edge_data (edge_id column from int4 to "
+"int8, edge_data_edge_id_seq from int4 to int8, left_face and right_face "
+"columns from int4 to int8, start_node and end_node columns from int4 to "
+"int8, next_left_edge and next_right_edge columns from int4 to int8) - "
+"relation (topogeo_id column from int4 to int8, element_id from int4 to int8) "
+"- topology (useslargeids column set to true)"
 msgstr ""
 
 #. Tag: title
@@ -4423,7 +4735,8 @@ msgstr ""
 #, no-c-format
 msgid ""
 "The <varname>srid</varname> is the <link linkend=\"spatial_ref_sys\">spatial "
-"reference system</link> SRID for the topology."
+"reference system</link> SRID for the topology. The SRID defaults to -1 "
+"(unknown) if not specified."
 msgstr ""
 
 #. Tag: para
@@ -4436,6 +4749,21 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "<varname>hasz</varname> defaults to false if not specified."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<varname>topoid</varname> optional explicit identifier (allows deterministic "
+"topology id assignment, needs to be unique)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<varname>useslargeids</varname> optional, defaults to false. If true, the "
+"topology will be created to support large ids (int8) for topology and "
+"primitive ids."
 msgstr ""
 
 #. Tag: para
@@ -6870,6 +7198,13 @@ msgid ""
 "topology (say a spatially-simplified version of the starting topology)."
 msgstr ""
 
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the target topology already exists and you want it dropped upfront you "
+"can pass the <code>--drop-topology</code> switch (since PostGIS-3.6.0)."
+msgstr ""
+
 #. Tag: title
 #, no-c-format
 msgid "PostGIS Installation"
@@ -7073,7 +7408,7 @@ msgid ""
 "PostgreSQL &min_postgres_version; - &max_postgres_version;. A complete "
 "installation of PostgreSQL (including server headers) is required. "
 "PostgreSQL is available from <link xlink:href=\"https://www.postgresql."
-"org\"> https://www.postgresql.org </link> ."
+"org\"> https://www.postgresql.org </link>18 ."
 msgstr ""
 
 #. Tag: para
@@ -7124,7 +7459,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"GEOS geometry library, version &min_geos_version; or greater, but GEOS 3.12+ "
+"GEOS geometry library, version &min_geos_version; or greater, but GEOS 3.14+ "
 "is required to take full advantage of all the new functions and features. "
 "GEOS is available for download from <link xlink:href=\"https://libgeos.org/"
 "\"> https://libgeos.org </link>."
@@ -7147,6 +7482,10 @@ msgid ""
 "<link xlink:href=\"https://github.com/json-c/json-c/releases\">https://"
 "github.com/json-c/json-c/releases/</link>."
 msgstr ""
+"JSON-C, versión 0.9 o superior. JSON-C se utiliza actualmente para importar "
+"GeoJSON a través de la función ST_GeomFromGeoJson. JSON-C puede descargarse "
+"de <link xlink:href=\"https://github.com/json-c/json-c/releases\""
+">https://github.com/json-c/json-c/releases/</link>."
 
 #. Tag: para
 #, no-c-format
@@ -7155,6 +7494,9 @@ msgid ""
 "xlink:href=\"https://gdal.org/download.html\">https://gdal.org/download."
 "html</link>."
 msgstr ""
+"Se prefiere GDAL, versión 3+. Esto es necesario para el soporte raster. "
+"<link xlink:href=\"https://gdal.org/download.html\">https://gdal.org/download"
+".html</link>."
 
 #. Tag: para
 #, no-c-format
@@ -7163,6 +7505,9 @@ msgid ""
 "xlink:href=\"https://trac.osgeo.org/postgis/ticket/4125\">https://trac.osgeo."
 "org/postgis/ticket/4125</link>."
 msgstr ""
+"Si se compila con PostgreSQL+JIT, se requiere la versión &gt;=6 de LLVM "
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/4125\">https://trac."
+"osgeo.org/postgis/ticket/4125</link>."
 
 #. Tag: emphasis
 #, no-c-format
@@ -7176,6 +7521,9 @@ msgid ""
 "Also make sure to enable the drivers you want to use as described in <xref "
 "linkend=\"raster_configuration\"/>."
 msgstr ""
+"GDAL (pseudo opcional) solo si no quieres raster puedes dejarlo fuera. "
+"También asegúrese de habilitar los controladores que desea utilizar como se "
+"describe en <xref linkend=\"raster_configuration\"/>."
 
 #. Tag: para
 #, no-c-format
@@ -7190,13 +7538,13 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"SFCGAL, 1.4.1 or higher is required and 1.5.0+ is needed to be able to use "
-"all functionality. SFCGAL can be used to provide additional 2D and 3D "
-"advanced analysis functions to PostGIS cf <xref linkend=\"reference_sfcgal\"/"
-">. And also allow to use SFCGAL rather than GEOS for some 2D functions "
-"provided by both backends (like ST_Intersection or ST_Area, for instance). A "
-"PostgreSQL configuration variable <code>postgis.backend</code> allow end "
-"user to control which backend he want to use if SFCGAL is installed (GEOS by "
+"SFCGAL, 1.4.1 or higher is required and 2.1+ is needed to be able to use all "
+"functionality. SFCGAL can be used to provide additional 2D and 3D advanced "
+"analysis functions to PostGIS cf <xref linkend=\"reference_sfcgal\"/>. And "
+"also allow to use SFCGAL rather than GEOS for some 2D functions provided by "
+"both backends (like ST_Intersection or ST_Area, for instance). A PostgreSQL "
+"configuration variable <code>postgis.backend</code> allow end user to "
+"control which backend he want to use if SFCGAL is installed (GEOS by "
 "default). Nota: SFCGAL 1.2 require at least CGAL 4.3 and Boost 1.54 (cf: "
 "<link xlink:href=\"https://sfcgal.org\">https://sfcgal.org</link>) <link "
 "xlink:href=\"https://gitlab.com/sfcgal/SFCGAL/\">https://gitlab.com/sfcgal/"
@@ -7207,8 +7555,8 @@ msgstr ""
 #, no-c-format
 msgid ""
 "In order to build the <xref linkend=\"Address_Standardizer\"/> you will also "
-"need PCRE <link xlink:href=\"http://www.pcre.org\">http://www.pcre.org</"
-"link> (which generally is already installed on nix systems). <xref "
+"need PCRE 1 or 2 <link xlink:href=\"http://www.pcre.org\">http://www.pcre."
+"org</link> (which generally is already installed on nix systems). <xref "
 "linkend=\"Address_Standardizer\"/> will automatically be built if it detects "
 "a PCRE library, or you pass in a valid <varname>--with-pcre-dir=/path/to/"
 "pcre</varname> during configure."
@@ -7470,9 +7818,12 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid ""
-"Disable topology support. There is no corresponding library as all logic "
-"needed for topology is in postgis-&last_release_version; library."
+msgid "Disables tiger geocoder support."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Compile without topology support."
 msgstr ""
 
 #. Tag: para
@@ -9002,6 +9353,11 @@ msgstr ""
 
 #. Tag: member
 #, no-c-format
+msgid "Ayo Adesugba"
+msgstr ""
+
+#. Tag: member
+#, no-c-format
 msgid "Barbara Phillipot"
 msgstr ""
 
@@ -9077,6 +9433,11 @@ msgstr "Dane Springmeyer"
 
 #. Tag: member
 #, no-c-format
+msgid "Daniel Nylander"
+msgstr ""
+
+#. Tag: member
+#, no-c-format
 msgid "Dapeng Wang"
 msgstr ""
 
@@ -9103,6 +9464,11 @@ msgstr ""
 #. Tag: member
 #, no-c-format
 msgid "David Techer"
+msgstr ""
+
+#. Tag: member
+#, no-c-format
+msgid "Denys Kovshun"
 msgstr ""
 
 #. Tag: member
@@ -9292,6 +9658,11 @@ msgstr ""
 
 #. Tag: member
 #, no-c-format
+msgid "Laurențiu Nicola"
+msgstr ""
+
+#. Tag: member
+#, no-c-format
 msgid "Laurenz Albe"
 msgstr ""
 
@@ -9318,6 +9689,11 @@ msgstr ""
 #. Tag: member
 #, no-c-format
 msgid "Lucas C. Villa Real"
+msgstr ""
+
+#. Tag: member
+#, no-c-format
+msgid "Maksim Korotkov"
 msgstr ""
 
 #. Tag: member
@@ -9373,6 +9749,11 @@ msgstr ""
 #. Tag: member
 #, no-c-format
 msgid "Maxime Schoemans"
+msgstr ""
+
+#. Tag: member
+#, no-c-format
+msgid "Megan Ma"
 msgstr ""
 
 #. Tag: member
@@ -9746,6 +10127,11 @@ msgstr "Paragon Corporation"
 
 #. Tag: link
 #, no-c-format
+msgid "Postgres Pro"
+msgstr ""
+
+#. Tag: link
+#, no-c-format
 msgid "R3 GIS"
 msgstr ""
 
@@ -9782,6 +10168,11 @@ msgstr ""
 #. Tag: link
 #, no-c-format
 msgid "Université Laval"
+msgstr ""
+
+#. Tag: link
+#, no-c-format
+msgid "U.S. Census Bureau"
 msgstr ""
 
 #. Tag: link
@@ -12988,7 +13379,7 @@ msgstr ""
 msgid ""
 "Note that border geometries may be within <varname>eps</varname> distance of "
 "core geometries in more than one cluster. Either assignment would be "
-"correct, so the border geometry will be arbitrarily asssigned to one of the "
+"correct, so the border geometry will be arbitrarily assigned to one of the "
 "available clusters. In this situation it is possible for a correct cluster "
 "to be generated with fewer than <varname>minpoints</varname> geometries. To "
 "ensure deterministic assignment of border geometries (so that repeated calls "
@@ -14376,8 +14767,8 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-", <xref linkend=\"ST_CoverageUnion\"/>, <xref "
-"linkend=\"ST_CoverageSimplify\"/>"
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageClean\"/"
+">, <xref linkend=\"ST_CoverageSimplify\"/>"
 msgstr ""
 
 #. Tag: refpurpose
@@ -14431,6 +14822,12 @@ msgstr ""
 msgid "Simplified coverage"
 msgstr ""
 
+#. Tag: para
+#, no-c-format
+msgid ""
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageClean\"/>"
+msgstr ""
+
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
@@ -14464,6 +14861,84 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "Union result"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+", <xref linkend=\"ST_CoverageSimplify\"/>, <xref "
+"linkend=\"ST_CoverageClean\"/>, <xref linkend=\"ST_Union\"/>"
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Computes a clean (edge matched, non-overlapping, gap-cleared) polygonal "
+"coverage, given a non-clean input."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A window function which alters the edges of a polygonal coverage to ensure "
+"that none of the polygons overlap, that small gaps are snapped away, and "
+"that all shared edges are exactly identical. The result is a clean coverage "
+"that will pass validation tests like <xref "
+"linkend=\"ST_CoverageInvalidEdges\"/>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <parameter>gapMaximumWidth</parameter> controls the cleaning of gaps "
+"between polygons. Gaps smaller than this tolerance will be closed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <parameter>snappingDistance</parameter> controls the node snapping step, "
+"when nearby vertices are snapped together. The default setting (-1) applies "
+"an automatic snapping distance based on an analysis of the input. Set to 0.0 "
+"to turn off all snapping."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <parameter>overlapMergeStrategy</parameter> controls the algorithm used "
+"to determine which neighboring polygons to merge overlapping areas into."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<code>MERGE_LONGEST_BORDER</code> chooses polygon with longest common border"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<code>MERGE_MAX_AREA</code> chooses polygon with maximum area"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<code>MERGE_MIN_AREA</code> chooses polygon with minimum area"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<code>MERGE_MIN_INDEX</code> chooses polygon with smallest input index"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0 - requires GEOS &gt;= 3.14.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"ST_Union\"/> <xref linkend=\"ST_CoverageSimplify\"/>"
 msgstr ""
 
 #. Tag: title
@@ -14726,7 +15201,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "1: Symmetric (orientation idependent) output."
+msgid "1: Symmetric (orientation independent) output."
 msgstr ""
 
 #. Tag: para
@@ -15379,8 +15854,9 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"If the <parameter>tolerance</parameter> parameter is provided, vertices "
-"within the tolerance distance of one another are considered to be duplicates."
+"If a non-zero <parameter>tolerance</parameter> parameter is provided, "
+"vertices within the tolerance distance of one another are considered to be "
+"duplicates. The distance is computed in 2D (XY plane)."
 msgstr ""
 
 #. Tag: para
@@ -15400,7 +15876,7 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"Removes points that are irrelevant for rendering a specific rectangluar view "
+"Removes points that are irrelevant for rendering a specific rectangular view "
 "of a geometry."
 msgstr ""
 
@@ -15408,7 +15884,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Returns a <xref linkend=\"geometry\"/> without points being irrelevant for "
-"rendering the geometry within a given rectangluar view."
+"rendering the geometry within a given rectangular view."
 msgstr ""
 
 #. Tag: para
@@ -16171,32 +16647,6 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"The backend to service a function where GEOS and SFCGAL overlap. Options: "
-"geos or sfcgal. Defaults to geos."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"This GUC is only relevant if you compiled PostGIS with sfcgal support. By "
-"default <varname>geos</varname> backend is used for functions where both "
-"GEOS and SFCGAL have the same named function. This variable allows you to "
-"override and make sfcgal the backend to service the request."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "Sets backend just for life of connection"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "Sets backend for new connections to database"
-msgstr ""
-
-#. Tag: refpurpose
-#, no-c-format
-msgid ""
 "A configuration option to assign the value of GDAL's GDAL_DATA option. If "
 "not set, the environmentally set GDAL_DATA variable is used."
 msgstr ""
@@ -16228,8 +16678,8 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Additional information about GDAL_DATA is available at GDAL's <link xlink:"
-"href=\"http://trac.osgeo.org/gdal/wiki/ConfigOptions\">Configuration "
-"Options</link>."
+"href=\"https://gdal.org/user/configoptions.html\">Configuration Options</"
+"link>."
 msgstr ""
 
 #. Tag: para
@@ -16327,8 +16777,8 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Additional information about GDAL_SKIP is available at GDAL's <link xlink:"
-"href=\"http://trac.osgeo.org/gdal/wiki/ConfigOptions\">Configuration "
-"Options</link>."
+"href=\"https://gdal.org/user/configoptions.html\">Configuration Options</"
+"link>."
 msgstr ""
 
 #. Tag: para
@@ -16426,10 +16876,10 @@ msgstr ""
 #, no-c-format
 msgid ""
 "A string configuration to set options used when working with an out-db "
-"raster. <link xlink:href=\"http://trac.osgeo.org/gdal/wiki/"
-"ConfigOptions\">Configuration options</link> control things like how much "
-"space GDAL allocates to local data cache, whether to read overviews, and "
-"what access keys to use for remote out-db data sources."
+"raster. <link xlink:href=\"https://gdal.org/user/configoptions."
+"html\">Configuration options</link> control things like how much space GDAL "
+"allocates to local data cache, whether to read overviews, and what access "
+"keys to use for remote out-db data sources."
 msgstr ""
 
 #. Tag: para
@@ -16443,6 +16893,21 @@ msgid ""
 "Set <varname>postgis.gdal_vsi_options</varname> just for the "
 "<emphasis>current transaction</emphasis> using the <varname>LOCAL</varname> "
 "keyword:"
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"A boolean configuration to turn logging of GDAL debug messages on and off."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default, GDAL logging is printed to stderr, and lower level debug "
+"messages are not printed at all. Turning this GUC to true will cause GDAL "
+"logging to be sent into the PostgreSQL logging stream, so you can see more "
+"or less of it by altering the <code>client_min_message</code> PostgreSQL GUC."
 msgstr ""
 
 #. Tag: title
@@ -21054,8 +21519,9 @@ msgid ""
 "Returns the OGC/ISO <link linkend=\"OpenGISWKBWKT\">Well-Known Binary</link> "
 "(WKB) representation of the geometry. The first function variant defaults to "
 "encoding using server machine endian. The second function variant takes a "
-"text argument specifying the endian encoding, either little-endian ('NDR') "
-"or big-endian ('XDR')."
+"text argument specifying the endian encoding: either 'NDR' for little-"
+"endian; or 'XDR' for big-endian. Supplying unknown arguments will result in "
+"little-endian output."
 msgstr ""
 
 #. Tag: para
@@ -21141,8 +21607,9 @@ msgid ""
 "Returns the <link linkend=\"EWKB_EWKT\">Extended Well-Known Binary</link> "
 "(EWKB) representation of the geometry with SRID metadata. The first function "
 "variant defaults to encoding using server machine endian. The second "
-"function variant takes a text argument specifying the endian encoding, "
-"either little-endian ('NDR') or big-endian ('XDR')."
+"function variant takes a text argument specifying the endian encoding: "
+"either 'NDR' for little-endian; or 'XDR' for big-endian. Supplying unknown "
+"arguments will result in little-endian output."
 msgstr ""
 
 #. Tag: para
@@ -21876,7 +22343,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Canonical example for a Web Mercator tile using a computed tile bounds to "
-"query and clip geometry."
+"query and clip geometry. This assumes the data.geom column has srid of 4326."
 msgstr ""
 
 #. Tag: para
@@ -22479,12 +22946,9 @@ msgid ""
 "ST_Difference(A, B) always returns a portion of A."
 msgstr ""
 
-#. Tag: para
+#. Tag: refsection
 #, no-c-format
-msgid ""
-"If the optional <code>gridSize</code> argument is provided, the inputs are "
-"snapped to a grid of the given size, and the result vertices are computed on "
-"that same grid. (Requires GEOS-3.9.0 or higher)"
+msgid "&overlay_gridsize_arg;"
 msgstr ""
 
 #. Tag: para
@@ -22536,7 +23000,9 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid ", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>"
+msgid ""
+", <xref linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Union\"/>, <xref "
+"linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 
 #. Tag: refpurpose
@@ -22656,9 +23122,10 @@ msgstr ""
 #, no-c-format
 msgid ""
 ", <xref linkend=\"ST_Difference\"/>, <xref linkend=\"ST_Union\"/>, <xref "
-"linkend=\"ST_Dimension\"/>, <xref linkend=\"ST_Dump\"/>, <xref "
-"linkend=\"ST_Force2D\"/>, <xref linkend=\"ST_SymDifference\"/>, <xref "
-"linkend=\"ST_Intersects\"/>, <xref linkend=\"ST_Multi\"/>"
+"linkend=\"ST_ClipByBox2D\"/>, <xref linkend=\"ST_Dimension\"/>, <xref "
+"linkend=\"ST_Dump\"/>, <xref linkend=\"ST_Force2D\"/>, <xref "
+"linkend=\"ST_SymDifference\"/>, <xref linkend=\"ST_Intersects\"/>, <xref "
+"linkend=\"ST_Multi\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 
 #. Tag: refpurpose
@@ -22836,8 +23303,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "<code>max_vertices</code> must be 5 or more, as 5 points are needed to "
-"represent a closed box. <code>gridSize</code> can be specified to have "
-"clipping work in fixed-precision space (requires GEOS-3.9.0+)."
+"represent a closed box."
 msgstr ""
 
 #. Tag: para
@@ -22915,7 +23381,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 ", <xref linkend=\"ST_Segmentize\"/>, <xref linkend=\"ST_Split\"/>, <xref "
-"linkend=\"ST_NPoints\"/>"
+"linkend=\"ST_NPoints\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 
 #. Tag: refpurpose
@@ -22993,7 +23459,8 @@ msgstr ""
 #, no-c-format
 msgid ""
 ", <xref linkend=\"ST_MemUnion\"/>, <xref linkend=\"ST_MakeValid\"/>, <xref "
-"linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>"
+"linkend=\"ST_Collect\"/>, <xref linkend=\"ST_Node\"/>, <xref "
+"linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 
 #. Tag: refpurpose
@@ -23049,14 +23516,6 @@ msgid ""
 "described in <link xlink:href=\"http://blog.cleverelephant.ca/2009/01/must-"
 "faster-unions-in-postgis-14.html\">http://blog.cleverelephant.ca/2009/01/"
 "must-faster-unions-in-postgis-14.html</link>"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"A <code>gridSize</code> can be specified to work in fixed-precision space. "
-"The inputs are snapped to a grid of the given size, and the result vertices "
-"are computed on that same grid. (Requires GEOS-3.9.0 or higher)"
 msgstr ""
 
 #. Tag: para
@@ -23125,7 +23584,7 @@ msgstr ""
 msgid ""
 ", <xref linkend=\"ST_UnaryUnion\"/>, <xref linkend=\"ST_MemUnion\"/>, <xref "
 "linkend=\"ST_Intersection\"/>, <xref linkend=\"ST_Difference\"/>, <xref "
-"linkend=\"ST_SymDifference\"/>"
+"linkend=\"ST_SymDifference\"/>, <xref linkend=\"ST_ReducePrecision\"/>"
 msgstr ""
 
 #. Tag: title
@@ -23227,10 +23686,10 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"Buffer output is always a valid polygonal geometry. Buffer can handle "
-"invalid inputs, so buffering by distance 0 is sometimes used as a way of "
-"repairing invalid polygons. <xref linkend=\"ST_MakeValid\"/> can also be "
-"used for this purpose."
+"Buffer can handle invalid inputs and the output is always a valid polygonal "
+"geometry. Buffering by distance 0 is sometimes used as a way of repairing "
+"invalid polygons. <xref linkend=\"ST_MakeValid\"/> is more suitable for this "
+"process as it can handle multi-polygons."
 msgstr ""
 
 #. Tag: para
@@ -24736,7 +25195,7 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"Computes a simplifed topology-preserving outer or inner hull of a polygonal "
+"Computes a simplified topology-preserving outer or inner hull of a polygonal "
 "geometry."
 msgstr ""
 
@@ -25089,17 +25548,8 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"The functions given below are the ones which a user of PostGIS Raster is "
-"likely to need and which are currently available in PostGIS Raster. There "
-"are other functions which are required support functions to the raster "
-"objects which are not of use to a general user."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"<varname>raster</varname> is a new PostGIS type for storing and analyzing "
-"raster data."
+"<varname>raster</varname> is a PostGIS type for storing and analyzing raster "
+"data."
 msgstr ""
 
 #. Tag: para
@@ -25112,8 +25562,16 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"For the examples in this reference we will be using a raster table of dummy "
-"rasters - Formed with the following code"
+"Some examples in this reference use a raster table of dummy data, created "
+"with the following code:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The functions below are ones which a user of PostGIS Raster is likely to "
+"need. There are other raster support functions which are not of interest to "
+"a general user."
 msgstr ""
 
 #. Tag: title
@@ -25236,15 +25694,15 @@ msgstr ""
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
-"<refpurpose>A composite type used as input into the ST_Reclass function "
-"defining the behavior of reclassification.</refpurpose>"
+"A composite type used as input into the ST_Reclass function defining the "
+"behavior of reclassification."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
 msgid ""
-"<para>A composite type used as input into the ST_Reclass function defining "
-"the behavior of reclassification.</para>"
+"A composite type used as input into the <xref linkend=\"RT_ST_Reclass\"/> "
+"function defining the behavior of reclassification."
 msgstr ""
 
 #. Tag: para
@@ -25720,143 +26178,6 @@ msgstr ""
 
 #. Tag: refpurpose
 #, no-c-format
-msgid ""
-"<refpurpose>Generates a set of vector contours from the provided raster "
-"band, using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
-"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
-"contouring algorithm</link>.</refpurpose>"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"<para>Generates a set of vector contours from the provided raster band, "
-"using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
-"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
-"contouring algorithm</link>.</para>"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"When the <varname>fixed_levels</varname> parameter is a non-empty array, the "
-"<varname>level_interval</varname> and <varname>level_base</varname> "
-"parameters are ignored."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "Input parameters are:"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "The raster to generate the contour of"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "The band to generate the contour of"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "The elevation interval between contours generated"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"The \"base\" relative to which contour intervals are applied, this is "
-"normally zero, but could be different. To generate 10m contours at 5, 15, "
-"25, ... the LEVEL_BASE would be 5."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"If <literal>true</literal>, contour polygons will be created, rather than "
-"polygon lines."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "Return values are a set of records with the following attributes:"
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "The geometry of the contour line."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "A unique identifier given to the contour line by GDAL."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"The raster value the line represents. For an elevation DEM input, this would "
-"be the elevation of the output contour."
-msgstr ""
-
-#. Tag: refpurpose
-#, no-c-format
-msgid ""
-"Interpolates a gridded surface based on an input set of 3-d points, using "
-"the X- and Y-values to position the points on the grid and the Z-value of "
-"the points as the surface elevation."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"Interpolates a gridded surface based on an input set of 3-d points, using "
-"the X- and Y-values to position the points on the grid and the Z-value of "
-"the points as the surface elevation. There are five interpolation algorithms "
-"available: inverse distance, inverse distance nearest-neighbor, moving "
-"average, nearest neighbor, and linear interpolation. See the <link xlink:"
-"href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
-"algorithms\">gdal_grid documentation</link> for more details on the "
-"algorithms and their parameters. For more information on how interpolations "
-"are calculated, see the <link xlink:href=\"https://gdal.org/tutorials/"
-"gdal_grid_tut.html\">GDAL grid tutorial</link>."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"The points to drive the interpolation. Any geometry with Z-values is "
-"acceptable, all points in the input will be used."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"A string defining the algorithm and algorithm options, in the format used by "
-"<link xlink:href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
-"algorithms\">gdal_grid</link>. For example, for an inverse-distance "
-"interpolation with a smoothing of 2, you would use \"invdist:smoothing=2.0\""
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"A raster template to drive the geometry of the output raster. The width, "
-"height, pixel size, spatial extent and pixel type will be read from this "
-"template."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid ""
-"By default the first band in the template raster is used to drive the output "
-"raster, but that can be adjusted with this parameter."
-msgstr ""
-
-#. Tag: refpurpose
-#, no-c-format
 msgid "Change the SRID of all rasters in the user-specified column and table."
 msgstr ""
 
@@ -26143,11 +26464,6 @@ msgstr ""
 msgid ""
 "Returns a single-band raster containing the rendered version of all incoming "
 "geometries, each with its associated value."
-msgstr ""
-
-#. Tag: para
-#, no-c-format
-msgid "Availability: 3.6.0"
 msgstr ""
 
 #. Tag: para
@@ -28625,7 +28941,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Returns summarystats consisting of count, sum, mean, stddev, min, max for a "
-"given raster band of a raster or raster coverage. Band 1 is assumed is no "
+"given raster band of a raster or raster coverage. Band 1 is assumed if no "
 "band is specified."
 msgstr ""
 
@@ -28693,7 +29009,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Aggregate. Returns summarystats consisting of count, sum, mean, stddev, min, "
-"max for a given raster band of a set of raster. Band 1 is assumed is no band "
+"max for a given raster band of a set of raster. Band 1 is assumed if no band "
 "is specified."
 msgstr ""
 
@@ -30252,7 +30568,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "1 band version - Creates a new one band raster formed by applying a valid "
-"PostgreSQL function on the input raster band and of pixeltype prodived. Band "
+"PostgreSQL function on the input raster band and of pixeltype provided. Band "
 "1 is assumed if no band is specified."
 msgstr ""
 
@@ -30343,7 +30659,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "2 band version - Creates a new one band raster formed by applying a valid "
-"PostgreSQL function on the 2 input raster bands and of pixeltype prodived. "
+"PostgreSQL function on the 2 input raster bands and of pixeltype provided. "
 "Band 1 is assumed if no band is specified. Extent type defaults to "
 "INTERSECTION if not specified."
 msgstr ""
@@ -30520,9 +30836,9 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Examples utilize the katrina raster loaded as a single tile described in "
-"<link xlink:href=\"http://trac.osgeo.org/gdal/wiki/frmts_wtkraster."
-"html\">http://trac.osgeo.org/gdal/wiki/frmts_wtkraster.html</link> and then "
-"prepared in the <xref linkend=\"RT_ST_Rescale\"/> examples"
+"<link xlink:href=\"https://gdal.org/user/drivers/raster/postgisraster."
+"html\">https://gdal.org/user/drivers/raster/postgisraster.html</link> and "
+"then prepared in the <xref linkend=\"RT_ST_Rescale\"/> examples"
 msgstr ""
 
 #. Tag: para
@@ -30553,21 +30869,26 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"Creates a new raster formed by applying a valid PostgreSQL algebraic "
-"operation defined by the <varname>reclassexpr</varname> on the input raster "
-"(<varname>rast</varname>). If no <varname>band</varname> is specified band 1 "
-"is assumed. The new raster will have the same georeference, width, and "
-"height as the original raster. Bands not designated will come back "
-"unchanged. Refer to <xref linkend=\"reclassarg\"/> for description of valid "
-"reclassification expressions."
+"Creates a new raster formed by applying a reclassification operation defined "
+"by the <varname>reclassexpr</varname> on the input raster (<varname>rast</"
+"varname>). Refer to <xref linkend=\"reclassarg\"/> for the description of "
+"reclassification expressions. If no <varname>band</varname> is specified "
+"band 1 is assumed."
 msgstr ""
 
 #. Tag: para
 #, no-c-format
 msgid ""
-"The bands of the new raster will have pixel type of <varname>pixeltype</"
-"varname>. If <varname>reclassargset</varname> is passed in then each "
-"reclassarg defines behavior of each band generated."
+"The new raster will have the same georeference, width, and height as the "
+"original raster. The bands of the new raster have pixel type of "
+"<varname>pixeltype</varname>. If <varname>reclassargset</varname> is "
+"specified then each <varname>reclassarg</varname> defines the type of the "
+"target band. Bands not designated are returned unchanged."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Example: Basic"
 msgstr ""
 
 #. Tag: para
@@ -30610,6 +30931,51 @@ msgid ""
 ", <xref linkend=\"RT_ST_Band\"/>, <xref linkend=\"RT_ST_BandPixelType\"/>, "
 "<xref linkend=\"RT_ST_MakeEmptyRaster\"/>, <xref linkend=\"reclassarg\"/>, "
 "<xref linkend=\"RT_ST_Value\"/>"
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Creates a new raster composed of bands reclassified from original, using a "
+"1:1 mapping from values in the original band to new values in the "
+"destination band."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Creates a new raster formed by applying a reclassification operation defined "
+"by the <varname>inputvalues</varname> and <varname>outputvalues</varname> "
+"arrays. Pixel values found in the input array are mapped to the "
+"corresponding value in the output array. All other pixel values are mapped "
+"to the <varname>nodatavalue</varname>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The output pixel type defaults to float, but can be specified using the "
+"<varname>pixeltype</varname> parameter. If no <varname>bandnumber</varname> "
+"is specified band 1 is assumed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The new raster will have the same georeference, width, and height as the "
+"original raster. Bands not designated are returned unchanged."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a small raster and map its pixels to new values."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+", <xref linkend=\"RT_ST_AddBand\"/>, <xref linkend=\"RT_ST_Band\"/>, <xref "
+"linkend=\"RT_ST_MakeEmptyRaster\"/>"
 msgstr ""
 
 #. Tag: refpurpose
@@ -31217,6 +31583,143 @@ msgid ""
 "linkend=\"RT_ST_Aspect\"/>"
 msgstr ""
 
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Interpolates a gridded surface based on an input set of 3-d points, using "
+"the X- and Y-values to position the points on the grid and the Z-value of "
+"the points as the surface elevation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Interpolates a gridded surface based on an input set of 3-d points, using "
+"the X- and Y-values to position the points on the grid and the Z-value of "
+"the points as the surface elevation. There are five interpolation algorithms "
+"available: inverse distance, inverse distance nearest-neighbor, moving "
+"average, nearest neighbor, and linear interpolation. See the <link xlink:"
+"href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
+"algorithms\">gdal_grid documentation</link> for more details on the "
+"algorithms and their parameters. For more information on how interpolations "
+"are calculated, see the <link xlink:href=\"https://gdal.org/tutorials/"
+"gdal_grid_tut.html\">GDAL grid tutorial</link>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Input parameters are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The points to drive the interpolation. Any geometry with Z-values is "
+"acceptable, all points in the input will be used."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A string defining the algorithm and algorithm options, in the format used by "
+"<link xlink:href=\"https://gdal.org/programs/gdal_grid.html#interpolation-"
+"algorithms\">gdal_grid</link>. For example, for an inverse-distance "
+"interpolation with a smoothing of 2, you would use \"invdist:smoothing=2.0\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A raster template to drive the geometry of the output raster. The width, "
+"height, pixel size, spatial extent and pixel type will be read from this "
+"template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default the first band in the template raster is used to drive the output "
+"raster, but that can be adjusted with this parameter."
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"<refpurpose>Generates a set of vector contours from the provided raster "
+"band, using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
+"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
+"contouring algorithm</link>.</refpurpose>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<para>Generates a set of vector contours from the provided raster band, "
+"using the <link xlink:href=\"https://gdal.org/api/gdal_alg.html?"
+"highlight=contour#_CPPv421GDALContourGenerateEx15GDALRasterBandHPv12CSLConstList16GDALProgressFuncPv\">GDAL "
+"contouring algorithm</link>.</para>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"When the <varname>fixed_levels</varname> parameter is a non-empty array, the "
+"<varname>level_interval</varname> and <varname>level_base</varname> "
+"parameters are ignored."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The raster to generate the contour of"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The band to generate the contour of"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The elevation interval between contours generated"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The \"base\" relative to which contour intervals are applied, this is "
+"normally zero, but could be different. To generate 10m contours at 5, 15, "
+"25, ... the LEVEL_BASE would be 5."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If <literal>true</literal>, contour polygons will be created, rather than "
+"polygon lines."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Return values are a set of records with the following attributes:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The geometry of the contour line."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A unique identifier given to the contour line by GDAL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The raster value the line represents. For an elevation DEM input, this would "
+"be the elevation of the output contour."
+msgstr ""
+
 #. Tag: title
 #, no-c-format
 msgid "Raster Processing: Raster to Geometry"
@@ -31424,6 +31927,31 @@ msgstr ""
 msgid ""
 "Changed: 2.1.0 In prior versions would sometimes return a polygon, changed "
 "to always return multipolygon."
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Calculates the fraction of each raster cell that is covered by a given "
+"geometry."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Calculates the fraction of each raster cell that is covered by a given "
+"geometry. The first argument is a raster, which defines the grid geometry to "
+"use for the calculation. The extent and cell size are read from the raster "
+"parameter. The second argument is a geometry, which is overlaid with the "
+"grid, and each grid populated based on overlaying the geometry on the grid. "
+"For polygons, the value returned for each cell is the proportion of its area "
+"that is covered by the geometry. For linestrings, the value returned for "
+"each cell is the length contained in the cell."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0 Requires GEOS 3.14 or higher."
 msgstr ""
 
 #. Tag: title
@@ -31852,7 +32380,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "Enhanced: 2.1.0 addition of Aggegrate variant"
+msgid "Enhanced: 2.1.0 addition of Aggregate variant"
 msgstr ""
 
 #. Tag: title
@@ -32034,10 +32562,10 @@ msgstr ""
 #, no-c-format
 msgid ""
 "To control this behavior, GDAL provides the following environment variable: "
-"<link xlink:href=\"https://trac.osgeo.org/gdal/wiki/"
-"ConfigOptions#GDAL_DISABLE_READDIR_ON_OPEN\">GDAL_DISABLE_READDIR_ON_OPEN</"
-"link>. Set <varname>GDAL_DISABLE_READDIR_ON_OPEN</varname> to <varname>TRUE</"
-"varname> to disable directory scanning."
+"<link xlink:href=\"https://gdal.org/user/configoptions.html#config-"
+"GDAL_DISABLE_READDIR_ON_OPEN\">GDAL_DISABLE_READDIR_ON_OPEN</link>. Set "
+"<varname>GDAL_DISABLE_READDIR_ON_OPEN</varname> to <varname>TRUE</varname> "
+"to disable directory scanning."
 msgstr ""
 
 #. Tag: para
@@ -34373,6 +34901,11 @@ msgstr ""
 msgid "A polygon and its approximate medial axis"
 msgstr ""
 
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"CG_StraightSkeletonPartition\"/>"
+msgstr ""
+
 #. Tag: refpurpose
 #, no-c-format
 msgid ""
@@ -34472,7 +35005,10 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid ", <xref linkend=\"CG_StraightSkeleton\"/>"
+msgid ""
+", <xref linkend=\"CG_ExtrudeStraightSkeleton\"/>, <xref "
+"linkend=\"CG_StraightSkeleton\"/>, <xref "
+"linkend=\"CG_StraightSkeletonPartition\"/>"
 msgstr ""
 
 #. Tag: para
@@ -34679,6 +35215,13 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
+msgid ""
+"Note that valid inputs with rings that touch at a single point will raise an "
+"error."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
 msgid "Straight Skeleton of polygon"
 msgstr ""
 
@@ -34827,6 +35370,11 @@ msgstr ""
 msgid "Availability: 3.6.0 - requires SFCGAL &gt;= 2.0.0."
 msgstr ""
 
+#. Tag: para
+#, no-c-format
+msgid "Straight Skeleton Partition of polygon"
+msgstr ""
+
 #. Tag: refpurpose
 #, no-c-format
 msgid "Computes a 3D buffer around a geometry."
@@ -34839,9 +35387,15 @@ msgid ""
 "with a specified <parameter>radius</parameter>. The buffer is constructed in "
 "3D space, creating a volumetric representation of the geometry's "
 "surroundings. The <parameter>segments</parameter> parameter defines the "
-"number of segments used to approximate the curved sections of the buffer. "
-"The <parameter>buffer_type</parameter> specifies the type of buffer to "
-"create: 0: Rounded buffer (default) 1: Flat buffer 2: Square buffer"
+"number of segments used to approximate the curved sections of the buffer, "
+"with a minimum value of 4 segments required. The <parameter>buffer_type</"
+"parameter> specifies the type of buffer to create: 0: Rounded buffer "
+"(default) 1: Flat buffer 2: Square buffer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Input geometry must be a Point or LineString."
 msgstr ""
 
 #. Tag: para
@@ -35072,6 +35626,163 @@ msgid ""
 "<parameter>deltaX</parameter> to the X coordinates, <parameter>deltaY</"
 "parameter> to the Y coordinates, and <parameter>deltaZ</parameter> to the Z "
 "coordinates."
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid ""
+"Reduces the complexity of a geometry while preserving essential features and "
+"Z/M values."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Simplifies a geometry using SFCGAL's simplification algorithm, which reduces "
+"the number of points or vertices while preserving the essential features of "
+"the geometry. This function preserves Z and M values during simplification."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The algorithm is based on constrained triangulation and uses the <link xlink:"
+"href=\"https://doc.cgal.org/latest/Polyline_simplification_2/index."
+"html\">CGAL Polyline Simplification 2</link> library with additional "
+"handling to preserve Z and M coordinates. When topology is preserved and "
+"geometries intersect, Z and M values are interpolated at intersection points."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This function works well with 3D terrain-like geometries (2.5D) but is not "
+"designed for vertical surfaces like walls."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Availability: 3.6.0 - requires SFCGAL &gt;= 2.1.0"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Parameters"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Input geometry"
+msgstr ""
+
+#. Tag: parameter
+#, no-c-format
+msgid "threshold"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Maximum distance threshold (in geometry unit) for simplification. The higher "
+"this value, the more simplified the resulting geometry will be."
+msgstr ""
+
+#. Tag: parameter
+#, no-c-format
+msgid "preserveTopology"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If set to true, the function ensures that the topology of the geometry is "
+"preserved. When geometries intersect in this mode, Z and M values at "
+"intersection points are interpolated. The default value is false."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Return Value"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Returns a simplified geometry with preserved Z and M values."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Originals geometries"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Simplification with 0.5 and topology preserved"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Simplification with 0.5 without topology preservation"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ", <xref linkend=\"ST_SimplifyPreserveTopology\"/>"
+msgstr ""
+
+#. Tag: refpurpose
+#, no-c-format
+msgid "Computes a 3D Alpha-wrapping strictly enclosing a geometry."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Computes the <link xlink:href=\"https://doc.cgal.org/latest/Alpha_wrap_3/"
+"index.html\">3D Alpha Wrapping</link> of the points in a geometry. An alpha "
+"wrapping is a watertight and orientable surface mesh that strictly encloses "
+"the input. It can be seen as an extension or refinement of an <link "
+"linkend=\"CG_AlphaShape\">alpha-shape</link>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <varname>relative_alpha</varname> parameter controls which features will "
+"appear in the output. It can can have values from 0 to infinity. Smaller "
+"relative_alpha values result in simpler outputs, but they are less accurate "
+"representations of the original input."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <varname>relative_offset</varname> parameter controls the tightness of "
+"the result. It can can have values from 0 to infinity. If this parameter is "
+"set to 0, its value is automatically determined based on the relative_alpha "
+"parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Alpha wrapping of a MultiPoint (same example As <xref "
+"linkend=\"CG_OptimalAlphaShape\"/>)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Alpha wrapping of a MultiPoint (same example as <xref "
+"linkend=\"ST_ConcaveHull\"/>)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Effect of the <varname>relative_alpha</varname> parameter with values 5, 10 "
+"and 20. A value of 5 results in a coarse output. Increasing the parameter up "
+"to 20 significantly improves the precision and granularity of the result."
 msgstr ""
 
 #. Tag: title
@@ -36886,12 +37597,227 @@ msgstr "Notas de la versión"
 
 #. Tag: title
 #, no-c-format
-msgid "PostGIS 3.6.0"
+msgid "PostGIS 3.6.0rc2"
 msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "2025/xx/xx"
+msgid "2025/08/25"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This version requires PostgreSQL 12-18beta3, GEOS 3.8 or higher, and Proj "
+"6.1+. To take advantage of all features, GEOS 3.14+ is needed. To take "
+"advantage of all SFCGAL features, SFCGAL 2.2+ is needed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Many thanks to our translation teams, in particular:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Teramoto Ikuhiro (Japanese Team)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Daniel Nylander (Swedish Team)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Dapeng Wang, Zuo Chenwei from HighGo (Chinese Team)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Denys Kovshun (Ukrainian Team)"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Breaking Changes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5799\">#5799</"
+"link>, make ST_TileEnvelope clips envelopes to tile plane extent (Paul "
+"Ramsey)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5829\">#5829</"
+"link>, remove constraint checking from geometry_columns view (Paul Ramsey)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3373\">#3373</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/255\">GT-255</link>, [topology] Support for upgrading domains (Ayo "
+"Adesugba, U.S. Census Bureau)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/252\">GT-252</link>, ST_NumGeometries/ST_GeometryN treat TIN and "
+"PolyhedralSurface as unitary geometries, use ST_NumPatches/ST_PatchN for "
+"patch access (Loïc Bartoletti)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3110\">#3110</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/242\">GT-242</link>, [topology] Support for bigint (Ayo Adesugba, U.S. "
+"Census Bureau)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5359\">#5359</"
+"link>, <link xlink:href=\"https://trac.osgeo.org/postgis/"
+"ticket/5897\">#5897</link>, <link xlink:href=\"https://git.osgeo.org/gitea/"
+"postgis/postgis/pulls/260\">GT-260</link> [tiger_geocoder] Use @extschema:"
+"extension@ for PG &gt;= 16 to schema qualify dependent extensions, switch to "
+"use typmod for tiger tables (Regina Obe)"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Removed / Deprecate signatures"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5498\">#5498</link> "
+"Drop st_approxquantile(raster, double precision), wasn't usable as it "
+"triggered is not unique error when used (Regina Obe)"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "New Features"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/803\">GH-803</"
+"link>, [sfcgal] ADD CG_Simplify function (Loïc Bartoletti)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/805\">GH-805</"
+"link>, [sfcgal] Add M support for SFCGAL &gt;= 1.5.0 (Loïc Bartoletti)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://github.com/postgis/postgis/pull/801\">GH-801</"
+"link>, [sfcgal] ADD CG_3DAlphaWrapping function (Jean Felder)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5894\">#5894</"
+"link>, [topology] TotalTopologySize (Sandro Santilli)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5890\">#5890</"
+"link>, [topology] ValidateTopologyPrecision, MakeTopologyPrecise (Sandro "
+"Santilli)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5861\">#5861</"
+"link>, [topology] Add --drop-topology switch to pgtopo_import (Sandro "
+"Santilli)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/1247\">#1247</"
+"link>, [raster] ST_AsRasterAgg (Sandro Santilli)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5784\">#5784</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/223\">GT-223</link> Export circ_tree_distance_tree_internal for "
+"mobilitydb use (Maxime Schoemans)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/228\">GT-228</link> [sfcgal] Add new functions (Scale, Translate, "
+"Rotate, Buffer 3D and Straight Skeleton Partition) from SFCGAL 2 (Loïc "
+"Bartoletti)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"[raster] New GUC postgis.gdal_cpl_debug, enables GDAL debugging messages and "
+"routes them into the PostgreSQL logging system. (Paul Ramsey)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/5841\">#5841</"
+"link>, Change interrupt handling to remove use of pqsignal to support PG 18 "
+"(Paul Ramsey)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Add ST_CoverageClean to edge match and gap remove polygonal coverages (Paul "
+"Ramsey) from GEOS 3.14 (Martin Davis)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"<link xlink:href=\"https://trac.osgeo.org/postgis/ticket/3110\">#3110</"
+"link>, <link xlink:href=\"https://git.osgeo.org/gitea/postgis/postgis/"
+"pulls/242\">GT-242</link> [topology] Support for bigint (Ayo Adesugba, U.S. "
+"Census Bureau)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"[raster] Add ST_ReclassExact to quickly remap values in raster (Paul Ramsey)"
 msgstr ""
 
 #. Tag: title
@@ -42089,6 +43015,16 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "This function supports 3d and will not drop the z-index."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If the optional <code>gridSize</code> parameter is given (GEOS-3.9.0 or "
+"higher required), all result vertices are guaranteed to fall on a grid of "
+"the specified size. For the operation to give predictable results all the "
+"input vertices must fall already on the specified grid, see <xref "
+"linkend=\"ST_ReducePrecision\"/>."
 msgstr ""
 
 #. Tag: para

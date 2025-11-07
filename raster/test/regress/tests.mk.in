@@ -10,6 +10,8 @@
 # *
 # **********************************************************************
 
+POSTGIS_GEOS_VERSION=@POSTGIS_GEOS_VERSION@
+
 override RUNTESTFLAGS := $(RUNTESTFLAGS) --raster
 
 override RUNTESTFLAGS_INTERNAL := \
@@ -84,6 +86,7 @@ RASTER_TEST_UTILITY = \
 	$(top_srcdir)/raster/test/regress/rt_asjpeg \
 	$(top_srcdir)/raster/test/regress/rt_aspng \
 	$(top_srcdir)/raster/test/regress/rt_reclass \
+	$(top_srcdir)/raster/test/regress/rt_reclassexact \
 	$(top_srcdir)/raster/test/regress/rt_gdalwarp \
 	$(top_srcdir)/raster/test/regress/rt_gdalcontour \
 	$(top_srcdir)/raster/test/regress/rt_asraster \
@@ -146,3 +149,8 @@ RASTER_TESTS := $(RASTER_TEST_FIRST) \
 	$(RASTER_TEST_LAST)
 
 TESTS += $(RASTER_TESTS)
+
+ifeq ($(shell expr "$(POSTGIS_GEOS_VERSION)" ">=" 31400),1)
+    TESTS += \
+        $(top_srcdir)/raster/test/regress/rt_intersection_fractions
+endif

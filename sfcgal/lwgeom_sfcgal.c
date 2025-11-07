@@ -40,72 +40,12 @@
  * This is required for builds against pgsql
  */
 PG_MODULE_MAGIC;
-#ifdef WIN32
-static void
-interruptCallback()
-{
-	if (UNBLOCKED_SIGNAL_QUEUE())
-		pgwin32_dispatch_queued_signals();
-}
-#endif
 
-static pqsigfunc coreIntHandler = 0;
-static void handleInterrupt(int sig);
-
-/*
- * Module load callback
- */
-void _PG_init(void);
-void
-_PG_init(void)
-{
-
-	coreIntHandler = pqsignal(SIGINT, handleInterrupt);
-
-#ifdef WIN32
-	GEOS_interruptRegisterCallback(interruptCallback);
-	lwgeom_register_interrupt_callback(interruptCallback);
-#endif
-
-	/* install PostgreSQL handlers */
-	pg_install_lwgeom_handlers();
-}
-
-/*
- * Module unload callback
- */
-void _PG_fini(void);
-void
-_PG_fini(void)
-{
-	elog(NOTICE, "Goodbye from PostGIS SFCGAL %s", POSTGIS_VERSION);
-	pqsignal(SIGINT, coreIntHandler);
-}
-
-static void
-handleInterrupt(int sig)
-{
-	/* NOTE: printf here would be dangerous, see
-	 * https://trac.osgeo.org/postgis/ticket/3644
-	 *
-	 * TODO: block interrupts during execution, to fix the problem
-	 */
-	/* printf("Interrupt requested\n"); fflush(stdout); */
-
-	/* request interruption of liblwgeom as well */
-	lwgeom_request_interrupt();
-
-	if (coreIntHandler)
-	{
-		(*coreIntHandler)(sig);
-	}
-}
-
-Datum postgis_sfcgal_version(PG_FUNCTION_ARGS);
-
+/* Prototypes */
 #if POSTGIS_SFCGAL_VERSION >= 10400
 Datum postgis_sfcgal_full_version(PG_FUNCTION_ARGS);
 #endif
+Datum postgis_sfcgal_version(PG_FUNCTION_ARGS);
 
 Datum sfcgal_from_ewkt(PG_FUNCTION_ARGS);
 Datum sfcgal_distance(PG_FUNCTION_ARGS);
@@ -137,11 +77,34 @@ Datum postgis_sfcgal_noop(PG_FUNCTION_ARGS);
 Datum sfcgal_convexhull3D(PG_FUNCTION_ARGS);
 Datum sfcgal_alphashape(PG_FUNCTION_ARGS);
 Datum sfcgal_optimalalphashape(PG_FUNCTION_ARGS);
+Datum sfcgal_simplify(PG_FUNCTION_ARGS);
 
 GSERIALIZED *geometry_serialize(LWGEOM *lwgeom);
 char *text_to_cstring(const text *textptr);
+void _PG_init(void);
+void _PG_fini(void);
+
 
 static int __sfcgal_init = 0;
+
+
+/* Module load callback */
+void
+_PG_init(void)
+{
+	/* install PostgreSQL handlers */
+	pg_install_lwgeom_handlers();
+	elog(DEBUG1, "PostGIS SFCGAL %s loaded", POSTGIS_VERSION);
+}
+
+
+/* Module unload callback */
+void
+_PG_fini(void)
+{
+	elog(NOTICE, "Goodbye from PostGIS SFCGAL %s", POSTGIS_VERSION);
+}
+
 
 void
 sfcgal_postgis_init(void)
@@ -1166,6 +1129,8 @@ sfcgal_extrudestraightskeleton(PG_FUNCTION_ARGS)
 	    POSTGIS_SFCGAL_VERSION);
 	PG_RETURN_NULL();
 #else /* POSTGIS_SFCGAL_VERSION >= 10500 */
+
+
 	GSERIALIZED *input, *output;
 	sfcgal_geometry_t *geom;
 	sfcgal_geometry_t *result;
@@ -1176,6 +1141,18 @@ sfcgal_extrudestraightskeleton(PG_FUNCTION_ARGS)
 
 	input = PG_GETARG_GSERIALIZED_P(0);
 	srid = gserialized_get_srid(input);
+#if POSTGIS_SFCGAL_VERSION < 20200
+	if (gserialized_is_empty(input))
+	{
+		result = sfcgal_polyhedral_surface_create();
+		output = SFCGALGeometry2POSTGIS(result, 0, srid);
+		sfcgal_geometry_delete(result);
+
+		PG_FREE_IF_COPY(input, 0);
+		PG_RETURN_POINTER(output);
+	}
+#endif
+
 	geom = POSTGIS2SFCGALGeometry(input);
 	PG_FREE_IF_COPY(input, 0);
 
@@ -1225,6 +1202,17 @@ sfcgal_visibility_point(PG_FUNCTION_ARGS)
 	point = POSTGIS2SFCGALGeometry(input1);
 	PG_FREE_IF_COPY(input1, 1);
 
+#if POSTGIS_SFCGAL_VERSION < 20200
+	if (gserialized_is_empty(input0) || gserialized_is_empty(input1))
+	{
+		result = sfcgal_polygon_create();
+		output = SFCGALGeometry2POSTGIS(result, 0, srid);
+		sfcgal_geometry_delete(result);
+
+		PG_RETURN_POINTER(output);
+	}
+#endif
+
 	result = sfcgal_geometry_visibility_point(polygon, point);
 	sfcgal_geometry_delete(polygon);
 	sfcgal_geometry_delete(point);
@@ -1264,7 +1252,18 @@ sfcgal_visibility_segment(PG_FUNCTION_ARGS)
 	pointA = POSTGIS2SFCGALGeometry(input1);
 	PG_FREE_IF_COPY(input1, 1);
 	pointB = POSTGIS2SFCGALGeometry(input2);
-	PG_FREE_IF_COPY(input1, 2);
+	PG_FREE_IF_COPY(input2, 2);
+
+#if POSTGIS_SFCGAL_VERSION < 20200
+	if (gserialized_is_empty(input0) || gserialized_is_empty(input1) || gserialized_is_empty(input2))
+	{
+		result = sfcgal_polygon_create();
+		output = SFCGALGeometry2POSTGIS(result, 0, srid);
+		sfcgal_geometry_delete(result);
+
+		PG_RETURN_POINTER(output);
+	}
+#endif
 
 	result = sfcgal_geometry_visibility_segment(polygon, pointA, pointB);
 	sfcgal_geometry_delete(polygon);
@@ -1757,6 +1756,86 @@ sfcgal_buffer3d(PG_FUNCTION_ARGS)
 		geom = POSTGIS2SFCGALGeometry(input);
 		PG_FREE_IF_COPY(input, 0);
 		result = sfcgal_geometry_buffer3d(geom, radius, segments, buffer_type);
+		sfcgal_geometry_delete(geom);
+	}
+
+	output = SFCGALGeometry2POSTGIS(result, 1, srid); // force 3d output
+	sfcgal_geometry_delete(result);
+	PG_RETURN_POINTER(output);
+#endif
+}
+
+PG_FUNCTION_INFO_V1(sfcgal_simplify);
+Datum
+sfcgal_simplify(PG_FUNCTION_ARGS)
+{
+#if POSTGIS_SFCGAL_VERSION < 20100
+	lwpgerror(
+	    "The SFCGAL version this PostGIS binary was compiled against (%d) doesn't support "
+	    "'sfcgal_geometry_simplify' function (requires SFCGAL 2.1.0+)",
+	    POSTGIS_SFCGAL_VERSION);
+	PG_RETURN_NULL();
+#else /* POSTGIS_SFCGAL_VERSION >= 20100 */
+	GSERIALIZED *input, *output;
+	sfcgal_geometry_t *geom, *result;
+	double threshold;
+	bool preserveTopology;
+	srid_t srid;
+
+	sfcgal_postgis_init();
+
+	input = PG_GETARG_GSERIALIZED_P(0);
+	threshold = PG_GETARG_FLOAT8(1);
+	preserveTopology = PG_GETARG_BOOL(2);
+	srid = gserialized_get_srid(input);
+
+	geom = POSTGIS2SFCGALGeometry(input);
+	PG_FREE_IF_COPY(input, 0);
+
+	result = sfcgal_geometry_simplify(geom, threshold, preserveTopology);
+	sfcgal_geometry_delete(geom);
+
+	output = SFCGALGeometry2POSTGIS(result, 0, srid);
+	sfcgal_geometry_delete(result);
+
+	PG_RETURN_POINTER(output);
+#endif
+}
+
+PG_FUNCTION_INFO_V1(sfcgal_alphawrapping_3d);
+Datum
+sfcgal_alphawrapping_3d(PG_FUNCTION_ARGS)
+{
+#if POSTGIS_SFCGAL_VERSION < 20100
+	lwpgerror(
+	    "The SFCGAL version this PostGIS binary was compiled against (%d) doesn't support "
+	    "'sfcgal_geometry_alphawrapping3d' function (requires SFCGAL 2.1.0+)",
+	    POSTGIS_SFCGAL_VERSION);
+	PG_RETURN_NULL();
+#else /* POSTGIS_SFCGAL_VERSION >= 20100 */
+	GSERIALIZED *input, *output;
+	sfcgal_geometry_t *geom = NULL, *result;
+	size_t relative_alpha;
+	size_t relative_offset;
+	srid_t srid;
+
+	sfcgal_postgis_init();
+
+	input = PG_GETARG_GSERIALIZED_P(0);
+	relative_alpha = (size_t)PG_GETARG_INT32(1);
+	relative_offset = (size_t)PG_GETARG_INT32(2);
+	srid = gserialized_get_srid(input);
+
+	if (gserialized_is_empty(input))
+	{
+		result = sfcgal_polyhedral_surface_create();
+	}
+	else
+	{
+
+		geom = POSTGIS2SFCGALGeometry(input);
+		PG_FREE_IF_COPY(input, 0);
+		result = sfcgal_geometry_alpha_wrapping_3d(geom, relative_alpha, relative_offset);
 		sfcgal_geometry_delete(geom);
 	}
 

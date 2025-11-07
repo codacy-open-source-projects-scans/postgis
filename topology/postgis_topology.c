@@ -32,7 +32,6 @@
 /*#define POSTGIS_DEBUG_LEVEL 1*/
 #include "lwgeom_log.h"
 #include "lwgeom_pg.h"
-#include "pgsql_compat.h"
 
 #include <stdarg.h>
 
@@ -53,7 +52,7 @@
  */
 PG_MODULE_MAGIC;
 
-LWT_BE_IFACE* be_iface;
+static LWT_BE_IFACE* be_iface;
 
 /*
  * Private data we'll use for this backend
@@ -76,7 +75,7 @@ struct LWT_BE_DATA_T
   int topoLoadFailMessageFlavor; /* 0:sql, 1:AddPoint */
 };
 
-LWT_BE_DATA be_data;
+static LWT_BE_DATA be_data;
 
 struct LWT_BE_TOPOLOGY_T
 {
@@ -665,7 +664,7 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
 {
   bool isnull;
   Datum dat;
-  int val;
+  LWT_ELEMID val;
   GSERIALIZED *geom;
   LWGEOM *lwg;
   int colno = 0;
@@ -683,9 +682,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (edge_id)"
-                     " has int32 val of %d",
+                     " has int64 val of %" LWTFMT_ELEMID,
                      colno, val);
       edge->edge_id = val;
     }
@@ -701,9 +700,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (start_node)"
-                     " has int32 val of %d", colno, val);
+                     " has int64 val of %" LWTFMT_ELEMID, colno, val);
       edge->start_node = val;
     }
   }
@@ -717,9 +716,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (end_node)"
-                     " has int32 val of %d", colno, val);
+                     " has int64 val of %" LWTFMT_ELEMID, colno, val);
       edge->end_node = val;
     }
   }
@@ -733,9 +732,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (face_left)"
-                     " has int32 val of %d", colno, val);
+                     " has int64 val of %" LWTFMT_ELEMID, colno, val);
       edge->face_left = val;
     }
   }
@@ -749,9 +748,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (face_right)"
-                     " has int32 val of %d", colno, val);
+                     " has int64 val of %" LWTFMT_ELEMID, colno, val);
       edge->face_right = val;
     }
   }
@@ -765,9 +764,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (next_left)"
-                     " has int32 val of %d", colno, val);
+                     " has int64 val of %" LWTFMT_ELEMID, colno, val);
       edge->next_left = val;
     }
   }
@@ -781,9 +780,9 @@ fillEdgeFields(LWT_ISO_EDGE* edge, HeapTuple row, TupleDesc rowdesc, int fields)
     }
     else
     {
-      val = DatumGetInt32(dat);
+      val = DatumGetInt64(dat);
       POSTGIS_DEBUGF(2, "fillEdgeFields: colno%d (next_right)"
-                     " has int32 val of %d", colno, val);
+                     " has int64 val of %" LWTFMT_ELEMID, colno, val);
       edge->next_right = val;
     }
   }
@@ -824,13 +823,13 @@ fillNodeFields(LWT_ISO_NODE* node, HeapTuple row, TupleDesc rowdesc, int fields)
   if ( fields & LWT_COL_NODE_NODE_ID )
   {
     dat = SPI_getbinval(row, rowdesc, ++colno, &isnull);
-    node->node_id = DatumGetInt32(dat);
+    node->node_id = DatumGetInt64(dat);
   }
   if ( fields & LWT_COL_NODE_CONTAINING_FACE )
   {
     dat = SPI_getbinval(row, rowdesc, ++colno, &isnull);
     if ( isnull ) node->containing_face = -1;
-    else node->containing_face = DatumGetInt32(dat);
+    else node->containing_face = DatumGetInt64(dat);
   }
   if ( fields & LWT_COL_NODE_GEOM )
   {
@@ -864,7 +863,7 @@ fillFaceFields(LWT_ISO_FACE* face, HeapTuple row, TupleDesc rowdesc, int fields)
   if ( fields & LWT_COL_FACE_FACE_ID )
   {
     dat = SPI_getbinval(row, rowdesc, ++colno, &isnull);
-    face->face_id = DatumGetInt32(dat);
+    face->face_id = DatumGetInt64(dat);
   }
   if ( fields & LWT_COL_FACE_MBR )
   {
@@ -908,6 +907,19 @@ getNotNullInt32( HeapTuple row, TupleDesc desc, int col, int32 *val )
   *val = DatumGetInt32(dat);
   return 1;
 }
+
+
+/* return 0 on failure (null) 1 otherwise */
+static int
+getNotNullInt64( HeapTuple row, TupleDesc desc, int col, int64 *val )
+{
+  bool isnull;
+  Datum dat = SPI_getbinval( row, desc, col, &isnull );
+  if ( isnull ) return 0;
+  *val = DatumGetInt64(dat);
+  return 1;
+}
+
 
 /* ----------------- Callbacks start here ------------------------ */
 
@@ -1043,8 +1055,8 @@ cb_getEdgeByFace(const LWT_BE_TOPOLOGY *topo, const LWT_ELEMID *ids, uint64_t *n
   GSERIALIZED *gser = NULL;
 
   datum_ids = palloc(sizeof(Datum)*(*numelems));
-  for (i=0; i<*numelems; ++i) datum_ids[i] = Int32GetDatum(ids[i]);
-  array_ids = construct_array(datum_ids, *numelems, INT4OID, 4, true, 's');
+  for (i=0; i<*numelems; ++i) datum_ids[i] = Int64GetDatum(ids[i]);
+  array_ids = construct_array(datum_ids, *numelems, INT8OID, 8, true, 's');
 
   initStringInfo(sql);
   appendStringInfoString(sql, "SELECT ");
@@ -1055,7 +1067,7 @@ cb_getEdgeByFace(const LWT_BE_TOPOLOGY *topo, const LWT_ELEMID *ids, uint64_t *n
                    topo->name);
 
   values[0] = PointerGetDatum(array_ids);
-  argtypes[0] = INT4ARRAYOID;
+  argtypes[0] = INT8ARRAYOID;
 
   if ( box )
   {
@@ -1174,8 +1186,8 @@ cb_getRingEdges(const LWT_BE_TOPOLOGY *topo, LWT_ELEMID edge, uint64_t *numelems
   initStringInfo(sql);
   appendStringInfo(sql, "WITH RECURSIVE edgering AS ( "
                    "SELECT %" LWTFMT_ELEMID
-                   " as signed_edge_id, edge_id, next_left_edge, next_right_edge "
-                   "FROM \"%s\".edge_data WHERE edge_id = %" LWTFMT_ELEMID " UNION "
+                   "::int8 as signed_edge_id, edge_id, next_left_edge, next_right_edge "
+                   "FROM \"%s\".edge_data WHERE edge_id = %" LWTFMT_ELEMID "::int8 UNION "
                    "SELECT CASE WHEN "
                    "p.signed_edge_id < 0 THEN p.next_right_edge ELSE p.next_left_edge END, "
                    "e.edge_id, e.next_left_edge, e.next_right_edge "
@@ -1228,7 +1240,7 @@ cb_getRingEdges(const LWT_BE_TOPOLOGY *topo, LWT_ELEMID edge, uint64_t *numelems
     HeapTuple row = SPI_tuptable->vals[i];
     bool isnull;
     Datum dat;
-    int32 val;
+    int64 val;
     dat = SPI_getbinval(row, rowdesc, 1, &isnull);
     if ( isnull )
     {
@@ -1237,7 +1249,7 @@ cb_getRingEdges(const LWT_BE_TOPOLOGY *topo, LWT_ELEMID edge, uint64_t *numelems
       *numelems = UINT64_MAX;
       return NULL;
     }
-    val = DatumGetInt32(dat);
+    val = DatumGetInt64(dat);
     edges[i] = val;
     POSTGIS_DEBUGF(1, "Component " UINT64_FORMAT " in ring of edge %" LWTFMT_ELEMID " is edge %d", i, edge, val);
 
@@ -1245,7 +1257,7 @@ cb_getRingEdges(const LWT_BE_TOPOLOGY *topo, LWT_ELEMID edge, uint64_t *numelems
      * point, or complain about topology being corrupted */
     if ( i == *numelems - 1 )
     {
-      int32 nextedge;
+      int64 nextedge;
       int sidecol = val > 0 ? 3 : 4;
       const char *sidetext = val > 0 ? "left" : "right";
 
@@ -1253,13 +1265,13 @@ cb_getRingEdges(const LWT_BE_TOPOLOGY *topo, LWT_ELEMID edge, uint64_t *numelems
       if ( isnull )
       {
         lwfree(edges);
-        cberror(topo->be_data, "Edge %d" /*LWTFMT_ELEMID*/
+        cberror(topo->be_data, "Edge %" LWTFMT_ELEMID
                                " has NULL next_%s_edge",
                                val, sidetext);
         *numelems = UINT64_MAX;
         return NULL;
       }
-      nextedge = DatumGetInt32(dat);
+      nextedge = DatumGetInt64(dat);
       POSTGIS_DEBUGF(1, "Last component in ring of edge %"
                         LWTFMT_ELEMID " (%d) has next_%s_edge %d",
                         edge, val, sidetext, nextedge);
@@ -1522,7 +1534,7 @@ cb_getNodeWithinDistance2D(const LWT_BE_TOPOLOGY *topo,
     else
     {
       lwpgwarning("liblwgeom-topo invoked 'getNodeWithinDistance2D' "
-                  "backend callback with limit=%ld and no fields",
+                  "backend callback with limit=" UINT64_FORMAT " and no fields",
                   elems_requested);
       appendStringInfo(sql, "*");
     }
@@ -2235,12 +2247,12 @@ cb_updateTopoGeomEdgeSplit ( const LWT_BE_TOPOLOGY* topo,
       HeapTuple row = SPI_tuptable->vals[i];
       TupleDesc tdesc = SPI_tuptable->tupdesc;
       int negate;
-      int element_id;
-      int topogeo_id;
+      LWT_ELEMID element_id;
+      LWT_ELEMID topogeo_id;
       int layer_id;
       int element_type;
 
-      if ( ! getNotNullInt32( row, tdesc, 1, &element_id ) )
+      if ( ! getNotNullInt64( row, tdesc, 1, &element_id ) )
       {
         cberror(topo->be_data,
                 "unexpected null element_id in \"%s\".relation",
@@ -2249,7 +2261,7 @@ cb_updateTopoGeomEdgeSplit ( const LWT_BE_TOPOLOGY* topo,
       }
       negate = ( element_id < 0 );
 
-      if ( ! getNotNullInt32( row, tdesc, 2, &topogeo_id ) )
+      if ( ! getNotNullInt64( row, tdesc, 2, &topogeo_id ) )
       {
         cberror(topo->be_data,
                 "unexpected null topogeo_id in \"%s\".relation",
@@ -2274,13 +2286,13 @@ cb_updateTopoGeomEdgeSplit ( const LWT_BE_TOPOLOGY* topo,
       }
 
       if ( i ) appendStringInfoChar(sql, ',');
-      appendStringInfo(sql, "(%d,%d,%" LWTFMT_ELEMID ",%d)",
+      appendStringInfo(sql, "(%" LWTFMT_ELEMID ",%d,%" LWTFMT_ELEMID ",%d)",
                        topogeo_id, layer_id, negate ? -new_edge1 : new_edge1, element_type);
       if ( new_edge2 != -1 )
       {
         resetStringInfo(sql);
         appendStringInfo(sql,
-                         ",VALUES (%d,%d,%" LWTFMT_ELEMID ",%d",
+                         ",VALUES (%" LWTFMT_ELEMID ",%d,%" LWTFMT_ELEMID ",%d",
                          topogeo_id, layer_id, negate ? -new_edge2 : new_edge2, element_type);
       }
     }
@@ -2367,12 +2379,12 @@ cb_updateTopoGeomFaceSplit ( const LWT_BE_TOPOLOGY* topo,
       HeapTuple row = SPI_tuptable->vals[i];
       TupleDesc tdesc = SPI_tuptable->tupdesc;
       int negate;
-      int element_id;
-      int topogeo_id;
+      LWT_ELEMID element_id;
+      LWT_ELEMID topogeo_id;
       int layer_id;
       int element_type;
 
-      if ( ! getNotNullInt32( row, tdesc, 1, &element_id ) )
+      if ( ! getNotNullInt64( row, tdesc, 1, &element_id ) )
       {
         cberror(topo->be_data,
                 "unexpected null element_id in \"%s\".relation",
@@ -2381,7 +2393,7 @@ cb_updateTopoGeomFaceSplit ( const LWT_BE_TOPOLOGY* topo,
       }
       negate = ( element_id < 0 );
 
-      if ( ! getNotNullInt32( row, tdesc, 2, &topogeo_id ) )
+      if ( ! getNotNullInt64( row, tdesc, 2, &topogeo_id ) )
       {
         cberror(topo->be_data,
                 "unexpected null topogeo_id in \"%s\".relation",
@@ -2407,13 +2419,13 @@ cb_updateTopoGeomFaceSplit ( const LWT_BE_TOPOLOGY* topo,
 
       if ( i ) appendStringInfoChar(sql, ',');
       appendStringInfo(sql,
-                       "(%d,%d,%" LWTFMT_ELEMID ",%d)",
+                       "(%" LWTFMT_ELEMID ",%d,%" LWTFMT_ELEMID ",%d)",
                        topogeo_id, layer_id, negate ? -new_face1 : new_face1, element_type);
 
       if ( new_face2 != -1 )
       {
         appendStringInfo(sql,
-                         ",(%d,%d,%" LWTFMT_ELEMID ",%d)",
+                         ",(%" LWTFMT_ELEMID ",%d,%" LWTFMT_ELEMID ",%d)",
                          topogeo_id, layer_id, negate ? -new_face2 : new_face2, element_type);
       }
     }
@@ -2510,16 +2522,16 @@ cb_checkTopoGeomRemEdge ( const LWT_BE_TOPOLOGY* topo,
       the definition in case of healing, so we'd have to bail out
     */
     initStringInfo(sql);
-    appendStringInfo( sql, "SELECT t.* FROM ( SELECT r.topogeo_id, "
+    appendStringInfo( sql, "SELECT t.* FROM ( SELECT r.topogeo_id::int8, "
                       "r.layer_id, l.schema_name, l.table_name, l.feature_column, "
-                      "array_agg(r.element_id) as elems FROM topology.layer l "
+                      "array_agg(r.element_id::int8) as elems FROM topology.layer l "
                       " INNER JOIN \"%s\".relation r ON (l.layer_id = r.layer_id) "
                       "WHERE l.level = 0 and l.feature_type IN (3, 4) "
                       "AND l.topology_id = %d"
-                      " AND r.element_type = 3 AND r.element_id = ANY (ARRAY[%" LWTFMT_ELEMID ",%" LWTFMT_ELEMID
-                      "]::int4[]) group by r.topogeo_id, r.layer_id, l.schema_name, "
+                      " AND r.element_type = 3 AND r.element_id::int8 = ANY (ARRAY[%" LWTFMT_ELEMID ",%" LWTFMT_ELEMID
+                      "]::int8[]) group by r.topogeo_id, r.layer_id, l.schema_name, "
                       "l.table_name, l.feature_column ) t WHERE NOT t.elems @> ARRAY[%"
-                      LWTFMT_ELEMID ",%" LWTFMT_ELEMID "]::int4[]",
+                      LWTFMT_ELEMID ",%" LWTFMT_ELEMID "]::int8[]",
 
                       topo->name, topo->id,
                       face_left, face_right, face_left, face_right );
@@ -2640,18 +2652,18 @@ cb_checkTopoGeomRemNode ( const LWT_BE_TOPOLOGY* topo,
 
   /* 1: check for lineal TopoGeometry objects being defined by
    * only one of the edges to be merged */
-  appendStringInfo( sql, "SELECT t.* FROM ( SELECT r.topogeo_id, "
+  appendStringInfo( sql, "SELECT t.* FROM ( SELECT r.topogeo_id::int8, "
                     "r.layer_id, l.schema_name, l.table_name, l.feature_column, "
-                    "array_agg(abs(r.element_id)) as elems FROM topology.layer l "
+                    "array_agg(abs(r.element_id::int8)) as elems FROM topology.layer l "
                     " INNER JOIN \"%s\".relation r ON (l.layer_id = r.layer_id) "
                     "WHERE l.level = 0 and l.feature_type in ( 2, 4 ) "
                     "AND l.topology_id = %d"
-                    " AND r.element_type = 2 AND r.element_id = ANY (ARRAY[%"
+                    " AND r.element_type = 2 AND r.element_id::int8 = ANY (ARRAY[%"
                     LWTFMT_ELEMID ", -%" LWTFMT_ELEMID ", %"
                     LWTFMT_ELEMID ", -%" LWTFMT_ELEMID
-                    "]::int4[]) group by r.topogeo_id, r.layer_id, l.schema_name, "
+                    "]::int8[]) group by r.topogeo_id, r.layer_id, l.schema_name, "
                     "l.table_name, l.feature_column ) t WHERE NOT t.elems @> ARRAY[%"
-                    LWTFMT_ELEMID ",%" LWTFMT_ELEMID "]::int4[] LIMIT 1",
+                    LWTFMT_ELEMID ",%" LWTFMT_ELEMID "]::int8[] LIMIT 1",
                     topo->name, topo->id,
                     edge1, edge1,
                     edge2, edge2,
@@ -3628,7 +3640,7 @@ Datum ST_ModEdgeSplit(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  edge_id = PG_GETARG_INT32(1) ;
+  edge_id = PG_GETARG_INT64(1) ;
 
   geom = PG_GETARG_GSERIALIZED_P(2);
   lwgeom = lwgeom_from_gserialized(geom);
@@ -3660,7 +3672,7 @@ Datum ST_ModEdgeSplit(PG_FUNCTION_ARGS)
   node_id = lwt_ModEdgeSplit(topo, edge_id, pt, 0);
   POSTGIS_DEBUG(1, "lwt_ModEdgeSplit returned");
   lwgeom_free(lwgeom);
-  PG_FREE_IF_COPY(geom, 3);
+  PG_FREE_IF_COPY(geom, 2);
   lwt_FreeTopology(topo);
 
   if ( node_id == -1 )
@@ -3671,7 +3683,7 @@ Datum ST_ModEdgeSplit(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  ST_NewEdgesSplit(atopology, anedge, apoint) */
@@ -3698,7 +3710,7 @@ Datum ST_NewEdgesSplit(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  edge_id = PG_GETARG_INT32(1) ;
+  edge_id = PG_GETARG_INT64(1) ;
 
   geom = PG_GETARG_GSERIALIZED_P(2);
   lwgeom = lwgeom_from_gserialized(geom);
@@ -3730,7 +3742,7 @@ Datum ST_NewEdgesSplit(PG_FUNCTION_ARGS)
   node_id = lwt_NewEdgesSplit(topo, edge_id, pt, 0);
   POSTGIS_DEBUG(1, "lwt_NewEdgesSplit returned");
   lwgeom_free(lwgeom);
-  PG_FREE_IF_COPY(geom, 3);
+  PG_FREE_IF_COPY(geom, 2);
   lwt_FreeTopology(topo);
 
   if ( node_id == -1 )
@@ -3741,7 +3753,7 @@ Datum ST_NewEdgesSplit(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  ST_AddIsoNode(atopology, aface, apoint) */
@@ -3771,7 +3783,7 @@ Datum ST_AddIsoNode(PG_FUNCTION_ARGS)
   if ( PG_ARGISNULL(1) ) containing_face = -1;
   else
   {
-    containing_face = PG_GETARG_INT32(1);
+    containing_face = PG_GETARG_INT64(1);
     if ( containing_face < 0 )
     {
       lwpgerror("SQL/MM Spatial exception - not within face");
@@ -3827,7 +3839,7 @@ Datum ST_AddIsoNode(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  ST_AddIsoEdge(atopology, anode, anothernode, acurve) */
@@ -3855,8 +3867,8 @@ Datum ST_AddIsoEdge(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  start_node = PG_GETARG_INT32(1);
-  end_node = PG_GETARG_INT32(2);
+  start_node = PG_GETARG_INT64(1);
+  end_node = PG_GETARG_INT64(2);
 
   if ( start_node == end_node )
   {
@@ -3905,7 +3917,7 @@ Datum ST_AddIsoEdge(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(edge_id);
+  PG_RETURN_INT64(edge_id);
 }
 
 /*  ST_AddEdgeModFace(atopology, snode, enode, line) */
@@ -3916,7 +3928,7 @@ Datum ST_AddEdgeModFace(PG_FUNCTION_ARGS)
   text* toponame_text;
   char* toponame;
   LWT_ELEMID startnode_id, endnode_id;
-  int edge_id;
+  LWT_ELEMID edge_id;
   GSERIALIZED *geom;
   LWGEOM *lwgeom;
   LWLINE *line;
@@ -3932,8 +3944,8 @@ Datum ST_AddEdgeModFace(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  startnode_id = PG_GETARG_INT32(1) ;
-  endnode_id = PG_GETARG_INT32(2) ;
+  startnode_id = PG_GETARG_INT64(1) ;
+  endnode_id = PG_GETARG_INT64(2) ;
 
   geom = PG_GETARG_GSERIALIZED_P(3);
   lwgeom = lwgeom_from_gserialized(geom);
@@ -3976,7 +3988,7 @@ Datum ST_AddEdgeModFace(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(edge_id);
+  PG_RETURN_INT64(edge_id);
 }
 
 /*  ST_AddEdgeNewFaces(atopology, snode, enode, line) */
@@ -3987,7 +3999,7 @@ Datum ST_AddEdgeNewFaces(PG_FUNCTION_ARGS)
   text* toponame_text;
   char* toponame;
   LWT_ELEMID startnode_id, endnode_id;
-  int edge_id;
+  LWT_ELEMID edge_id;
   GSERIALIZED *geom;
   LWGEOM *lwgeom;
   LWLINE *line;
@@ -4003,8 +4015,8 @@ Datum ST_AddEdgeNewFaces(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  startnode_id = PG_GETARG_INT32(1) ;
-  endnode_id = PG_GETARG_INT32(2) ;
+  startnode_id = PG_GETARG_INT64(1) ;
+  endnode_id = PG_GETARG_INT64(2) ;
 
   geom = PG_GETARG_GSERIALIZED_P(3);
   lwgeom = lwgeom_from_gserialized(geom);
@@ -4047,7 +4059,7 @@ Datum ST_AddEdgeNewFaces(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(edge_id);
+  PG_RETURN_INT64(edge_id);
 }
 
 /* ST_GetFaceGeometry(atopology, aface) */
@@ -4061,7 +4073,7 @@ Datum ST_GetFaceGeometry(PG_FUNCTION_ARGS)
   LWGEOM *lwgeom;
   LWT_TOPOLOGY *topo;
   GSERIALIZED *geom;
-  MemoryContext old_context;
+  MemoryContext old_context, spi_context;
 
   if ( PG_ARGISNULL(0) || PG_ARGISNULL(1) )
   {
@@ -4073,10 +4085,12 @@ Datum ST_GetFaceGeometry(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  face_id = PG_GETARG_INT32(1) ;
+  face_id = PG_GETARG_INT64(1) ;
 
+  old_context = CurrentMemoryContext;
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
+    pfree(toponame);
     lwpgerror("Could not connect to SPI");
     PG_RETURN_NULL();
   }
@@ -4103,10 +4117,11 @@ Datum ST_GetFaceGeometry(PG_FUNCTION_ARGS)
   }
 
   /* Serialize in upper memory context (outside of SPI) */
-  /* TODO: use a narrower context to switch to ? */
-  old_context = MemoryContextSwitchTo( TopTransactionContext );
+  spi_context = MemoryContextSwitchTo(old_context);
   geom = geometry_serialize(lwgeom);
-  MemoryContextSwitchTo(old_context);
+  MemoryContextSwitchTo(spi_context);
+
+  /* No need to free lwgeom here because it will go away with the SPI context */
 
   SPI_finish();
 
@@ -4162,7 +4177,7 @@ Datum ST_GetFaceEdges(PG_FUNCTION_ARGS)
     toponame = text_to_cstring(toponame_text);
     PG_FREE_IF_COPY(toponame_text, 0);
 
-    face_id = PG_GETARG_INT32(1) ;
+    face_id = PG_GETARG_INT64(1) ;
 
     if ( SPI_OK_CONNECT != SPI_connect() )
     {
@@ -4223,6 +4238,10 @@ Datum ST_GetFaceEdges(PG_FUNCTION_ARGS)
 
   /* get state */
   state = funcctx->user_fctx;
+  if ( ! state )
+  {
+    SRF_RETURN_DONE(funcctx);
+  }
 
   if ( state->curr == state->nelems )
   {
@@ -4278,7 +4297,7 @@ Datum ST_ChangeEdgeGeom(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  edge_id = PG_GETARG_INT32(1) ;
+  edge_id = PG_GETARG_INT64(1) ;
 
   geom = PG_GETARG_GSERIALIZED_P(2);
   lwgeom = lwgeom_from_gserialized(geom);
@@ -4351,7 +4370,7 @@ Datum ST_RemoveIsoNode(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  node_id = PG_GETARG_INT32(1) ;
+  node_id = PG_GETARG_INT64(1) ;
 
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
@@ -4412,7 +4431,7 @@ Datum ST_RemIsoEdge(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  node_id = PG_GETARG_INT32(1) ;
+  node_id = PG_GETARG_INT64(1) ;
 
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
@@ -4477,7 +4496,7 @@ Datum ST_MoveIsoNode(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  node_id = PG_GETARG_INT32(1) ;
+  node_id = PG_GETARG_INT64(1) ;
 
   geom = PG_GETARG_GSERIALIZED_P(2);
   lwgeom = lwgeom_from_gserialized(geom);
@@ -4562,7 +4581,7 @@ Datum ST_RemEdgeModFace(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  node_id = PG_GETARG_INT32(1) ;
+  node_id = PG_GETARG_INT64(1) ;
 
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
@@ -4593,7 +4612,7 @@ Datum ST_RemEdgeModFace(PG_FUNCTION_ARGS)
 
   SPI_finish();
 
-  PG_RETURN_INT32(ret);
+  PG_RETURN_INT64(ret);
 }
 
 /*  ST_RemEdgeNewFace(atopology, anedge) */
@@ -4617,7 +4636,7 @@ Datum ST_RemEdgeNewFace(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  node_id = PG_GETARG_INT32(1) ;
+  node_id = PG_GETARG_INT64(1) ;
 
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
@@ -4646,7 +4665,7 @@ Datum ST_RemEdgeNewFace(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
   }
 
-  PG_RETURN_INT32(ret);
+  PG_RETURN_INT64(ret);
 }
 
 /*  ST_ModEdgeHeal(atopology, anedge, anotheredge) */
@@ -4670,8 +4689,8 @@ Datum ST_ModEdgeHeal(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  eid1 = PG_GETARG_INT32(1) ;
-  eid2 = PG_GETARG_INT32(2) ;
+  eid1 = PG_GETARG_INT64(1) ;
+  eid2 = PG_GETARG_INT64(2) ;
 
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
@@ -4700,7 +4719,7 @@ Datum ST_ModEdgeHeal(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
   }
 
-  PG_RETURN_INT32(ret);
+  PG_RETURN_INT64(ret);
 }
 
 /*  ST_NewEdgeHeal(atopology, anedge, anotheredge) */
@@ -4724,8 +4743,8 @@ Datum ST_NewEdgeHeal(PG_FUNCTION_ARGS)
   toponame = text_to_cstring(toponame_text);
   PG_FREE_IF_COPY(toponame_text, 0);
 
-  eid1 = PG_GETARG_INT32(1) ;
-  eid2 = PG_GETARG_INT32(2) ;
+  eid1 = PG_GETARG_INT64(1) ;
+  eid2 = PG_GETARG_INT64(2) ;
 
   if ( SPI_OK_CONNECT != SPI_connect() )
   {
@@ -4754,7 +4773,7 @@ Datum ST_NewEdgeHeal(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
   }
 
-  PG_RETURN_INT32(ret);
+  PG_RETURN_INT64(ret);
 }
 
 /*  GetNodeByPoint(atopology, point, tolerance) */
@@ -4787,10 +4806,10 @@ Datum GetNodeByPoint(PG_FUNCTION_ARGS)
   }
 
   tol = PG_GETARG_FLOAT8(2);
-  if ( tol < 0 )
+  if ( tol < -1 )
   {
     PG_FREE_IF_COPY(geom, 1);
-    lwpgerror("Tolerance must be >=0");
+    lwpgerror("Tolerance must be -1 or >=0 ");
     PG_RETURN_NULL();
   }
 
@@ -4824,7 +4843,7 @@ Datum GetNodeByPoint(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  GetEdgeByPoint(atopology, point, tolerance) */
@@ -4857,10 +4876,10 @@ Datum GetEdgeByPoint(PG_FUNCTION_ARGS)
   }
 
   tol = PG_GETARG_FLOAT8(2);
-  if ( tol < 0 )
+  if ( tol < -1 )
   {
     PG_FREE_IF_COPY(geom, 1);
-    lwpgerror("Tolerance must be >=0");
+    lwpgerror("Tolerance must be -1 or >=0 ");
     PG_RETURN_NULL();
   }
 
@@ -4894,7 +4913,7 @@ Datum GetEdgeByPoint(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  GetFaceByPoint(atopology, point, tolerance) */
@@ -4929,10 +4948,10 @@ Datum GetFaceByPoint(PG_FUNCTION_ARGS)
   }
 
   tol = PG_GETARG_FLOAT8(2);
-  if ( tol < 0 )
+  if ( tol < -1 )
   {
     PG_FREE_IF_COPY(geom, 1);
-    lwpgerror("Tolerance must be >=0");
+    lwpgerror("Tolerance must be -1 or >=0 ");
     PG_RETURN_NULL();
   }
 
@@ -4966,7 +4985,7 @@ Datum GetFaceByPoint(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  TopoGeo_AddPoint(atopology, point, tolerance) */
@@ -5010,10 +5029,10 @@ Datum TopoGeo_AddPoint(PG_FUNCTION_ARGS)
   }
 
   tol = PG_GETARG_FLOAT8(2);
-  if ( tol < 0 )
+  if ( tol < -1 )
   {
     PG_FREE_IF_COPY(geom, 1);
-    lwpgerror("Tolerance must be >=0");
+    lwpgerror("Tolerance must be -1 or >=0 ");
     PG_RETURN_NULL();
   }
 
@@ -5052,7 +5071,7 @@ Datum TopoGeo_AddPoint(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(node_id);
+  PG_RETURN_INT64(node_id);
 }
 
 /*  TopoGeo_AddLinestring(atopology, point, tolerance) */
@@ -5068,6 +5087,7 @@ Datum TopoGeo_AddLinestring(PG_FUNCTION_ARGS)
   GSERIALIZED *geom;
   LWGEOM *lwgeom;
   LWLINE *ln;
+  int max_new_edges = -1; /* defaults to unlimited */
   LWT_TOPOLOGY *topo;
   FuncCallContext *funcctx;
   MemoryContext oldcontext, newcontext;
@@ -5085,6 +5105,11 @@ Datum TopoGeo_AddLinestring(PG_FUNCTION_ARGS)
     {
       lwpgerror("SQL/MM Spatial exception - null argument");
       PG_RETURN_NULL();
+    }
+
+    if (PG_NARGS() > 3 && !PG_ARGISNULL(3))
+    {
+      max_new_edges = PG_GETARG_INT32(3);
     }
 
     toponame_text = PG_GETARG_TEXT_P(0);
@@ -5106,13 +5131,20 @@ Datum TopoGeo_AddLinestring(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
       }
     }
-
-    tol = PG_GETARG_FLOAT8(2);
-    if ( tol < 0 )
+    /* Nothing to do if line is empty */
+    if ( lwline_is_empty(ln) )
     {
       lwgeom_free(lwgeom);
       PG_FREE_IF_COPY(geom, 1);
-      lwpgerror("Tolerance must be >=0");
+      PG_RETURN_NULL();
+    }
+
+    tol = PG_GETARG_FLOAT8(2);
+    if ( tol < -1 )
+    {
+      lwgeom_free(lwgeom);
+      PG_FREE_IF_COPY(geom, 1);
+      lwpgerror("Tolerance must be -1 or >=0 ");
       PG_RETURN_NULL();
     }
 
@@ -5140,7 +5172,7 @@ Datum TopoGeo_AddLinestring(PG_FUNCTION_ARGS)
     }
 
     POSTGIS_DEBUG(1, "Calling lwt_AddLine");
-    elems = lwt_AddLine(topo, ln, tol, &nelems);
+    elems = lwt_AddLine(topo, ln, tol, &nelems, max_new_edges);
     POSTGIS_DEBUG(1, "lwt_AddLine returned");
     lwgeom_free(lwgeom);
     PG_FREE_IF_COPY(geom, 1);
@@ -5187,7 +5219,7 @@ Datum TopoGeo_AddLinestring(PG_FUNCTION_ARGS)
   POSTGIS_DEBUGF(1, "TopoGeo_AddLinestring: cur:%d, val:%" LWTFMT_ELEMID,
                  state->curr-1, id);
 
-  result = Int32GetDatum((int32)id);
+  result = Int64GetDatum((int64)id);
 
   SRF_RETURN_NEXT(funcctx, result);
 }
@@ -5228,10 +5260,10 @@ Datum TopoGeo_AddLinestringNoFace(PG_FUNCTION_ARGS)
   }
 
   tol = PG_GETARG_FLOAT8(2);
-  if ( tol < 0 )
+  if ( tol < -1 )
   {
     PG_FREE_IF_COPY(geom, 1);
-    lwpgerror("Tolerance must be >=0");
+    lwpgerror("Tolerance must be -1 or >=0 ");
     PG_RETURN_NULL();
   }
 
@@ -5319,10 +5351,10 @@ Datum TopoGeo_AddPolygon(PG_FUNCTION_ARGS)
     }
 
     tol = PG_GETARG_FLOAT8(2);
-    if ( tol < 0 )
+    if ( tol < -1 )
     {
       PG_FREE_IF_COPY(geom, 1);
-      lwpgerror("Tolerance must be >=0");
+      lwpgerror("Tolerance must be -1 or >=0 ");
       PG_RETURN_NULL();
     }
 
@@ -5394,7 +5426,7 @@ Datum TopoGeo_AddPolygon(PG_FUNCTION_ARGS)
   POSTGIS_DEBUGF(1, "TopoGeo_AddPolygon: cur:%d, val:%" LWTFMT_ELEMID,
                  state->curr-1, id);
 
-  result = Int32GetDatum((int32)id);
+  result = Int64GetDatum((int64)id);
 
   SRF_RETURN_NEXT(funcctx, result);
 }
@@ -5440,7 +5472,7 @@ Datum GetRingEdges(PG_FUNCTION_ARGS)
       lwpgerror("GetRingEdges: edge id cannot be null");
       PG_RETURN_NULL();
     }
-    edge_id = PG_GETARG_INT32(1) ;
+    edge_id = PG_GETARG_INT64(1) ;
 
     if ( ! PG_ARGISNULL(2) )
     {
@@ -5521,14 +5553,14 @@ Datum GetRingEdges(PG_FUNCTION_ARGS)
 
 
   ret[0] = Int32GetDatum(state->curr);
-  ret[1] = Int32GetDatum(edge_id);
+  ret[1] = Int64GetDatum(edge_id);
   tuple = heap_form_tuple(funcctx->tuple_desc, ret, isnull);
   result = HeapTupleGetDatum(tuple);
 
   SRF_RETURN_NEXT(funcctx, result);
 }
 
-/*  GetFaceContainingPoint(atopology, point) */
+/* GetFaceContainingPoint(atopology, point) */
 Datum GetFaceContainingPoint(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1(GetFaceContainingPoint);
 Datum GetFaceContainingPoint(PG_FUNCTION_ARGS)
@@ -5540,6 +5572,12 @@ Datum GetFaceContainingPoint(PG_FUNCTION_ARGS)
   LWGEOM *lwgeom;
   LWPOINT *pt;
   LWT_TOPOLOGY *topo;
+
+  if ( PG_ARGISNULL(0) || PG_ARGISNULL(1) )
+  {
+    /* should only happen when the SQL function is not declared STRICT */
+    PG_RETURN_NULL();
+  }
 
   toponame_text = PG_GETARG_TEXT_P(0);
   toponame = text_to_cstring(toponame_text);
@@ -5553,6 +5591,14 @@ Datum GetFaceContainingPoint(PG_FUNCTION_ARGS)
     lwgeom_free(lwgeom);
     PG_FREE_IF_COPY(geom, 1);
     lwpgerror("Second argument must be a point geometry");
+    PG_RETURN_NULL();
+  }
+
+  if ( lwpoint_is_empty(pt) )
+  {
+    lwgeom_free(lwgeom);
+    PG_FREE_IF_COPY(geom, 1);
+    lwpgerror("Second argument needs be a non-empty point");
     PG_RETURN_NULL();
   }
 
@@ -5586,7 +5632,7 @@ Datum GetFaceContainingPoint(PG_FUNCTION_ARGS)
   }
 
   SPI_finish();
-  PG_RETURN_INT32(face_id);
+  PG_RETURN_INT64(face_id);
 }
 
 /*  RegisterMissingFaces(atopology) */
@@ -5655,10 +5701,10 @@ Datum TopoGeo_LoadGeometry(PG_FUNCTION_ARGS)
   geom = PG_GETARG_GSERIALIZED_P(1);
 
   tol = PG_GETARG_FLOAT8(2);
-  if ( tol < 0 )
+  if ( tol < -1 )
   {
     PG_FREE_IF_COPY(geom, 1);
-    lwpgerror("Tolerance must be >=0");
+    lwpgerror("Tolerance must be -1 or >=0 ");
     PG_RETURN_NULL();
   }
 

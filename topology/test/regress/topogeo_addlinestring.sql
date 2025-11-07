@@ -58,6 +58,7 @@ $$ LANGUAGE 'plpgsql';
 SELECT 'invalid', TopoGeo_addLineString('city_data', 'SRID=4326;MULTILINESTRING((36 26, 38 30))');
 SELECT 'invalid', TopoGeo_addLineString('city_data', 'SRID=4326;POINT(36 26)');
 SELECT 'invalid', TopoGeo_addLineString('invalid', 'SRID=4326;LINESTRING(36 26, 0 0)');
+SELECT 'empty', TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING EMPTY');
 
 -- Isolated edge in universal face
 SELECT 'iso_uni', TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING(36 26, 38 30)');
@@ -290,18 +291,18 @@ LINESTRING(
 1612829.90652844007126987 4841274.48807844985276461,
 1612830.1566380700096488 4841287.23833953030407429,
 1612883.15799825009889901 4841277.73794914968311787)
-', 0);
+');
 SELECT 't3380.L2', TopoGeo_AddLinestring('bug3380', '
 LINESTRING(
 1612790.88055733009241521 4841286.88526585046201944,
 1612830.15823523001745343 4841287.12674008030444384,
 1612829.98813172010704875 4841274.56198261026293039)
-', 0);
+');
 SELECT 't3380.L3', TopoGeo_AddLinestring('bug3380', '
  LINESTRING(
 1612830.15823523 4841287.12674008,
 1612881.64990281 4841274.56198261)
-', 0);
+');
 SELECT 't3380.end', DropTopology( 'bug3380' );
 
 -- See http://trac.osgeo.org/postgis/ticket/3402
@@ -309,10 +310,10 @@ SELECT 't3380.end', DropTopology( 'bug3380' );
 SELECT 't3402.start', CreateTopology('bug3402') > 1;
 SELECT 't3402.L1', TopoGeo_addLinestring('bug3402',
 '010200000003000000C1AABC2B192739418E7DE0E6AB9652411F85EB5119283941F6285CEF2D9652411F85EB5128283941F6285CCF2C965241'
-, 0);
+);
 SELECT 't3402.L2', TopoGeo_addLinestring('bug3402',
 '010200000003000000BCAABC2B192739418F7DE0E6AB96524185EB51382828394115AE47D12C96524187EB51382828394115AE47D12C965241'
-, 0);
+);
 SELECT 't3402.end', DropTopology('bug3402');
 
 -- See http://trac.osgeo.org/postgis/ticket/3412
@@ -324,16 +325,16 @@ SELECT 't3412.L1', TopoGeo_AddLinestring('bug3412',
 599671.37 4889683.4,
 599671.37 4889781.87
 )'
-::geometry, 0);
+::geometry);
 
 -- TODO: answers different on 3.8 from older geos so revised test
 /**SELECT 't3412.L2', TopoGeo_AddLinestring('bug3412',
 '0102000000020000003AB42BBFEE4C22410010C5A997A6524167BB5DBDEE4C224117FE3DA85FA75241'
-::geometry, 0);**/
+::geometry);**/
 SELECT 't3412.L2', COUNT(*)
 FROM TopoGeo_AddLinestring('bug3412',
 '0102000000020000003AB42BBFEE4C22410010C5A997A6524167BB5DBDEE4C224117FE3DA85FA75241'
-::geometry, 0);
+::geometry);
 SELECT 't3412.end', DropTopology('bug3412');
 
 -- See http://trac.osgeo.org/postgis/ticket/3711
@@ -555,3 +556,36 @@ SELECT NULL FROM topology.TopoGeo_addLinestring('t5782',
 );
 SELECT '#5782', 'valid_after', * FROM topology.ValidateTopology('t5782');
 ROLLBACK;
+
+-- See https://trac.osgeo.org/postgis/ticket/5993
+SELECT NULL FROM topology.CreateTopology ('t5993');
+SELECT NULL FROM topology.TopoGeo_addLinestring('t5993',
+'LINESTRING(0 2, 100 2)'
+);
+-- We expect this to succeed, as we added no new edges
+SELECT '#5993.0', 'existing-data', count(*) FROM topology.TopoGeo_addLinestring('t5993',
+  'LINESTRING(0 2,100 2)', max_edges => 0
+);
+-- This should fail because the existing edge is split
+-- creating a new edge while we limit to 0
+SELECT '#5993.1', 'single-split', count(*) FROM topology.TopoGeo_addLinestring('t5993',
+  'LINESTRING(0 2,80 2)', max_edges => 0
+);
+-- This should fail because the existing edge is split
+-- creating two new edge while we limit to 1
+SELECT '#5993.2', 'double-split-off-limit', count(*) FROM topology.TopoGeo_addLinestring('t5993',
+  'LINESTRING(10 2,80 2)', max_edges => 1
+);
+-- This should succeed because the existing edge is split
+-- creating two new edge while we limit to 1
+SELECT '#5993.3', 'double-split-in-limit', count(*) FROM topology.TopoGeo_addLinestring('t5993',
+  'LINESTRING(10 2,80 2)', max_edges => 2
+);
+-- This should fail because the existing edge is snap-split
+-- creating two new edge while we limit to 1
+SELECT '#5993.4', 'snap-split-off-limit', * FROM topology.TopoGeo_addLinestring('t5993',
+  ST_MakeLine(ST_MakePoint(5, 0), ST_MakePoint(5, 2 - 1e-20)),
+  max_edges => 1,
+  tolerance => 2
+);
+SELECT NULL FROM topology.DropTopology ('t5993');

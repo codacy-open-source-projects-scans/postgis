@@ -1098,6 +1098,20 @@ CREATE OR REPLACE FUNCTION ST_ZMax(box3d)
 	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_DEFAULT;
 
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_MMin(geometry)
+	RETURNS FLOAT8
+	AS 'MODULE_PATHNAME','ST_MMin'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_DEFAULT;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_MMax(geometry)
+	RETURNS FLOAT8
+	AS 'MODULE_PATHNAME','ST_MMax'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_DEFAULT;
+
 -----------------------------------------------------------------------------
 --  BOX2D FUNCTIONS
 -----------------------------------------------------------------------------
@@ -1592,10 +1606,11 @@ CREATE OR REPLACE FUNCTION ST_ForcePolygonCW(geometry)
 	_COST_LOW;
 
 -- Availability: 2.4.0
+-- Changed: 3.7.0 - C implementation
 CREATE OR REPLACE FUNCTION ST_ForcePolygonCCW(geometry)
 	RETURNS geometry
-	AS $$ SELECT @extschema@.ST_Reverse(@extschema@.ST_ForcePolygonCW($1)) $$
-	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	AS 'MODULE_PATHNAME', 'ST_ForcePolygonCCW'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_LOW;
 
 -- Availability: 1.2.2
@@ -4467,6 +4482,13 @@ CREATE OR REPLACE FUNCTION ST_CoverageInvalidEdges (geom geometry, tolerance flo
 	LANGUAGE 'c' IMMUTABLE STRICT WINDOW PARALLEL SAFE
 	_COST_HIGH;
 
+-- Availability: 3.6.0
+CREATE OR REPLACE FUNCTION ST_CoverageClean (geom geometry, gapMaximumWidth float8 default 0.0, snappingDistance float8 default -1.0, overlapMergeStrategy text default 'MERGE_LONGEST_BORDER')
+	RETURNS geometry
+	AS 'MODULE_PATHNAME', 'ST_CoverageClean'
+	LANGUAGE 'c' IMMUTABLE STRICT WINDOW PARALLEL SAFE
+	_COST_HIGH;
+
 --------------------------------------------------------------------------------
 
 -- Availability: 2.3.0
@@ -5393,7 +5415,7 @@ CREATE OR REPLACE FUNCTION ST_PointFromGeoHash(text, integer DEFAULT NULL)
 -- ST_GeomFromGeoHash(geohash text, precision integer)
 CREATE OR REPLACE FUNCTION ST_GeomFromGeoHash(text, integer DEFAULT NULL)
 	RETURNS geometry
-	AS $$ SELECT CAST(@extschema@.ST_Box2dFromGeoHash($1, $2) AS geometry); $$
+	AS $$ SELECT CAST(@extschema@.ST_Box2dFromGeoHash($1, $2) AS @extschema@.geometry); $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
 	_COST_LOW;
 
@@ -5480,24 +5502,15 @@ CREATE OR REPLACE FUNCTION ST_PointN(geometry,integer)
 -- Availability: 2.0.0
 CREATE OR REPLACE FUNCTION ST_NumPatches(geometry)
 	RETURNS integer
-	AS '
-	SELECT CASE WHEN @extschema@.ST_GeometryType($1) = ''ST_PolyhedralSurface''
-	THEN @extschema@.ST_NumGeometries($1)
-	ELSE NULL END
-	'
-	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	AS 'MODULE_PATHNAME', 'LWGEOM_numpatches'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_LOW;
 
 -- Availability: 2.0.0
 CREATE OR REPLACE FUNCTION ST_PatchN(geometry, integer)
 	RETURNS geometry
-	AS '
-	SELECT CASE WHEN @extschema@.ST_GeometryType($1) = ''ST_PolyhedralSurface''
-	THEN @extschema@.ST_GeometryN($1, $2)
-	ELSE NULL END
-	'
-	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
-	_COST_LOW;
+	AS 'MODULE_PATHNAME', 'LWGEOM_patchn'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE;
 
 -- PostGIS equivalent function of old StartPoint(geometry))
 CREATE OR REPLACE FUNCTION ST_StartPoint(geometry)
@@ -5596,7 +5609,7 @@ CREATE OR REPLACE FUNCTION ST_WKTToSQL(text)
 CREATE OR REPLACE FUNCTION ST_PointFromText(text)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''POINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_Point''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5608,7 +5621,7 @@ CREATE OR REPLACE FUNCTION ST_PointFromText(text)
 CREATE OR REPLACE FUNCTION ST_PointFromText(text, integer)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''POINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_Point''
 	THEN @extschema@.ST_GeomFromText($1, $2)
 	ELSE NULL END
 	'
@@ -5619,7 +5632,7 @@ CREATE OR REPLACE FUNCTION ST_PointFromText(text, integer)
 CREATE OR REPLACE FUNCTION ST_LineFromText(text)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''LINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_LineString''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5630,7 +5643,7 @@ CREATE OR REPLACE FUNCTION ST_LineFromText(text)
 CREATE OR REPLACE FUNCTION ST_LineFromText(text, integer)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''LINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_LineString''
 	THEN @extschema@.ST_GeomFromText($1,$2)
 	ELSE NULL END
 	'
@@ -5641,7 +5654,7 @@ CREATE OR REPLACE FUNCTION ST_LineFromText(text, integer)
 CREATE OR REPLACE FUNCTION ST_PolyFromText(text)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''POLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_Polygon''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5652,7 +5665,7 @@ CREATE OR REPLACE FUNCTION ST_PolyFromText(text)
 CREATE OR REPLACE FUNCTION ST_PolyFromText(text, integer)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''POLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_Polygon''
 	THEN @extschema@.ST_GeomFromText($1, $2)
 	ELSE NULL END
 	'
@@ -5678,7 +5691,7 @@ CREATE OR REPLACE FUNCTION ST_MLineFromText(text, integer)
 	RETURNS geometry
 	AS '
 	SELECT CASE
-	WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''MULTILINESTRING''
+	WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_MultiLineString''
 	THEN @extschema@.ST_GeomFromText($1,$2)
 	ELSE NULL END
 	'
@@ -5689,7 +5702,7 @@ CREATE OR REPLACE FUNCTION ST_MLineFromText(text, integer)
 CREATE OR REPLACE FUNCTION ST_MLineFromText(text)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''MULTILINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_MultiLineString''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5714,7 +5727,7 @@ CREATE OR REPLACE FUNCTION ST_MultiLineStringFromText(text, integer)
 CREATE OR REPLACE FUNCTION ST_MPointFromText(text, integer)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''MULTIPOINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_MultiPoint''
 	THEN ST_GeomFromText($1, $2)
 	ELSE NULL END
 	'
@@ -5725,7 +5738,7 @@ CREATE OR REPLACE FUNCTION ST_MPointFromText(text, integer)
 CREATE OR REPLACE FUNCTION ST_MPointFromText(text)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''MULTIPOINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_MultiPoint''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5743,7 +5756,7 @@ CREATE OR REPLACE FUNCTION ST_MultiPointFromText(text)
 CREATE OR REPLACE FUNCTION ST_MPolyFromText(text, integer)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''MULTIPOLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_MultiPolygon''
 	THEN @extschema@.ST_GeomFromText($1,$2)
 	ELSE NULL END
 	'
@@ -5754,7 +5767,7 @@ CREATE OR REPLACE FUNCTION ST_MPolyFromText(text, integer)
 CREATE OR REPLACE FUNCTION ST_MPolyFromText(text)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''MULTIPOLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_MultiPolygon''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5780,7 +5793,7 @@ CREATE OR REPLACE FUNCTION ST_GeomCollFromText(text, integer)
 	RETURNS geometry
 	AS '
 	SELECT CASE
-	WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1, $2)) = ''GEOMETRYCOLLECTION''
+	WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1, $2)) = ''ST_GeometryCollection''
 	THEN @extschema@.ST_GeomFromText($1,$2)
 	ELSE NULL END
 	'
@@ -5792,7 +5805,7 @@ CREATE OR REPLACE FUNCTION ST_GeomCollFromText(text)
 	RETURNS geometry
 	AS '
 	SELECT CASE
-	WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromText($1)) = ''GEOMETRYCOLLECTION''
+	WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromText($1)) = ''ST_GeometryCollection''
 	THEN @extschema@.ST_GeomFromText($1)
 	ELSE NULL END
 	'
@@ -5817,7 +5830,7 @@ CREATE OR REPLACE FUNCTION ST_GeomFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_PointFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''POINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_Point''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5828,7 +5841,7 @@ CREATE OR REPLACE FUNCTION ST_PointFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_PointFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''POINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_Point''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5839,7 +5852,7 @@ CREATE OR REPLACE FUNCTION ST_PointFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_LineFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''LINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_LineString''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5850,7 +5863,7 @@ CREATE OR REPLACE FUNCTION ST_LineFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_LineFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''LINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_LineString''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5861,7 +5874,7 @@ CREATE OR REPLACE FUNCTION ST_LineFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_LinestringFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''LINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_LineString''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5872,7 +5885,7 @@ CREATE OR REPLACE FUNCTION ST_LinestringFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_LinestringFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''LINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_LineString''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5883,7 +5896,7 @@ CREATE OR REPLACE FUNCTION ST_LinestringFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_PolyFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''POLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_Polygon''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5894,7 +5907,7 @@ CREATE OR REPLACE FUNCTION ST_PolyFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_PolyFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''POLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_Polygon''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5905,7 +5918,7 @@ CREATE OR REPLACE FUNCTION ST_PolyFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_PolygonFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1,$2)) = ''POLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1,$2)) = ''ST_Polygon''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5916,7 +5929,7 @@ CREATE OR REPLACE FUNCTION ST_PolygonFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_PolygonFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''POLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_Polygon''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5927,7 +5940,7 @@ CREATE OR REPLACE FUNCTION ST_PolygonFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_MPointFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''MULTIPOINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_MultiPoint''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5938,7 +5951,7 @@ CREATE OR REPLACE FUNCTION ST_MPointFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_MPointFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''MULTIPOINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_MultiPoint''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5949,7 +5962,7 @@ CREATE OR REPLACE FUNCTION ST_MPointFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_MultiPointFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1,$2)) = ''MULTIPOINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1,$2)) = ''ST_MultiPoint''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5960,7 +5973,7 @@ CREATE OR REPLACE FUNCTION ST_MultiPointFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_MultiPointFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''MULTIPOINT''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_MultiPoint''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5971,7 +5984,7 @@ CREATE OR REPLACE FUNCTION ST_MultiPointFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_MultiLineFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''MULTILINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_MultiLineString''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -5982,7 +5995,7 @@ CREATE OR REPLACE FUNCTION ST_MultiLineFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_MLineFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''MULTILINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_MultiLineString''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -5993,7 +6006,7 @@ CREATE OR REPLACE FUNCTION ST_MLineFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_MLineFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''MULTILINESTRING''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_MultiLineString''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -6005,7 +6018,7 @@ CREATE OR REPLACE FUNCTION ST_MLineFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_MPolyFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''MULTIPOLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_MultiPolygon''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -6016,7 +6029,7 @@ CREATE OR REPLACE FUNCTION ST_MPolyFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_MPolyFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''MULTIPOLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_MultiPolygon''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -6026,7 +6039,7 @@ CREATE OR REPLACE FUNCTION ST_MPolyFromWKB(bytea)
 CREATE OR REPLACE FUNCTION ST_MultiPolyFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''MULTIPOLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_MultiPolygon''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -6037,7 +6050,7 @@ CREATE OR REPLACE FUNCTION ST_MultiPolyFromWKB(bytea, int)
 CREATE OR REPLACE FUNCTION ST_MultiPolyFromWKB(bytea)
 	RETURNS geometry
 	AS '
-	SELECT CASE WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''MULTIPOLYGON''
+	SELECT CASE WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_MultiPolygon''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -6049,7 +6062,7 @@ CREATE OR REPLACE FUNCTION ST_GeomCollFromWKB(bytea, int)
 	RETURNS geometry
 	AS '
 	SELECT CASE
-	WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1, $2)) = ''GEOMETRYCOLLECTION''
+	WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1, $2)) = ''ST_GeometryCollection''
 	THEN @extschema@.ST_GeomFromWKB($1, $2)
 	ELSE NULL END
 	'
@@ -6061,7 +6074,7 @@ CREATE OR REPLACE FUNCTION ST_GeomCollFromWKB(bytea)
 	RETURNS geometry
 	AS '
 	SELECT CASE
-	WHEN @extschema@.geometrytype(@extschema@.ST_GeomFromWKB($1)) = ''GEOMETRYCOLLECTION''
+	WHEN @extschema@.ST_GeometryType(@extschema@.ST_GeomFromWKB($1)) = ''ST_GeometryCollection''
 	THEN @extschema@.ST_GeomFromWKB($1)
 	ELSE NULL END
 	'
@@ -6158,7 +6171,7 @@ BEGIN
 
 	geom := @extschema@.ST_BuildArea(mline);
 
-	IF @extschema@.GeometryType(geom) != 'POLYGON'
+	IF @extschema@.ST_GeometryType(geom) != 'ST_Polygon'
 	THEN
 		RAISE EXCEPTION 'Input returns more then a single polygon, try using BdMPolyFromText instead';
 	END IF;
@@ -6385,41 +6398,49 @@ LANGUAGE 'sql' STABLE STRICT PARALLEL SAFE _COST_MEDIUM;
 -- Changed: 2.5.2 replace use of pg_constraint.consrc with pg_get_constraintdef, consrc removed pg12
 
 CREATE OR REPLACE VIEW geometry_columns AS
- SELECT current_database()::character varying(256) AS f_table_catalog,
-	n.nspname AS f_table_schema,
-	c.relname AS f_table_name,
-	a.attname AS f_geometry_column,
-	COALESCE(postgis_typmod_dims(a.atttypmod), sn.ndims, 2) AS coord_dimension,
-	COALESCE(NULLIF(postgis_typmod_srid(a.atttypmod), 0), sr.srid, 0) AS srid,
-	replace(replace(COALESCE(NULLIF(upper(postgis_typmod_type(a.atttypmod)), 'GEOMETRY'::text), st.type, 'GEOMETRY'::text), 'ZM'::text, ''::text), 'Z'::text, ''::text)::character varying(30) AS type
+WITH constraint_defs AS (
+    -- Trim trailing NOT VALID so metadata inference works before constraint validation (#4828).
+    SELECT connamespace,
+           conrelid,
+           conkey,
+           regexp_replace(pg_get_constraintdef(oid), $$\s+NOT\s+VALID$$, '', 'i') AS consrc
+      FROM pg_constraint
+)
+SELECT current_database()::character varying(256) AS f_table_catalog,
+    n.nspname AS f_table_schema,
+    c.relname AS f_table_name,
+    a.attname AS f_geometry_column,
+    COALESCE(postgis_typmod_dims(a.atttypmod), sn.ndims, 2) AS coord_dimension,
+    COALESCE(NULLIF(postgis_typmod_srid(a.atttypmod), 0), sr.srid, 0) AS srid,
+    replace(replace(COALESCE(NULLIF(upper(postgis_typmod_type(a.atttypmod)), 'GEOMETRY'::text), st.type, 'GEOMETRY'::text), 'ZM'::text, ''::text), 'Z'::text, ''::text)::character varying(30) AS type
    FROM pg_class c
-	 JOIN pg_attribute a ON a.attrelid = c.oid AND NOT a.attisdropped
-	 JOIN pg_namespace n ON c.relnamespace = n.oid
-	 JOIN pg_type t ON a.atttypid = t.oid
-	 LEFT JOIN ( SELECT s.connamespace,
-			s.conrelid,
-			s.conkey, replace(split_part(s.consrc, ''''::text, 2), ')'::text, ''::text) As type
-		   FROM (SELECT connamespace, conrelid, conkey, pg_get_constraintdef(oid) As consrc
-				FROM pg_constraint) AS s
-		  WHERE s.consrc ~~* '%geometrytype(% = %'::text
-
-) st ON st.connamespace = n.oid AND st.conrelid = c.oid AND (a.attnum = ANY (st.conkey))
-	 LEFT JOIN ( SELECT s.connamespace,
-			s.conrelid,
-			s.conkey, replace(split_part(s.consrc, ' = '::text, 2), ')'::text, ''::text)::integer As ndims
-		   FROM (SELECT connamespace, conrelid, conkey, pg_get_constraintdef(oid) As consrc
-			FROM pg_constraint) AS s
-		  WHERE s.consrc ~~* '%ndims(% = %'::text
-
-) sn ON sn.connamespace = n.oid AND sn.conrelid = c.oid AND (a.attnum = ANY (sn.conkey))
-	 LEFT JOIN ( SELECT s.connamespace,
-			s.conrelid,
-			s.conkey, replace(replace(split_part(s.consrc, ' = '::text, 2), ')'::text, ''::text), '('::text, ''::text)::integer As srid
-		   FROM (SELECT connamespace, conrelid, conkey, pg_get_constraintdef(oid) As consrc
-			FROM pg_constraint) AS s
-		  WHERE s.consrc ~~* '%srid(% = %'::text
-
-) sr ON sr.connamespace = n.oid AND sr.conrelid = c.oid AND (a.attnum = ANY (sr.conkey))
+     JOIN pg_attribute a ON a.attrelid = c.oid AND NOT a.attisdropped
+     JOIN pg_namespace n ON c.relnamespace = n.oid
+     JOIN pg_type t ON a.atttypid = t.oid
+     LEFT JOIN (
+           SELECT s.connamespace,
+                  s.conrelid,
+                  s.conkey,
+                  (regexp_match(s.consrc, $$geometrytype\(\w+\)\s*=\s*'(\w+)'$$, 'i'))[1]::text AS type
+             FROM constraint_defs AS s
+            WHERE s.consrc ~* $$geometrytype\(\w+\)\s*=\s*'\w+'$$::text
+     ) st ON st.connamespace = n.oid AND st.conrelid = c.oid AND (a.attnum = ANY (st.conkey))
+     LEFT JOIN (
+           SELECT s.connamespace,
+                  s.conrelid,
+                  s.conkey,
+                  (regexp_match(s.consrc, $$ndims\(\w+\)\s*=\s*(\d+)$$, 'i'))[1]::integer AS ndims
+             FROM constraint_defs AS s
+            WHERE s.consrc ~* $$ndims\(\w+\)\s*=\s*\d+$$::text
+     ) sn ON sn.connamespace = n.oid AND sn.conrelid = c.oid AND (a.attnum = ANY (sn.conkey))
+     LEFT JOIN (
+           SELECT s.connamespace,
+                  s.conrelid,
+                  s.conkey,
+                  (regexp_match(s.consrc, $$srid\(\w+\)\s*=\s*(\d+)$$, 'i'))[1]::integer As srid
+             FROM constraint_defs AS s
+            WHERE s.consrc ~* $$srid\(\w+\)\s*=\s*\d+$$::text
+     ) sr ON sr.connamespace = n.oid AND sr.conrelid = c.oid AND (a.attnum = ANY (sr.conkey))
   WHERE (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", 'm'::"char", 'f'::"char", 'p'::"char"]))
   AND NOT c.relname = 'raster_columns'::name AND t.typname = 'geometry'::name
   AND NOT pg_is_other_temp_schema(c.relnamespace) AND has_table_privilege(c.oid, 'SELECT'::text);

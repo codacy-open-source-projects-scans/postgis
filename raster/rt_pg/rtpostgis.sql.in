@@ -1122,11 +1122,6 @@ CREATE OR REPLACE FUNCTION st_approxquantile(rast raster, exclude_nodata_value b
 	AS $$ SELECT ( @extschema@._ST_quantile($1, 1, $2, 0.1, ARRAY[$3]::double precision[])).value $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE;
 
-CREATE OR REPLACE FUNCTION st_approxquantile(rast raster, quantile double precision)
-	RETURNS double precision
-	AS $$ SELECT ( @extschema@._ST_quantile($1, 1, TRUE, 0.1, ARRAY[$2]::double precision[])).value $$
-	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE;
-
 
 -----------------------------------------------------------------------
 -- ST_ValueCount and ST_ValuePercent
@@ -1324,6 +1319,16 @@ CREATE OR REPLACE FUNCTION _st_reclass(rast raster, VARIADIC reclassargset recla
 	RETURNS raster
 	AS 'MODULE_PATHNAME', 'RASTER_reclass'
 	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION ST_ReclassExact(rast raster,
+	inputvalues float8[], outputvalues float8[],
+	bandnumber integer DEFAULT 1,
+	outputpixeltype text DEFAULT '32BF',
+	nodatavalue float8 DEFAULT NULL
+	)
+	RETURNS raster
+	AS 'MODULE_PATHNAME', 'RASTER_reclass_exact'
+	LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION st_reclass(rast raster, VARIADIC reclassargset reclassarg[])
 	RETURNS raster
@@ -6304,6 +6309,15 @@ CREATE OR REPLACE FUNCTION ST_Disjoint(rast1 raster, rast2 raster)
 	AS $$ SELECT @extschema@.ST_Disjoint($1, NULL::integer, $2, NULL::integer) $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
 	COST 1000;
+
+-----------------------------------------------------------------------
+-- ST_IntersectionFractions(raster, geometry) returns raster
+-----------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ST_IntersectionFractions(rast raster, geom geometry)
+	RETURNS raster
+	AS 'MODULE_PATHNAME','RASTER_intersectionFractions'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE;
 
 -----------------------------------------------------------------------
 -- ST_Intersection(geometry, raster) in geometry-space

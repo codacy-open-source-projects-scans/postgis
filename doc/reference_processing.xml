@@ -85,8 +85,8 @@ providing a list of blank-separated key=value pairs as follows:
 <para>'mitre_limit=#.#' : mitre ratio limit (only affects mitered join style). 'miter_limit' is accepted as a synonym for 'mitre_limit'.</para>
 </listitem>
 <listitem>
-<para>'side=both|left|right' : 'left' or 'right' performs a single-sided buffer on the geometry, with the buffered side relative to the direction of the line.
-This is only applicable to LINESTRING geometry and does not affect POINT or POLYGON geometries. By default end caps are square.</para>
+<para>'side=both|left|right' : defaults to 'both'. 'left' or 'right' performs a single-sided buffer on the geometry, with the buffered side relative to the direction of the line.
+This is only applicable to LINESTRING geometry and does not affect POINT or POLYGON geometries. By default end caps are square when 'left' or 'right' are specified.</para>
 </listitem>
 </itemizedlist>
                 </para>
@@ -98,10 +98,9 @@ This is only applicable to LINESTRING geometry and does not affect POINT or POLY
             This may not produce the desired behavior if the input object is much larger than a UTM zone or crosses the dateline
             </para></note>
 
-            <note><para>Buffer output is always a valid polygonal geometry.
-            Buffer can handle invalid inputs,
-            so buffering by distance 0 is sometimes used as a way of repairing invalid polygons.
-            <xref linkend="ST_MakeValid"/> can also be used for this purpose.
+            <note><para>Buffer can handle invalid inputs and the output is always a valid polygonal geometry.
+            Buffering by distance 0 is sometimes used as a way of repairing invalid polygons.
+            <xref linkend="ST_MakeValid"/> is more suitable for this process as it can handle multi-polygons.
             </para></note>
 
             <note><para>Buffering is sometimes used to perform a within-distance search.
@@ -1469,6 +1468,8 @@ FROM test;
 
 		<refsection>
 			<title>Examples</title>
+      <refsection>
+        <title>Cardinality 2</title>
       <para>
           <informalfigure>
               <mediaobject>
@@ -1477,7 +1478,7 @@ FROM test;
                     </imageobject>
 
                     <caption>
-                        <para>Merging lines with different orientation.
+                        <para>Nodes with cardinality 2 are merged away.
                         </para>
                     </caption>
               </mediaobject>
@@ -1489,7 +1490,9 @@ FROM test;
 --------------------------------------------
  LINESTRING(10 160,60 120,120 140,180 120)
 </programlisting>
-
+</refsection>
+<refsection>
+<title>Cardinality 3 or More</title>
       <para>
           <informalfigure>
               <mediaobject>
@@ -1510,7 +1513,10 @@ FROM test;
 --------------------------------------------
  MULTILINESTRING((10 160,60 120,120 140),(100 180,120 140),(120 140,180 120))
 </programlisting>
+</refsection>
 
+<refsection>
+  <title>Non-Touching Lines</title>
 <para>If merging is not possible due to non-touching lines,
 the original MultiLineString is returned.</para>
 <programlisting>
@@ -1520,7 +1526,10 @@ SELECT ST_AsText(ST_LineMerge(
 ----------------
 MULTILINESTRING((-45.2 -33.2,-46 -32),(-29 -27,-30 -29.7,-36 -31,-45 -33))
 </programlisting>
+</refsection>
 
+<refsection>
+  <title>Directed Parameter</title>
 <para>
 	<informalfigure>
 		<mediaobject>
@@ -1540,15 +1549,18 @@ TRUE));
 -------------------------------------------------------
  MULTILINESTRING((120 50,60 30,10 70),(120 50,180 30))
 </programlisting>
+</refsection>
 
-<para>Example showing Z-dimension handling.</para>
+<refsection>
+<title>Z-dimension Handling</title>
 <programlisting>
 SELECT ST_AsText(ST_LineMerge(
       'MULTILINESTRING((-29 -27 11,-30 -29.7 10,-36 -31 5,-45 -33 6), (-29 -27 12,-30 -29.7 5), (-45 -33 1,-46 -32 11))'
         ));
---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 LINESTRING Z (-30 -29.7 5,-29 -27 11,-30 -29.7 10,-36 -31 5,-45 -33 1,-46 -32 11)
 </programlisting>
+</refsection>
 		</refsection>
 		<refsection>
 			<title>See Also</title>
@@ -2839,7 +2851,7 @@ FROM (SELECT ST_Buffer('POINT(1 3)', 10,12) AS geom) AS t;
     <refentry xml:id="ST_SimplifyPolygonHull">
       <refnamediv>
         <refname>ST_SimplifyPolygonHull</refname>
-        <refpurpose>Computes a simplifed topology-preserving outer or inner hull of a polygonal geometry.</refpurpose>
+        <refpurpose>Computes a simplified topology-preserving outer or inner hull of a polygonal geometry.</refpurpose>
       </refnamediv>
 
       <refsynopsisdiv>

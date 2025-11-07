@@ -19,6 +19,7 @@
 #include "utils/datetime.h"
 #include "utils/lsyscache.h"
 #include "utils/json.h"
+#include "utils/hsearch.h"
 #if POSTGIS_PGSQL_VERSION < 130
 #include "utils/jsonapi.h"
 #else
@@ -32,7 +33,6 @@
 #include "lwgeom_log.h"
 #include "liblwgeom.h"
 
-#if POSTGIS_PGSQL_VERSION < 190
 typedef enum					/* type categories for datum_to_json */
 {
 	JSONTYPE_NULL,				/* null, so we didn't bother to identify */
@@ -47,12 +47,21 @@ typedef enum					/* type categories for datum_to_json */
 	JSONTYPE_CAST,				/* something with an explicit cast to JSON */
 	JSONTYPE_OTHER				/* all else */
 } JsonTypeCategory;
-#endif
 
-static void array_dim_to_json(StringInfo result, int dim, int ndims, int *dims,
-				  Datum *vals, bool *nulls, int *valcount,
-				  JsonTypeCategory tcategory, Oid outfuncoid,
-				  bool use_line_feeds);
+typedef struct GeoJsonPropKey {
+	char key[NAMEDATALEN];
+} GeoJsonPropKey;
+
+static void array_dim_to_json(StringInfo result,
+			      int dim,
+			      int ndims,
+			      int *dims,
+			      Datum *vals,
+			      bool *nulls,
+			      int *valcount,
+			      JsonTypeCategory tcategory,
+			      Oid outfuncoid,
+			      bool use_line_feeds);
 static void array_to_json_internal(Datum array, StringInfo result,
 								   bool use_line_feeds);
 static void composite_to_geojson(FunctionCallInfo fcinfo,
@@ -69,11 +78,9 @@ static void composite_to_json(Datum composite, StringInfo result,
 static void datum_to_json(Datum val, bool is_null, StringInfo result,
 						  JsonTypeCategory tcategory, Oid outfuncoid,
 						  bool key_scalar);
-#if POSTGIS_PGSQL_VERSION < 190
 static void json_categorize_type(Oid typoid,
 								 JsonTypeCategory *tcategory,
 								 Oid *outfuncoid);
-#endif
 static char * postgis_JsonEncodeDateTime(char *buf, Datum value, Oid typid);
 static int postgis_time2tm(TimeADT time, struct pg_tm *tm, fsec_t *fsec);
 static int postgis_timetz2tm(TimeTzADT *time, struct pg_tm *tm, fsec_t *fsec, int *tzp);
@@ -90,12 +97,12 @@ ST_AsGeoJsonRow(PG_FUNCTION_ARGS)
 {
 	Datum		array = PG_GETARG_DATUM(0);
 	text        *geom_column_text = PG_GETARG_TEXT_P(1);
+	char        *geom_column = PG_ARGISNULL(1) ? "" : text_to_cstring(geom_column_text);
 	int32       maxdecimaldigits = PG_GETARG_INT32(2);
 	bool		do_pretty = PG_GETARG_BOOL(3);
 	text        *id_column_text = PG_GETARG_TEXT_P(4);
-	StringInfo	result;
-	char        *geom_column = text_to_cstring(geom_column_text);
-	char        *id_column = text_to_cstring(id_column_text);
+	char        *id_column = PG_ARGISNULL(4) ? "" : text_to_cstring(id_column_text);
+	StringInfoData result;
 	Oid geom_oid = InvalidOid;
 	Oid geog_oid = InvalidOid;
 
@@ -109,11 +116,11 @@ ST_AsGeoJsonRow(PG_FUNCTION_ARGS)
 	if (strlen(id_column) == 0)
 		id_column = NULL;
 
-	result = makeStringInfo();
+	initStringInfo(&result);
 
-	composite_to_geojson(fcinfo, array, geom_column, id_column, maxdecimaldigits, result, do_pretty, geom_oid, geog_oid);
+	composite_to_geojson(fcinfo, array, geom_column, id_column, maxdecimaldigits, &result, do_pretty, geom_oid, geog_oid);
 
-	PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
+	PG_RETURN_TEXT_P(cstring_to_text_with_len(result.data, result.len));
 }
 
 /*
@@ -131,18 +138,24 @@ composite_to_geojson(FunctionCallInfo fcinfo,
 		     Oid geog_oid)
 {
 	HeapTupleHeader td;
-	Oid			tupType;
-	int32		tupTypmod;
-	TupleDesc	tupdesc;
-	HeapTupleData tmptup,
-			   *tuple;
-	int			i;
-	bool		needsep = false;
+	Oid tupType;
+	int32 tupTypmod;
+	TupleDesc tupdesc;
+	HeapTupleData tmptup, *tuple;
+	int i;
+	bool needsep = false;
 	const char *sep;
-	StringInfo	props = makeStringInfo();
-	StringInfo	id = makeStringInfo();
-	bool		geom_column_found = false;
-	bool		id_column_found = false;
+	StringInfo props = makeStringInfo();
+	StringInfo id = makeStringInfo();
+	bool geom_column_found = false;
+	bool id_column_found = false;
+	HTAB *prop_keys = NULL;
+	HASHCTL ctl;
+
+	MemSet(&ctl, 0, sizeof(ctl));
+	ctl.keysize = NAMEDATALEN;
+	ctl.entrysize = sizeof(GeoJsonPropKey);
+	ctl.hcxt = CurrentMemoryContext;
 
 	sep = use_line_feeds ? ",\n " : ", ";
 
@@ -153,6 +166,19 @@ composite_to_geojson(FunctionCallInfo fcinfo,
 	tupTypmod = HeapTupleHeaderGetTypMod(td);
 	tupdesc = lookup_rowtype_tupdesc(tupType, tupTypmod);
 
+	/*
+	 * Keep track of property names for this feature so that we can warn
+	 * when SQL supplies duplicate aliases.  GeoJSON accepts repeated keys,
+	 * yet downstream PostgreSQL jsonb casts retain only the last value, so
+	 * surfacing the issue here prevents silent information loss.
+	 */
+	prop_keys =
+#if POSTGIS_PGSQL_VERSION <= 130
+	    hash_create("GeoJSON property keys", Max(tupdesc->natts, 8), &ctl, HASH_ELEM | HASH_CONTEXT);
+#else
+	    hash_create("GeoJSON property keys", Max(tupdesc->natts, 8), &ctl, HASH_ELEM | HASH_CONTEXT | HASH_STRINGS);
+#endif
+
 	/* Build a temporary HeapTuple control structure */
 	tmptup.t_len = HeapTupleHeaderGetDatumLength(td);
 	tmptup.t_data = td;
@@ -162,14 +188,14 @@ composite_to_geojson(FunctionCallInfo fcinfo,
 
 	for (i = 0; i < tupdesc->natts; i++)
 	{
-		Datum		val;
-		bool		isnull;
-		char	   *attname;
+		Datum val;
+		bool isnull;
+		char *attname;
 		JsonTypeCategory tcategory;
-		Oid			outfuncoid;
+		Oid outfuncoid;
 		Form_pg_attribute att = TupleDescAttr(tupdesc, i);
-		bool        is_geom_column = false;
-		bool        is_id_column = false;
+		bool is_geom_column = false;
+		bool is_id_column = false;
 
 		if (att->attisdropped)
 			continue;
@@ -224,9 +250,21 @@ composite_to_geojson(FunctionCallInfo fcinfo,
 		}
 		else
 		{
+			bool found;
+
 			if (needsep)
 				appendStringInfoString(props, sep);
 			needsep = true;
+
+			(void)hash_search(prop_keys, attname, HASH_ENTER, &found);
+			if (found)
+			{
+				ereport(
+				    WARNING,
+				    (errmsg("duplicate key \"%s\" encountered while building GeoJSON properties",
+					    attname),
+				     errhint("Only the last value for each key is preserved when casting to JSONB.")));
+			}
 
 			escape_json(props, attname);
 			appendStringInfoString(props, ": ");
@@ -246,16 +284,14 @@ composite_to_geojson(FunctionCallInfo fcinfo,
 	}
 
 	if (!geom_column_found)
-		ereport(ERROR,
-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-				 errmsg("geometry column is missing")));
+		ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("geometry column is missing")));
 
 	if (id_column_name)
 	{
 		if (!id_column_found)
 			ereport(ERROR,
-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-					 errmsg("Specified id column \"%s\" is missing", id_column_name)));
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("Specified id column \"%s\" is missing", id_column_name)));
 
 		appendStringInfoString(result, ", \"id\": ");
 		appendStringInfo(result, "%s", id->data);
@@ -265,6 +301,7 @@ composite_to_geojson(FunctionCallInfo fcinfo,
 	appendStringInfo(result, "%s", props->data);
 
 	appendStringInfoString(result, "}}");
+	hash_destroy(prop_keys);
 	ReleaseTupleDesc(tupdesc);
 }
 
@@ -283,7 +320,6 @@ composite_to_geojson(FunctionCallInfo fcinfo,
  * output function OID.  If the returned category is JSONTYPE_CAST, we
  * return the OID of the type->JSON cast function instead.
  */
-#if POSTGIS_PGSQL_VERSION < 190
 static void
 json_categorize_type(Oid typoid,
 					 JsonTypeCategory *tcategory,
@@ -376,7 +412,7 @@ json_categorize_type(Oid typoid,
 			break;
 	}
 }
-#endif
+
 /*
  * Turn a Datum into JSON text, appending the string to "result".
  *

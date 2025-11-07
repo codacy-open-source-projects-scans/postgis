@@ -1467,8 +1467,10 @@ Datum LWGEOM_makeline_garray(PG_FUNCTION_ARGS)
 
 		geom = (GSERIALIZED *)DatumGetPointer(value);
 
-		if (gserialized_get_type(geom) != POINTTYPE && gserialized_get_type(geom) != LINETYPE &&
-		    gserialized_get_type(geom) != MULTIPOINTTYPE)
+		if (gserialized_get_type(geom) != POINTTYPE &&
+		    gserialized_get_type(geom) != MULTIPOINTTYPE &&
+		    gserialized_get_type(geom) != LINETYPE &&
+		    gserialized_get_type(geom) != MULTILINETYPE)
 		{
 			continue;
 		}
@@ -1932,6 +1934,31 @@ Datum LWGEOM_force_clockwise_poly(PG_FUNCTION_ARGS)
 	PG_RETURN_POINTER(outgeom);
 }
 
+
+/**
+ * Force polygon exterior rings to circle counter-clockwise,
+ * and interior rings to circle clockwise.
+ */
+PG_FUNCTION_INFO_V1(ST_ForcePolygonCCW);
+Datum ST_ForcePolygonCCW(PG_FUNCTION_ARGS)
+{
+	GSERIALIZED *ingeom, *outgeom;
+	LWGEOM *lwgeom;
+
+	POSTGIS_DEBUG(2, "ST_ForcePolygonCCW called");
+
+	ingeom = PG_GETARG_GSERIALIZED_P_COPY(0);
+
+	lwgeom = lwgeom_from_gserialized(ingeom);
+	lwgeom_force_counterclockwise(lwgeom);
+
+	outgeom = geometry_serialize(lwgeom);
+
+	lwgeom_free(lwgeom);
+	PG_FREE_IF_COPY(ingeom, 0);
+	PG_RETURN_POINTER(outgeom);
+}
+
 /** Test deserialize/serialize operations */
 PG_FUNCTION_INFO_V1(LWGEOM_noop);
 Datum LWGEOM_noop(PG_FUNCTION_ARGS)
@@ -2161,8 +2188,8 @@ PG_FUNCTION_INFO_V1(ST_IsCollection);
 Datum ST_IsCollection(PG_FUNCTION_ARGS)
 {
 	GSERIALIZED *geom = PG_GETARG_GSERIALIZED_HEADER(0);
-	LWGEOM *lwg = lwgeom_from_gserialized(geom);
-	PG_RETURN_BOOL(!lwgeom_is_unitary(lwg));
+	uint32_t lwtype = gserialized_get_type(geom);
+	PG_RETURN_BOOL(!lwtype_is_unitary(lwtype));
 }
 
 PG_FUNCTION_INFO_V1(LWGEOM_makepoint);
@@ -2292,6 +2319,11 @@ Datum LWGEOM_addpoint(PG_FUNCTION_ARGS)
 	{
 		elog(ERROR, "Second argument must be a POINT");
 		PG_RETURN_NULL();
+	}
+
+	if (gserialized_is_empty(pglwg2))
+	{
+		PG_RETURN_POINTER(pglwg1);
 	}
 
 	line = lwgeom_as_lwline(lwgeom_from_gserialized(pglwg1));

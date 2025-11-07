@@ -144,7 +144,7 @@ sh autogen.sh
 		  is available from
 		  <link xlink:href="https://www.postgresql.org">
 			https://www.postgresql.org
-		  </link>
+		  </link>18
 		  .
 		</para>
 		<para>For a full PostgreSQL / PostGIS support matrix and PostGIS/GEOS support matrix refer to
@@ -184,7 +184,7 @@ sh autogen.sh
 
 	  <listitem>
 		<para>
-		  GEOS geometry library, version &min_geos_version; or greater, but GEOS 3.12+ is required to take full advantage of all the new functions and features. GEOS is available for download from
+		  GEOS geometry library, version &min_geos_version; or greater, but GEOS 3.14+ is required to take full advantage of all the new functions and features. GEOS is available for download from
 		  <link xlink:href="https://libgeos.org/">
 			https://libgeos.org
 		  </link>.
@@ -246,7 +246,7 @@ sh autogen.sh
 
 	  <listitem>
 		<para>
-			SFCGAL, 1.4.1 or higher is required and 1.5.0+ is needed to be able to use all functionality. SFCGAL can be used to provide additional 2D and 3D advanced analysis functions to PostGIS cf <xref linkend="reference_sfcgal"/>. And also allow to use SFCGAL rather than GEOS for some 2D functions provided by both backends (like ST_Intersection or ST_Area, for instance). A PostgreSQL configuration variable <code>postgis.backend</code> allow end user to control which backend he want to use if SFCGAL is installed (GEOS by default). Nota: SFCGAL 1.2 require at least CGAL 4.3 and Boost 1.54 (cf: <link xlink:href="https://sfcgal.org">https://sfcgal.org</link>)
+			SFCGAL, 1.4.1 or higher is required and 2.1+ is needed to be able to use all functionality. SFCGAL can be used to provide additional 2D and 3D advanced analysis functions to PostGIS cf <xref linkend="reference_sfcgal"/>. And also allow to use SFCGAL rather than GEOS for some 2D functions provided by both backends (like ST_Intersection or ST_Area, for instance). A PostgreSQL configuration variable <code>postgis.backend</code> allow end user to control which backend he want to use if SFCGAL is installed (GEOS by default). Nota: SFCGAL 1.2 require at least CGAL 4.3 and Boost 1.54 (cf: <link xlink:href="https://sfcgal.org">https://sfcgal.org</link>)
 
 		  <link xlink:href="https://gitlab.com/sfcgal/SFCGAL/">https://gitlab.com/sfcgal/SFCGAL/</link>.
 		</para>
@@ -254,7 +254,7 @@ sh autogen.sh
 
 	 <listitem>
 			<para>
-				In order to build the <xref linkend="Address_Standardizer"/> you will also need PCRE <link xlink:href="http://www.pcre.org">http://www.pcre.org</link> (which generally is already installed on nix systems).
+				In order to build the <xref linkend="Address_Standardizer"/> you will also need PCRE 1 or 2 <link xlink:href="http://www.pcre.org">http://www.pcre.org</link> (which generally is already installed on nix systems).
 				<xref linkend="Address_Standardizer"/> will automatically be built if it detects a PCRE library, or you pass in a valid <varname>--with-pcre-dir=/path/to/pcre</varname> during configure.
 			</para>
 		</listitem>
@@ -498,11 +498,18 @@ sh autogen.sh
 		  </listitem>
 		</varlistentry>
 		<varlistentry>
+		  <term><option>--without-tiger</option></term>
+		  <listitem>
+			<para>
+			  Disables tiger geocoder support.
+			</para>
+		  </listitem>
+		</varlistentry>
+		<varlistentry>
 		  <term><option>--without-topology</option></term>
 		  <listitem>
 			<para>
-			  Disable topology support. There is no corresponding library
-			  as all logic needed for topology is in postgis-&last_release_version; library.
+			  Compile without topology support.
 			</para>
 		  </listitem>
 		</varlistentry>
@@ -578,24 +585,24 @@ sh autogen.sh
 		successfully. Ready to install.</code>"
 	  </para>
 
-	  <para>
-		As of PostGIS v1.4.0, all the functions have comments generated from the
-		documentation. If you wish to install these comments into your spatial
-		databases later, run the command which requires docbook.  The postgis_comments.sql and other
-		package comments files raster_comments.sql, topology_comments.sql are
-			also packaged in the tar.gz distribution in the doc folder so no need to make comments
-			if installing from the tar ball.  Comments are also included as part of the CREATE EXTENSION install.
-	  </para>
+          <para>
+                All the functions have comments generated from the
+                documentation. If you wish to install these comments into your spatial
+                databases later, run the command which requires docbook.  The postgis_comments.sql and other
+                package comment files are
+                        also packaged in the tar.gz distribution in the doc folder so no need to make comments
+                        if installing from the tar ball.  Comments are also included as part of the CREATE EXTENSION install.
+          </para>
 
 	  <para>
 		<command>make comments</command>
 	  </para>
 
-	  <para>
-		Introduced in PostGIS 2.0. This generates html cheat sheets suitable for quick reference or for student handouts.
-		This requires xsltproc to build and will generate 4 files in doc folder <filename>topology_cheatsheet.html</filename>, <filename>tiger_geocoder_cheatsheet.html</filename>,
-			<filename>raster_cheatsheet.html</filename>, <filename>postgis_cheatsheet.html</filename>
-	  </para>
+          <para>
+                The <command>make cheatsheets</command> target generates html cheat sheets suitable for quick reference or for student handouts.
+                This requires xsltproc to build and will generate 4 files in doc folder <filename>topology_cheatsheet.html</filename>, <filename>tiger_geocoder_cheatsheet.html</filename>,
+                        <filename>raster_cheatsheet.html</filename>, <filename>postgis_cheatsheet.html</filename>
+          </para>
 	  <para>You can download some pre-built ones available in html and pdf from <link xlink:href="http://www.postgis.us/study_guides">PostGIS / PostgreSQL Study Guides</link></para>
 
 	  <para>
@@ -606,9 +613,9 @@ sh autogen.sh
 	<section xml:id="make_install_postgis_extensions">
 	  <title>Building PostGIS Extensions and Deploying them</title>
 
-	  <para>
-		The PostGIS extensions are built and installed automatically if you are using PostgreSQL 9.1+.
-	  </para>
+          <para>
+                The PostGIS extensions are built and installed automatically when PostgreSQL extension support is available.
+          </para>
 	  <para>If you are building from source repository, you need to build the function descriptions first. These get built if you have docbook installed. You can also manually build with the statement:
     </para>
 	  <para>
@@ -708,9 +715,9 @@ Schema      | topology
 Description | PostGIS topology spatial types and functions</screen>
 
 <warning><para>Extension tables <varname>spatial_ref_sys</varname>, <varname>layer</varname>, <varname>topology</varname> can not be explicitly backed up.  They can only
-be backed up when the respective <varname>postgis</varname> or <varname>postgis_topology</varname> extension is backed up, which only seems to happen when you backup the whole database.
-As of PostGIS 2.0.1, only srid records not packaged with PostGIS are backed up when the database is backed up so don't go around changing srids we package and expect your changes to be there. Put in a ticket if you find an issue.  The structures of extension tables are never backed up since they are created with <code>CREATE EXTENSION</code>
-and assumed to be the same for a given version of an extension. These behaviors are built into the current PostgreSQL extension model, so nothing we can do about it.</para></warning>
+be backed up when the respective <varname>postgis</varname> or <varname>postgis_topology</varname> extension is backed up, which only happens when you back up the whole database.
+Only srid records not packaged with PostGIS are captured in backups, so don't change the entries we ship and expect the modifications to persist. Put in a ticket if you find an issue.  The structures of extension tables are never backed up since they are created with <code>CREATE EXTENSION</code>
+and assumed to be the same for a given version of an extension. These behaviors are built into the current PostgreSQL extension model.</para></warning>
 
 <para>If you installed &last_release_version;, without using our
 wonderful extension system, you can change it to be extension based by
@@ -751,23 +758,41 @@ CREATE EXTENSION postgis_tiger_geocoder FROM unpackaged;
 		</para>
 	  </note>
 
-	  <caution>
-		<para>
-		  Currently, the <command>make check</command> relies on the
-		  <code>PATH</code> and <code>PGPORT</code> environment variables when
-		  performing the checks - it does <emphasis>not</emphasis> use the
-		  PostgreSQL version that may have been specified using the
-		  configuration parameter <command>--with-pgconfig</command>. So make
-		  sure to modify your PATH to match the detected PostgreSQL installation
-		  during configuration or be prepared to deal with the impending
-		  headaches.
-		</para>
-	  </caution>
+          <caution>
+                <para>
+                  Currently, the <command>make check</command> relies on the
+                  <code>PATH</code> and <code>PGPORT</code> environment variables when
+                  performing the checks - it does <emphasis>not</emphasis> use the
+                  PostgreSQL version that may have been specified using the
+                  configuration parameter <command>--with-pgconfig</command>. So make
+                  sure to modify your PATH to match the detected PostgreSQL installation
+                  during configuration or be prepared to deal with the impending
+                  headaches.
+                </para>
+          </caution>
 
-	  <para>
-		If successful, make check will produce the output of almost 500 tests.  The results will look similar to the
-		following (numerous lines omitted below):
-	  </para>
+          <note>
+                <para>
+                  Sandboxed build accounts that are not PostgreSQL superusers can
+                  delegate database ownership during the regression cycle by exporting
+                  <varname>POSTGIS_REGRESS_DB_OWNER</varname>. The harness will create
+                  the temporary regression database owned by the nominated role while
+                  continuing to connect using the less privileged account. Combine this
+                  with <varname>POSTGIS_REGRESS_ROLE_EXT_CREATOR</varname> when the
+                  extension creation role must differ from the database owner.
+                </para>
+                <para>
+                  These variables allow automated environments to exercise the full
+                  upgrade and extension install paths without promoting the calling
+                  account to superuser, provided the target PostgreSQL instance permits
+                  extension installation by those delegate roles.
+                </para>
+          </note>
+
+          <para>
+                If successful, make check will produce the output of almost 500 tests.  The results will look similar to the
+                following (numerous lines omitted below):
+          </para>
 
 	  <programlisting>
 
@@ -979,8 +1004,8 @@ All 2 tests passed.
   </section>
 
   <section xml:id="installing_pagc_address_standardizer"><title>Installing and Using the address standardizer</title>
-		<para>The <code>address_standardizer</code> extension used to be a separate package that required separate download. From PostGIS 2.2 on, it is now bundled in.
-		For more information about the address_standardize, what it does, and how to configure it for your needs, refer to <xref linkend="Address_Standardizer"/>.</para>
+        <para>The <code>address_standardizer</code> extension is bundled with PostGIS.
+                For more information about the address_standardizer, what it does, and how to configure it for your needs, refer to <xref linkend="Address_Standardizer"/>.</para>
 		<para>This standardizer can be used in conjunction with the PostGIS packaged tiger geocoder extension as a replacement for the <xref linkend="Normalize_Address"/> discussed.
 		To use as replacement refer to  <xref linkend="tiger_pagc_address_standardizing"/>.
 		You can also use it as a building block for your own geocoder or use it to standardize your addresses for easier compare of addresses.</para>
@@ -988,7 +1013,7 @@ All 2 tests passed.
 		<para>The address standardizer relies on PCRE which is usually already installed on many Nix systems,
 but you can download the latest at: <link xlink:href="http://www.pcre.org">http://www.pcre.org</link>. If during <xref linkend="installation_configuration"/>, PCRE is found, then the address standardizer extension will automatically be built.  If you have a custom pcre install you want to use instead, pass to configure <code>--with-pcredir=/path/to/pcre</code> where <filename>/path/to/pcre</filename> is the root folder for your pcre include and lib directories.</para>
 
-		<para>For Windows users, the PostGIS 2.1+ bundle is packaged with the address_standardizer already so no need to compile and can move straight to <code>CREATE EXTENSION</code> step.</para>
+        <para>Windows installation packages include the address_standardizer so you can move straight to the <code>CREATE EXTENSION</code> step.</para>
 
 
       <para>Once you have installed, you can connect to your database and run the SQL:</para>
@@ -1047,7 +1072,7 @@ SELECT 'debbie', declare_sect, pgbin, wget, unzip_command, psql, path_sep,
 
 				<para>If you don't edit this  <varname>loader_platform</varname> table, it will just contain common case locations of items and you'll have to edit the generated script after the script is generated.</para>
 			</listitem>
-			<listitem><para>As of PostGIS 2.4.1 the Zip code-5 digit tabulation area <varname>zcta5</varname> load step was revised to load current zcta5 data and is part of the  <xref linkend="Loader_Generate_Nation_Script"/> when enabled.
+                        <listitem><para>The Zip code-5 digit tabulation area <varname>zcta5</varname> load step uses current ZCTA data and is part of the  <xref linkend="Loader_Generate_Nation_Script"/> when enabled.
 It is turned off by default because it takes quite a bit of time to load (20 to 60 minutes), takes up quite a bit of disk space, and is not used that often.</para>
 <para>To enable it, do the following:</para>
 <programlisting>UPDATE tiger.loader_lookuptables SET load = true WHERE table_name = 'zcta520';</programlisting>

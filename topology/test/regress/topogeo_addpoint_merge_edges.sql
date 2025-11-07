@@ -12,7 +12,7 @@ BEGIN
     PERFORM topology.DropTopology ('topo');
   END IF;
 
-  PERFORM topology.CreateTopology ('topo');
+  PERFORM topology.CreateTopology ('topo', 0, prec);
   CREATE TABLE topo.fl(lbl text, g geometry);
   PERFORM topology.AddTopoGeometryColumn('topo','topo','fl','tg','LINESTRING');
   CREATE TABLE topo.fa(lbl text, g geometry);
@@ -62,7 +62,7 @@ BEGIN
   IF debug THEN
     set client_min_messages to DEBUG;
   END IF;
-  PERFORM topology.TopoGeo_addPoint('topo', point, prec);
+  PERFORM topology.TopoGeo_addPoint('topo', point);
   IF debug THEN
     set client_min_messages to WARNING;
   END IF;
@@ -132,8 +132,8 @@ BEGIN
       lbl,
       'area change',
       l,
-      rec.bfr::text,
-      rec.aft::text
+      bfr::text,
+      aft::text
     ], '|')
     FROM (
       SELECT t.lbl l, ST_Area(t.g) bfr, ST_Area(tg::geometry) aft
@@ -438,6 +438,14 @@ SELECT * FROM runTest('#5792.1',
     'LINESTRING(11.811862389533625 59.77938237222866,11.811969079533624 59.77938496222866,11.812075769533624 59.77938755222866)',
     'LINESTRING(11.811862389533625 59.77938237222866,11.811969079533624 59.77938,11.812075769533624 59.77938755222866)'
   ], 'POINT(11.812029186127067 59.7793864213727)', 0
+) WHERE true ;
+
+-- See https://trac.osgeo.org/postgis/ticket/5862
+SELECT * FROM runTest('#5862',
+  ARRAY[
+    'LINESTRING(22.780107846871616 70.70515928614921, 22.779899976871615 70.7046262461492)',
+    'LINESTRING(22.792170566871620 70.70247684614921, 22.779969266871618 70.70480392614921, 22.780038556871617 70.7049816061492, 22.796764346871615 70.7044482361492)'
+  ], 'POINT(22.780038556871617 70.7049816061492)', 0
 ) WHERE true ;
 
 DROP FUNCTION runTest(text, geometry[], geometry, float8, bool);
