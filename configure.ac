@@ -186,9 +186,16 @@ case $host_os in
 esac
 AC_SUBST([MINGWBUILD])
 
-AC_PATH_PROG([CODESPELL], [codespell], [])
-if test "x$CODESPELL" = "x"; then
-	AC_MSG_WARN([codespell is not installed so spelling cannot be checked])
+AC_ARG_ENABLE([spellcheck-tests],
+    [AS_HELP_STRING([--disable-spellcheck-tests],
+                    [Disable spell checking tests])])
+if test "x$enable_spellcheck_tests" = "xno"; then
+  AC_MSG_NOTICE([NOTE: spell checking tests disabled])
+else
+  AC_PATH_PROG([CODESPELL], [codespell], [])
+  if test "x$CODESPELL" = "x"; then
+    AC_MSG_WARN([codespell is not installed so spelling cannot be checked])
+  fi
 fi
 
 AC_PATH_PROG([PERL], [perl], [])
@@ -571,9 +578,9 @@ if test "x$SUPPORT_POSTGRESQL" = "xyes"; then dnl {
   PGSQL_SHAREDIR=`"$PG_CONFIG" --sharedir`
 
   AC_MSG_RESULT([checking PostgreSQL version... $PGSQL_FULL_VERSION])
-  dnl Ensure that we are using PostgreSQL >= 12
-  if test $POSTGIS_PGSQL_VERSION -lt 120; then
-    AC_MSG_ERROR([PostGIS requires PostgreSQL >= 12])
+  dnl Ensure that we are using PostgreSQL >= 14
+  if test $POSTGIS_PGSQL_VERSION -lt 140; then
+    AC_MSG_ERROR([PostGIS requires PostgreSQL >= 14])
   fi
 
   HAVE_SPGIST=yes

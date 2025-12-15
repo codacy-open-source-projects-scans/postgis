@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: postgis 3.5\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
 "POT-Creation-Date: 2025-11-13 16:23+0000\n"
-"PO-Revision-Date: 2025-11-26 08:47+0000\n"
+"PO-Revision-Date: 2025-12-15 01:47+0000\n"
 "Last-Translator: Teramoto Ikuhiro <teramoto.ikuhiro576@naro.go.jp>\n"
 "Language-Team: Japanese <https://weblate.osgeo.org/projects/postgis/"
 "postgis-manual/ja/>\n"
@@ -418,17 +418,17 @@ msgid "Soft upgrade without extensions"
 msgstr "エクステンションを使わないソフトアップグレード"
 
 #. Tag: para
-#, fuzzy, no-c-format
+#, no-c-format
 msgid ""
 "Extensions have been the supported installation method for many releases. If "
 "you still rely on an unpackaged installation, perform a <link "
 "linkend=\"hard_upgrade\">HARD UPGRADE</link> into a database created with "
 "extensions and migrate your data there."
 msgstr ""
-"エクステンションは多数のリリースのために対応したインストールメソッドです。ま"
-"だアパッケージ化されていないものをインストールしているのなら、エクステンショ"
-"ンで作られたデータベース内で<link linkend=\"hard_upgrade\">HARD UPGRADE</"
-"link>を実行してそこで保持データを移行させて下さい。"
+"エクステンションはこれまでの多数のリリースに対応したインストール手法です。今"
+"なおパッケージ化されていないものをインストールしているのなら、"
+"エクステンションで作られたデータベース内で<link linkend=\"hard_upgrade\""
+">HARD UPGRADE</link>を実行して、保持データをそちらに移行させて下さい。"
 
 #. Tag: title
 #, no-c-format
@@ -859,7 +859,7 @@ msgid "max_parallel_workers_per_gather"
 msgstr "max_parallel_workers_per_gather"
 
 #. Tag: para
-#, fuzzy, no-c-format
+#, no-c-format
 msgid ""
 "Parallel query support in modern PostgreSQL and PostGIS uses this setting to "
 "decide how many workers a plan may request. If set to higher than 0, then "
@@ -872,11 +872,11 @@ msgid ""
 msgstr ""
 "最近のPostgreSQLとPostGISのパラレルクエリー機能では、1回のプランで要求する可"
 "能性のあるワーカー数を決定するためにこの設定が使われます。0より大きい数を設定"
-"した場合には、これらの関係する <code>ST_Intersects</code> のような関数のよう"
-"なクエリーが複数のプロセスを使うことができ、そうすると2倍を超える速度になりま"
-"す。多数の予備プロセスがあるなら、この値を持っているプロセス数まで上げるべき"
-"です。少なくともこの数と同じまで<code>max_worker_processes</code>を増やすのを"
-"忘れないでください。"
+"した場合には、これらの関係する <code>ST_Intersects</code> のような関係関数を"
+"含むクエリーが複数のプロセスを使うことができ、そうすると2倍を超える速度になり"
+"ます。多数の予備プロセスがあるなら、この値を持っているプロセス数まで上げるべ"
+"きです。ただし、これにあわせて<code>max_worker_processes</code>を少なくともこ"
+"の数と同じまで増やすのを忘れないでください。"
 
 #. Tag: para
 #, no-c-format
@@ -2481,6 +2481,13 @@ msgid ""
 "cross-platform and also has a reverse geocoder among some other neat "
 "features."
 msgstr ""
+"<link xlink:href=\"https://www.gisgraphy.com/\">GIS "
+"Graphy</link>はPostGISを利用し、Nominatimと同じようにOpenStreetMap (OSM)デー"
+"タと他のデータソースを使います。OSMデータをロードするローダーが付属されていて"
+"、Nominatimと同じように米国以外のジオコーディングが可能です。Nominatimのよう"
+"にウェブサービスとして動作し、Java 1.5、サーブレットアプリケーション、Solrを"
+"使用しています。GisGraphyはクロスプラットフォームに対応していて、逆ジオコーダ"
+"ーやその他の機能もあります。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -3971,7 +3978,7 @@ msgstr ""
 "ギュアオプション --without-topology を指定することで、無効にできます。"
 
 #. Tag: title
-#, fuzzy, no-c-format
+#, no-c-format
 msgid "Topology Primitive Tables"
 msgstr "トポロジープリミティブテーブル"
 
@@ -3990,14 +3997,14 @@ msgid ""
 "faces."
 msgstr ""
 "あらゆるトポロジーの中核的なプリミティブは<varname>edge_data</varname>、 "
-"<varname>node</varname>,、<varname>face</varname>テーブルに格納されます。これ"
-"らのテーブルは<xref linkend=\"CreateTopology\"/>で生成されたスキーマ内にあり"
-"ます。<varname>edge_data</varname>の各タプルは有向エッジを表現しています。"
-"<varname>start_node</varname>から<varname>end_node</varname>への有向曲線と、"
-"その曲線の進行方向左側にあるフェイスの識別番号 (<varname>left_face</varname>)"
-"と右側のもの (<varname>right_face</varname>)とを併せて記録しています。このた"
-"め、ジオメトリ線分が2個のフェイスに属するとき、同じ線分が2度 (方向ごとに1度ず"
-"つ)出現することがあります。"
+"<varname>node</varname>、<varname>face</varname>テーブルに格納されます。"
+"これらのテーブルは<xref linkend=\"CreateTopology\"/>で生成されたスキーマ内に"
+"あります。<varname>edge_data</varname>の各タプルは有向エッジを表現しています"
+"。<varname>start_node</varname>から<varname>end_node</varname>への有向曲線と"
+"、その曲線の進行方向左側にあるフェイスの識別番号 "
+"(<varname>left_face</varname>)と右側のもの (<varname>right_face</varname>)と"
+"を併せて記録しています。このため、ジオメトリ線分が2個のフェイスに属するとき、"
+"同じ線分が2度 (方向ごとに1度ずつ)出現することがあります。"
 
 #. Tag: para
 #, no-c-format
@@ -4016,7 +4023,7 @@ msgstr ""
 "ます (エッジを <varname>e</varname>とします):"
 
 #. Tag: para
-#, fuzzy, no-c-format
+#, no-c-format
 msgid ""
 "<varname>abs(next_left_edge)</varname> is the identifier of the edge reached "
 "by continuing around the face that lies to the left of <varname>e</varname>. "
@@ -4026,10 +4033,10 @@ msgid ""
 "face remains on the walker’s left."
 msgstr ""
 "<varname>abs(next_left_edge)</varname>は<varname>e</varname>の左にあるフェイ"
-"スを辿る場合に次に到達するエッジの識別番号です。値が正数の場合には"
-"<varname>e</varname>の終端ノードから次のエッジの格納されている通りの方向に進"
-"みます。負数の場合には次のエッジは逆向きにたどることになるので、共有するフェ"
-"イスは辿っている者から見たら左側にあります。"
+"スを辿る場合に次に到達するエッジの識別番号です。値が正数の場合には<varname>e<"
+"/varname>の終端ノードから次のエッジの格納されている通りの方向に進みます。負数"
+"の場合には次のエッジは逆向きに辿ることになるので、共有するフェイスは辿ってい"
+"る者から見たら左側にあります。"
 
 #. Tag: para
 #, no-c-format
@@ -4050,7 +4057,7 @@ msgstr ""
 "存されます。"
 
 #. Tag: para
-#, fuzzy, no-c-format
+#, no-c-format
 msgid ""
 "A zero value indicates that the edge is dangling on the corresponding side "
 "(for example an isolated edge whose incident face is the universal face "
@@ -5586,8 +5593,9 @@ msgid ""
 "identifiers forming it up (negative identifies mean the edge goes in the "
 "opposite direction of the input linestring)."
 msgstr ""
-"ラインストリングを既存のトポロジーに追加して、整列させた符号付エッジ識別番号"
-"を返す (負数は入力ラインストリングと逆方向であることを示します)。"
+"ラインストリングを既存のトポロジーに追加して、"
+"整列させた符号付エッジ識別番号を返します "
+"(負数は入力ラインストリングと逆方向であることを示します)。"
 
 #. Tag: para
 #, no-c-format
@@ -5596,28 +5604,30 @@ msgid ""
 "Existing edges and faces may be split by the line. New nodes and faces may "
 "be added, in addition to new edges."
 msgstr ""
-"与えられたラインは与えられた許容値内にある既存のノードまたはエッジににスナッ"
-"プします。既存のエッジとフェイスはラインで分割される場合があります。新規エッ"
-"ジ追加に加えて、新しいノードとフェイスは追加される場合があります。"
+"与えられたラインは与えられた許容値内にある既存のノードまたはエッジにスナップ"
+"します。既存のエッジとフェイスはラインで分割される場合があります。新規エッジ"
+"追加に加えて、新しいノードとフェイスが追加される場合があります。"
 
 #. Tag: para
-#, fuzzy, no-c-format
+#, no-c-format
 msgid ""
 "The returned edge identifiers may be either existing edges or newly created "
 "edges as needed to fully represent the input line as closely as possible."
-msgstr "返されるエッジ識別番号は、入力ラインの表現を可能な限り完全に表現するのに必要"
-"となるので、既存エッジか新規生成されたエッジかになります。"
+msgstr ""
+"返されるエッジ識別番号は、入力ラインを可能な限り忠実になるような表現を完全に"
+"行うために、既存のエッジまたは新規生成されるエッジのいずれかの番号になります"
+"。"
 
 #. Tag: para
-#, fuzzy, no-c-format
+#, no-c-format
 msgid ""
 "The number of newly created edges (either covering space previously "
 "uncovered or resulting from split of existing edges) may be limited by the "
 "<varname>max_edges</varname> parameter."
 msgstr ""
-"新規生成されたエッジの数 "
-"(覆っていなかった空間を覆うエッジか、既存エッジの分割から得られた結果)は "
-"<varname>max_edges</varname>パラメータで制限されることがあります。"
+"新規生成されるエッジ "
+"(及んでいなかった範囲の空間に及ぶか、既存エッジの分割から得られた結果)の数は "
+"<varname>max_edges</varname>パラメータで制限されます。"
 
 #. Tag: para
 #, no-c-format
@@ -7237,8 +7247,8 @@ msgid ""
 "the topology precision as tolerance."
 msgstr ""
 "<varname>tolerance</varname>が与えられた場合には、入力ジオメトリを既存のプリ"
-"ミティブにスナップします。特別な値である -1 "
-"(デフォルト)ではトポロジーの精度を許容値として使うことになります。"
+"ミティブにスナップします。特別な値である -1 (デフォルト)ではトポロジーの精度"
+"を許容値として使うことになります。"
 
 #. Tag: para
 #, no-c-format
@@ -7275,8 +7285,8 @@ msgid ""
 "Changed: 3.7.0 changes meaning of tolerance 0 to really mean 0 and -1 (new "
 "default) to request using the topology precision."
 msgstr ""
-"Changed: 3.7.0 許容値 0を実際の 0として扱い、-1 "
-"(新デフォルト値)をそのトポロジーの精度を使うよう求めるように変更されました。"
+"Changed: 3.7.0 許容値 0を実際の 0として扱い、-1 (新デフォルト値)をそのトポロ"
+"ジーの精度を使うよう求めるように変更されました。"
 
 #. Tag: para
 #, no-c-format
@@ -8450,13 +8460,15 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid ""
-"ImageMagick (<filename>convert</filename>) is required to generate the "
-"images used in the documentation. ImageMagick is available from <link xlink:"
-"href=\"http://www.imagemagick.org/\"> http://www.imagemagick.org/ </link> ."
+"GraphicsMagick (<filename>gm convert</filename>) is required to generate the "
+"images used in the documentation. GraphicsMagick is available from <link "
+"xlink:href=\"http://www.graphicsmagick.org/\"> http://www.graphicsmagick."
+"org/ </link> ."
 msgstr ""
-"ImageMagick (<filename>convert</filename>)。文書で使う画像を生成するのに必要"
-"です。<link xlink:href=\"http://www.imagemagick.org/\">http://www."
-"imagemagick.org/</link>にあります。"
+"GraphicsMagick (<filename>gm convert</filename>) "
+"はドキュメントの画像の生成に必要です。GraphicsMagickは<link xlink:href=\"http"
+"://www.graphicsmagick.org/\"> http://www.graphicsmagick.org/ "
+"</link>にあります。"
 
 #. Tag: title
 #, no-c-format
@@ -8777,10 +8789,10 @@ msgid ""
 msgstr ""
 "全ての関数は文書から生成されたコメントを持っています。後でコメントを手持ちの"
 "空間データベースにインストールしたい場合には、docbookが必要なコマンドを実行し"
-"ます。postgis_comments.sqlと他のパッケージのコメントファイルはtar."
-"gzディストリビューションのdocフォルダ内に同梱されています。この "
-"tarボールからインストールする場合にはコメントを生成する必要がありません。"
-"コメントはCREATE EXTENSIONインストールにも含まれています。"
+"ます。postgis_comments.sqlと他のパッケージのコメントファイルはtar.gzディスト"
+"リビューションのdocフォルダ内に同梱されています。この tarボールからインストー"
+"ルする場合にはコメントを生成する必要がありません。コメントはCREATE EXTENSION"
+"インストールにも含まれています。"
 
 #. Tag: para
 #, no-c-format
@@ -8990,6 +9002,17 @@ msgid ""
 "given version of an extension. These behaviors are built into the current "
 "PostgreSQL extension model."
 msgstr ""
+"追加テーブルの<varname>spatial_ref_sys</varname>、<varname>layer</varname>、<"
+"varname>topology</varname>は明示的にはバックアップできません。<varname>postgi"
+"s</varname>または<varname>postgis_topology</varname>のそれぞれがバックアップ"
+"されるときに限ってバックアップが行われます。これはデータベース全体をバックア"
+"ップする時だけ発生します。PostGISに同梱されていないSRIDレコードだけがバックア"
+"ップに取り込まれます。なので、私たちが提供するSRIDエントリーは変更しないでく"
+"ださい。また、変更が残るとは期待しないでください。問題を発見した時にはチケッ"
+"トを発行してください。<code>CREATE EXTENSION</code>で作られ、エクステンション"
+"の指定されたバージョンと同じものと仮定されるので拡張テーブルの構造はバックア"
+"ップされません。この挙動は現在のPostgreSQLエクステンションモデルに組み込まれ"
+"ています。"
 
 #. Tag: para
 #, no-c-format
@@ -9065,6 +9088,13 @@ msgid ""
 "<varname>POSTGIS_REGRESS_ROLE_EXT_CREATOR</varname> when the extension "
 "creation role must differ from the database owner."
 msgstr ""
+"PostgreSQLスーパーユーザーでないサンドボックス化したビルドアカウントは、<varn"
+"ame>POSTGIS_REGRESS_DB_OWNER</varname>を設定することで、レグレッションテスト"
+"の間ではデータベースの所有を委任することができます。このハーネスは、より特権"
+"が少ないアカウントを使った接続を持続している間において、指名されたロールが持"
+"つ一時的なレグレッションテストのデータベースを生成します。エクステンション生"
+"成者がデータベース所有者と異なるときは<varname>POSTGIS_REGRESS_ROLE_EXT_CREAT"
+"OR</varname>と併用します。"
 
 #. Tag: para
 #, no-c-format
@@ -9074,6 +9104,10 @@ msgid ""
 "superuser, provided the target PostgreSQL instance permits extension "
 "installation by those delegate roles."
 msgstr ""
+"これらの変数によって、アカウントがスーパーユーザーになるためのプロンプトを使"
+"わずに完全なアップグレードとエクステンションのインストールをを実行するための"
+"自動化環境が可能となります。ただし、対象となるPostgreSQLインスタンスがこの委"
+"任ロールによるエクステンションのインストールが許可されている場合に限ります。"
 
 #. Tag: para
 #, no-c-format
@@ -9209,6 +9243,10 @@ msgid ""
 "configure it for your needs, refer to <xref linkend=\"Address_Standardizer\"/"
 ">."
 msgstr ""
+"<code>address_standardizer</code>エクステンションはPostGISに同梱されています"
+"。address_standardizerの何をするものか、"
+"設定方法などの詳細情報については<xref linkend=\"Address_Standardizer\""
+"/>をご覧ください。"
 
 #. Tag: para
 #, no-c-format
@@ -9406,6 +9444,12 @@ msgid ""
 "by default because it takes quite a bit of time to load (20 to 60 minutes), "
 "takes up quite a bit of disk space, and is not used that often."
 msgstr ""
+"有効にしたときには<varname>zcta5</varname> (Zip Code 5 digit Tabulation "
+"Area, 5桁郵便番号集計エリア)ロード手順はZCTAデータを使用して、"
+"有効にすると<xref linkend=\"Loader_Generate_Nation_Script\""
+"/>の一部として実行されます。ロードにやや時間がかかる (20から60分ぐらい)のと、"
+"からいのディスク容量を使うのと、頻繁には使わないものですから、デフォルトでは"
+"無効になっています。"
 
 #. Tag: para
 #, no-c-format
@@ -10109,7 +10153,7 @@ msgstr "<term>Laurențiu Nicola</term>"
 #. Tag: para
 #, no-c-format
 msgid "Bug fixes, maintenance, stability, and performance"
-msgstr ""
+msgstr "誤り修正、メンテナンス、安定化、効率化"
 
 #. Tag: title
 #, no-c-format
@@ -10642,7 +10686,7 @@ msgstr "Kris Jurka"
 #. Tag: member
 #, no-c-format
 msgid "<member>Laurențiu Nicola</member>"
-msgstr ""
+msgstr "<member>Laurențiu Nicola</member>"
 
 #. Tag: member
 #, no-c-format
@@ -11203,6 +11247,9 @@ msgid ""
 "past. We used <link xlink:href=\"http://www.pledgebank.com\">PledgeBank</"
 "link> and we got two successful campaigns out of it."
 msgstr ""
+"PostGISは核に機能のコミュニティでの資金集めを試しています。<link xlink:href="
+"\"http://www.pledgebank.com\""
+">PledgeBank</link>を使って、2件の成功事例がありました。"
 
 #. Tag: para
 #, no-c-format
@@ -11303,6 +11350,12 @@ msgid ""
 "toast.html\">the PostgreSQL Documentation for TOAST</link> for more "
 "information)."
 msgstr ""
+"現版のPostgreSQLではTOASTテーブルに関するクエリオプティマイザの弱さに苦しみま"
+"す。TOASTテーブルは、(長いテキスト、イメージ、多数の頂点を持つ複合ジオメトリ"
+"といった)通常のデータページに適合しない、(データサイズという意味では)巨大な値"
+"を納めるための「拡張部屋」の一種です。詳細情報は<link xlink:href=\"https"
+"://www.postgresql.jp/document/current/html/storage-toast.html\""
+">PostgreSQLドキュメントのTOAST</link>をご覧ください。"
 
 #. Tag: para
 #, no-c-format
@@ -12035,6 +12088,9 @@ msgid ""
 "dimensionality, or coordinate components so that spatial expressions can "
 "interrogate complex objects in a controlled way."
 msgstr ""
+"これらの関数は既存のジオメトリを変更せずに、その構造情報を見せるものです。ジ"
+"オメトリタイプ、次元、座標要素のようなメタデータへのアクセスを提供していて、"
+"空間数式は、複雑なオブジェクトを制御された手法で問合せをすることができます。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -12579,6 +12635,10 @@ msgid ""
 "linkend=\"ST_Dump\"/> to extract polygon elements from polygonal geometries: "
 "<code>ST_DumpRings( (ST_Dump(geom)).geom )</code>"
 msgstr ""
+"POLYGONジオメトリでのみ動作します。MULTIPOLYGONでは動作しません。"
+"ポリゴン系ジオメトリから単一ポリゴン要素を抽出するには<xref linkend=\"ST_Dump"
+"\"/>を使います。次の通りとします: <code>ST_DumpRings( (ST_Dump(geom)).geom "
+")</code>"
 
 #. Tag: para
 #, no-c-format
@@ -12588,12 +12648,12 @@ msgstr "Availability: PostGIS 1.1.3 PostgreSQL 7.3以上が必要です。"
 #. Tag: para
 #, no-c-format
 msgid "Extracting all rings as polygons."
-msgstr ""
+msgstr "全てのリングのポリゴンとしての抽出。"
 
 #. Tag: para
 #, no-c-format
 msgid "Extracting shell and holes from a polygon."
-msgstr ""
+msgstr "ポリゴンから外殻と穴の抽出。"
 
 #. Tag: para
 #, no-c-format
@@ -14378,6 +14438,9 @@ msgid ""
 "linkend=\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, <xref "
 "linkend=\"ST_MMin\"/>, <xref linkend=\"ST_MMax\"/>"
 msgstr ""
+", <xref linkend=\"ST_YMin\"/>, <xref linkend=\"ST_YMax\"/>, <xref linkend="
+"\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, <xref linkend=\"ST_MMin\"/>, "
+"<xref linkend=\"ST_MMax\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -14431,6 +14494,9 @@ msgid ""
 "linkend=\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, <xref "
 "linkend=\"ST_MMin\"/>, <xref linkend=\"ST_MMax\"/>"
 msgstr ""
+", <xref linkend=\"ST_XMax\"/>, <xref linkend=\"ST_YMin\"/>, <xref linkend="
+"\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, <xref linkend=\"ST_MMin\"/>, "
+"<xref linkend=\"ST_MMax\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -14457,6 +14523,9 @@ msgid ""
 "linkend=\"ST_ZMax\"/>, <xref linkend=\"ST_MMin\"/>, <xref "
 "linkend=\"ST_MMax\"/>"
 msgstr ""
+", <xref linkend=\"ST_XMin\"/>, <xref linkend=\"ST_XMax\"/>, <xref linkend="
+"\"ST_YMax\"/>, <xref linkend=\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, "
+"<xref linkend=\"ST_MMin\"/>, <xref linkend=\"ST_MMax\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -14483,6 +14552,9 @@ msgid ""
 "linkend=\"ST_ZMin\"/>, <xref linkend=\"ST_MMin\"/>, <xref "
 "linkend=\"ST_MMax\"/>"
 msgstr ""
+", <xref linkend=\"ST_XMin\"/>, <xref linkend=\"ST_XMax\"/>, <xref linkend="
+"\"ST_YMin\"/>, <xref linkend=\"ST_YMax\"/>, <xref linkend=\"ST_ZMin\"/>, "
+"<xref linkend=\"ST_MMin\"/>, <xref linkend=\"ST_MMax\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -14509,17 +14581,21 @@ msgid ""
 "linkend=\"ST_YMax\"/>, <xref linkend=\"ST_ZMax\"/>, <xref "
 "linkend=\"ST_MMin\"/>, <xref linkend=\"ST_MMax\"/>"
 msgstr ""
+", <xref linkend=\"ST_GeomFromText\"/>, <xref linkend=\"ST_XMin\"/>, <xref "
+"linkend=\"ST_XMax\"/>, <xref linkend=\"ST_YMin\"/>, <xref linkend=\"ST_YMax\""
+"/>, <xref linkend=\"ST_ZMax\"/>, <xref linkend=\"ST_MMin\"/>, <xref linkend="
+"\"ST_MMax\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
 msgid "Returns the M minima of a geometry."
-msgstr ""
+msgstr "ジオメトリのM値の最小値を返します。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Returns the M minima of a geometry, or null of the geometry lacks M values."
-msgstr ""
+msgstr "ジオメトリのM値の最小値を返します。M値を持たない場合にはNULLを返します。"
 
 #. Tag: para
 #, no-c-format
@@ -14528,6 +14604,9 @@ msgid ""
 "linkend=\"ST_YMax\"/>, <xref linkend=\"ST_ZMin\"/>, <xref "
 "linkend=\"ST_ZMax\"/>, <xref linkend=\"ST_MMax\"/>"
 msgstr ""
+", <xref linkend=\"ST_XMax\"/>, <xref linkend=\"ST_YMin\"/>, <xref linkend="
+"\"ST_YMax\"/>, <xref linkend=\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, "
+"<xref linkend=\"ST_MMax\"/>"
 
 #. Tag: para
 #, no-c-format
@@ -14536,6 +14615,9 @@ msgid ""
 "linkend=\"ST_YMax\"/>, <xref linkend=\"ST_ZMin\"/>, <xref "
 "linkend=\"ST_ZMax\"/>, <xref linkend=\"ST_MMin\"/>"
 msgstr ""
+", <xref linkend=\"ST_XMax\"/>, <xref linkend=\"ST_YMin\"/>, <xref linkend="
+"\"ST_YMax\"/>, <xref linkend=\"ST_ZMin\"/>, <xref linkend=\"ST_ZMax\"/>, "
+"<xref linkend=\"ST_MMin\"/>"
 
 #. Tag: title
 #, no-c-format
@@ -14919,6 +15001,9 @@ msgid ""
 "primitives, coordinate sequences, or existing geometries into well-formed "
 "spatial objects that can participate in subsequent analysis."
 msgstr ""
+"これらの関数は、ジオメトリーまたはジオグラフィーの値を生成します。プリミティ"
+"ブ、座標値列、既存のジオメトリーを組み立てて、これに続く分析に使うのに適切な"
+"空間オブジェクトにします。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -15166,13 +15251,18 @@ msgid ""
 "appear in the collection. <xref linkend=\"ST_RemoveRepeatedPoints\"/> can be "
 "used to collapse repeated points from the output LineString."
 msgstr ""
+"入力ラインストリングの開始位置で重複するノードはひとつのポイントに減らされま"
+"す。ポイントとマルチポイントの入力での重複するポイントは減らされません。マル"
+"チラインストリングの要素は、コレクション内の出現順で処理されます。"
+"出力ラインストリングから重複ポイントを削除するには<xref linkend="
+"\"ST_RemoveRepeatedPoints\"/>が使えます。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Availability: 3.7.0 - Support for MultiLineString input elements was "
 "introduced"
-msgstr ""
+msgstr "Availability: 3.7.0 - マルチラインストリング入力要素への対応が導入されました"
 
 #. Tag: para
 #, no-c-format
@@ -15261,7 +15351,8 @@ msgid ""
 "When ordering within the aggregate is not possible, ordering in a subquery "
 "can be used. However, sometimes the query plan may not respect the order of "
 "the subquery."
-msgstr ""
+msgstr "集約内での整列ができない時は、サブクエリーで整列させます。ただし、クエリープ"
+"ランにサブクエリーの整列が反映されない場合があります。"
 
 #. Tag: para
 #, no-c-format
@@ -16289,24 +16380,26 @@ msgstr ""
 msgid ""
 "A window function which adjusts the edges of a set of valid polygonal "
 "geometries to produce a clean coverage. Cleaning involves:"
-msgstr ""
+msgstr "妥当なポリゴン系ジオメトリーの集合のエッジを調整して、きれいなカバレッジを生"
+"成するウィンドウ関数です。きれいにする処理には次を含みます:"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "snapping vertices and edges to remove small discrepancies and ensure common "
 "edges are identically noded"
-msgstr ""
+msgstr "小さな不一致を取り除き、共有されるエッジに同じノードが打たれるようにするため"
+"に、頂点とエッジをスナップさせる"
 
 #. Tag: para
 #, no-c-format
 msgid "merging overlaps into a parent polygon"
-msgstr ""
+msgstr "オーバーラップするポリゴンをひとつの親ポリゴンとしてマージする"
 
 #. Tag: para
 #, no-c-format
 msgid "merging narrow gaps into adjacent polygons"
-msgstr ""
+msgstr "小さい隙間を隣接ポリゴンとしてマージする"
 
 #. Tag: para
 #, no-c-format
@@ -16315,6 +16408,8 @@ msgid ""
 "are merged. Gaps with width &lt;= this distance are merged into an adjacent "
 "polygon."
 msgstr ""
+"<parameter>gapMaximumWidth</parameter>でポリゴンをマージする隙間の条件を制御"
+"します。隙間の幅がこの値以下なら隣接ポリゴンとしてマージします。"
 
 #. Tag: para
 #, no-c-format
@@ -16323,6 +16418,9 @@ msgid ""
 "edges. The default (-1) automatically determines a snapping distance based "
 "on the input extent. Set to 0.0 to turn off snapping."
 msgstr ""
+"<parameter>snappingDistance</parameter>で頂点とエッジのスナップを制御します。"
+"デフォルト (-1)では自動的にスナップ距離が入力の範囲に応じて決定されます。0."
+"0が指定されるとスナップを行いません。"
 
 #. Tag: para
 #, no-c-format
@@ -16330,23 +16428,25 @@ msgid ""
 "<parameter>overlapMergeStrategy</parameter> specifies how overlaps are "
 "merged into a parent polygon:"
 msgstr ""
+"<parameter>overlapMergeStrategy</parameter>で、どれぐらいオーバーラップしてい"
+"るポリゴンを親ポリゴンにマージするかが指定されます:"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "<code>MERGE_LONGEST_BORDER</code> - merges into polygon with longest common "
 "border"
-msgstr ""
+msgstr "<code>MERGE_LONGEST_BORDER</code> - 共有境界が最長のポリゴンにマージします"
 
 #. Tag: para
 #, no-c-format
 msgid "<code>MERGE_MAX_AREA</code> - merges into polygon with maximum area"
-msgstr ""
+msgstr "<code>MERGE_MAX_AREA</code> - 最大面積のポリゴンにマージします"
 
 #. Tag: para
 #, no-c-format
 msgid "<code>MERGE_MIN_AREA</code> - merges into polygon with minimum area"
-msgstr ""
+msgstr "<code>MERGE_MIN_AREA</code> - 最小面積のポリゴンにマージします"
 
 #. Tag: para
 #, no-c-format
@@ -16354,6 +16454,8 @@ msgid ""
 "<code>MERGE_MIN_INDEX</code> - merges into polygon with smallest input index "
 "(defined by order of input polygons)"
 msgstr ""
+"<code>MERGE_MIN_INDEX</code> - 入力インデックス "
+"(入力ポリゴンの順番で決まります)の最小値を持つポリゴンにマージします"
 
 #. Tag: para
 #, no-c-format
@@ -16362,6 +16464,8 @@ msgid ""
 "linkend=\"ST_CoverageInvalidEdges\"/> and can be input to coverage "
 "processing functions."
 msgstr ""
+"結果はきれいなポリゴンカバレッジで、<xref linkend=\"ST_CoverageInvalidEdges\""
+"/>が通り、カバレッジ処理関数の入力にすることができます。"
 
 #. Tag: para
 #, no-c-format
@@ -16374,6 +16478,12 @@ msgid ""
 "linkend=\"ST_MaximumInscribedCircle\"/> on them; the gap width is twice the "
 "computed radius."
 msgstr ""
+"最大隙間幅の判定を助けるために、<code>gapMaximumWidth => "
+"0</code>できれいにして、<xref linkend=\"ST_CoverageUnion\"/>を使って結果カバ"
+"レッジを結合することで隙間が計算できます。結合した際にできる穴は、元のデータ"
+"セットにある隙間に対応してします。隙間幅は、穴をポリゴンとして抽出して、"
+"<xref linkend=\"ST_MaximumInscribedCircle\""
+"/>を実行して得られた半径の2倍として計測できます。"
 
 #. Tag: para
 #, no-c-format
@@ -16383,17 +16493,17 @@ msgstr "Availability: 3.6.0 - GEOS &gt;= 3.14.0が必要です"
 #. Tag: para
 #, no-c-format
 msgid "Polygons with overlaps and gaps"
-msgstr ""
+msgstr "重複部と隙間があるポリゴン"
 
 #. Tag: para
 #, no-c-format
 msgid "Invalid coverage edges"
-msgstr ""
+msgstr "不正なカバレッジのエッジ"
 
 #. Tag: para
 #, no-c-format
 msgid "Clean polygonal coverage, with overlaps and narrow gaps removed"
-msgstr ""
+msgstr "重複部と狭い隙間の消去でポリゴンカバレッジをきれいにします"
 
 #. Tag: para
 #, no-c-format
@@ -16402,6 +16512,8 @@ msgid ""
 "linkend=\"ST_CoverageSimplify\"/>, <xref "
 "linkend=\"ST_MaximumInscribedCircle\"/>"
 msgstr ""
+", <xref linkend=\"ST_CoverageUnion\"/>, <xref linkend=\"ST_CoverageSimplify\""
+"/>, <xref linkend=\"ST_MaximumInscribedCircle\"/>"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -18305,7 +18417,8 @@ msgid ""
 "These routines are reserved for diagnosing and repairing data corruption. "
 "They provide last-resort maintenance operations that are not required during "
 "normal spatial workflows."
-msgstr ""
+msgstr "これらのルーチンはデータ崩壊の診断と修復のために用意されています。通常の空間"
+"処理で求められないメンテナンスの最終手段です。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -19487,6 +19600,11 @@ msgid ""
 "In this case we escape the ' with standard ANSI ', but slashes are not "
 "escaped"
 msgstr ""
+"PostgreSQLではデフォルトでstandard_conforming_stringsが設定されています。単体"
+"クエリーでの必要に応じて、またはデータベースやサーバーレベルで、デフォルトを"
+"変更することができます。次にstandard_conforming_strings = "
+"onでどう動作するかを示します。この場合には標準ANSIの ' "
+"がエスケープされますがバックスラッシュはエスケープされません"
 
 #. Tag: para
 #, no-c-format
@@ -20185,6 +20303,9 @@ msgid ""
 "fractions or measures along routes and of projecting those measures back "
 "into spatial coordinates."
 msgstr ""
+"これらの関数は、測定とイベント (地物に沿った計測値)の位置特定を行います。これ"
+"らの関数は、ルートに沿った割合や計測値としての位置表現とこれらの計測値の座標"
+"への変換との古典的な線形参照の処理に対応します。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -21925,6 +22046,10 @@ msgid ""
 "false</varname>, then the calculation is based on a sphere instead of a "
 "spheroid."
 msgstr ""
+"ジオグラフィー型: 測地線の逆解法を用います。周囲長の単位はメートルです。回転"
+"楕円体はSRIDで指定されますが、SRIDが指定されていない場合にはWGS84が使われます"
+"。<varname>use_spheroid = "
+"false</varname>の場合には回転楕円体面の代わりに球面で計算します。"
 
 #. Tag: para
 #, no-c-format
@@ -22415,6 +22540,10 @@ msgid ""
 "<varname>use_spheroid = false</varname>, then calculations will approximate "
 "a sphere instead of a spheroid."
 msgstr ""
+"ジオグラフィー型では、測地線の逆解法を用います。この際、周囲長の単位はメート"
+"ルです。回転楕円体はSRIDで指定されますが、SRIDが指定されていない場合にはWGS84"
+"が使われます。<varname>use_spheroid = "
+"false</varname>の場合には回転楕円体面の代わりに球面で近似します。"
 
 #. Tag: para
 #, no-c-format
@@ -22630,6 +22759,10 @@ msgid ""
 "follow the same geometric rules as the corresponding functions but are "
 "optimised for use in SQL expressions and index-supported filtering."
 msgstr ""
+"ここではPostGISで定義されている空間演算子について記述しています。演算子はバウ"
+"ンディングボックスの相互作用および空間関係に関する簡潔な記号による述語で関数"
+"を補うものです。関連する関数と同じ処理ルールに従って動作しますが、SQL式での利"
+"用やインデックス対応のフィルタリングでの利用に最適化されています。"
 
 #. Tag: title
 #, no-c-format
@@ -22721,7 +22854,7 @@ msgstr ""
 #, no-c-format
 msgid ""
 "Availability: 2.3.0 support for Block Range INdexes (BRIN) was introduced."
-msgstr ""
+msgstr "Availability: 2.3.0 BRIN (Block Range INdexes)が導入されました。"
 
 #. Tag: para
 #, no-c-format
@@ -23593,6 +23726,10 @@ msgid ""
 "nearest-neighbor result sets with true KNN distance search for geometries, "
 "and distance on the sphere for geographies."
 msgstr ""
+"<varname>&lt;-&gt;</varname>演算子は二つのジオメトリーの2次元距離を返します。"
+"\"ORDER BY\"句内で使われ、インデックスの援助を受けた近傍結果集合の結果を返し"
+"ます。ジオメトリーではデカルト距離を使い、ジオグラフィでは球面上の距離を計算"
+"します。"
 
 #. Tag: para
 #, no-c-format
@@ -23634,13 +23771,16 @@ msgid ""
 "and geography. Note for geography KNN is based on sphere rather than "
 "spheroid."
 msgstr ""
+"Enhanced: 2.2.0 -- 真のKNN (k近傍法)のジオメトリーとジオグラフィーのふるまい"
+"。ジオグラフィーのKNNは回転楕円体でなく球面に基づきます。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Changed: 2.2.0 -- Old hybrid-syntax workarounds may be slower once true KNN "
 "is available. See examples below."
-msgstr ""
+msgstr "Changed: 2.2.0 -- 真のKNNが有効になると、古いハイブリッド法による回避策は遅く"
+"なることがあります。下の例を見てください。"
 
 #. Tag: para
 #, no-c-format
@@ -23649,6 +23789,9 @@ msgid ""
 "centroid distances instead of true distances. Exact results for points, "
 "inexact for all other types."
 msgstr ""
+"Availability: 2.0.0 -- 弱いKNNによって、実際の距離の代わりにジオメトリーの重"
+"心に基づく近傍が得られます。ポイントは確実な結果を得て、他のタイプは全て不確"
+"実な結果を得ます。"
 
 #. Tag: para
 #, no-c-format
@@ -23671,6 +23814,10 @@ msgid ""
 "find the true nearest neighbors. First a CTE query using the index-assisted "
 "KNN, then an exact query to get correct ordering:"
 msgstr ""
+"プランで直接確実な距離を生成できない時には、真の近傍を見つけるには複合クエリ"
+"ーを追加居ます。まずインデックスを使ったKNNによるCTE (Common Table "
+"Expression, WITH句)クエリーを実行し、その後に正しい順序を得るための確実なクエ"
+"リーを実施します。次のようにします:"
 
 #. Tag: para
 #, no-c-format
@@ -23694,6 +23841,10 @@ msgid ""
 "same as <xref linkend=\"ST_DistanceCPA\"/> but as an operator it can be used "
 "for doing nearest neighbor searches using an N-dimensional index."
 msgstr ""
+"<varname>|=|</varname>演算子は二つのトラジェクトりー (<xref linkend="
+"\"ST_IsValidTrajectory\"/>参照)の間の3次元距離を返します。<xref linkend="
+"\"ST_DistanceCPA\""
+"/>と同じですが、この演算子はN次元インデックスを使った最近傍探索を行います。"
 
 #. Tag: para
 #, no-c-format
@@ -23721,7 +23872,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "Availability: 2.2.0."
-msgstr ""
+msgstr "Availability: 2.2.0."
 
 #. Tag: para
 #, no-c-format
@@ -23746,6 +23897,9 @@ msgid ""
 "Useful for doing nearest neighbor <emphasis role=\"strong\">approximate</"
 "emphasis> distance ordering."
 msgstr ""
+"<varname>&lt;#&gt;</varname>演算子は、二つの浮動小数点数型ボックスの間の距離"
+"を返します。場合によっては空間インデックスから読みます。最近傍の<emphasis "
+"role=\"strong\">概算</emphasis>距離での並び替えに使えます。"
 
 #. Tag: para
 #, no-c-format
@@ -23771,7 +23925,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "Availability: 2.0.0."
-msgstr ""
+msgstr "Availability: 2.0.0."
 
 #. Tag: para
 #, no-c-format
@@ -24061,6 +24215,9 @@ msgid ""
 "default. If your GUI tools require the old behavior, then SET "
 "<code>bytea_output='escape'</code> in your database."
 msgstr ""
+"デフォルトではPostgreSQLは16進エンコードがされた <varname>bytea</varname>値を"
+"出力します。お使いのGUIツールが古い振舞いを求める場合には、データベースで<cod"
+"e>bytea_output='escape'</code>を設定します。"
 
 #. Tag: para
 #, no-c-format
@@ -24399,6 +24556,10 @@ msgid ""
 "function> raises a warning in that case because PostgreSQL <type>jsonb</"
 "type> keeps only the last value for duplicate keys."
 msgstr ""
+"入力レコードのカラム名に重複があるとき、\"properties"
+"\"オブジェクトは重複キーを持つことになります"
+"。この場合には<function>ST_AsGeoJSON</function>は警告を出します。 PostgreSQL"
+"の<type>jsonb</type>は重複キーがあると最後の値だけをキープするためです。"
 
 #. Tag: para
 #, no-c-format
@@ -24471,7 +24632,7 @@ msgstr "Changed: 3.5.0 地物のidを含むカラムを指定できるように�
 #. Tag: para
 #, no-c-format
 msgid "Changed: 3.7.0 added warning about duplicate keys"
-msgstr ""
+msgstr "Changed: 3.7.0 キー重複に関する警告の追加"
 
 #. Tag: para
 #, no-c-format
@@ -25387,6 +25548,11 @@ msgid ""
 "the x/y axis. By default, <code>ST_AsX3D</code> outputs in database form "
 "(long,lat or X,Y), but the X3D default of lat/lon, y/x may be preferred."
 msgstr ""
+"'options'引数はビットフィールドです。X3D GeoCoordinates "
+"Geospatialノードを表現するかどうか、また、X/"
+"Y軸を反対にするかどうかで使います。<code>ST_AsX3D</code>は、"
+"デフォルトではデータベースの形式 (経度, 緯度またはX, Y)で出力しますが、X3Dの"
+"lat/lon, y/xのデフォルトが好まれることがあります。"
 
 #. Tag: para
 #, no-c-format
@@ -26254,6 +26420,12 @@ msgid ""
 "linkend=\"ST_Segmentize\"/> to add geodesic vertices, then cast to geometry "
 "before subdivision."
 msgstr ""
+"分割したジオメトリーをジオグラフィーにキャストすると、得られるジオグラフィー"
+"は元のものと異なることになる場合があります。分割によって平面空間 (ジオメトリ)"
+"に頂点が追加されます。頂点が境界に沿って挿入される場合には、ジオグラフィー表"
+"現のエッジは測地線上の辺として補間されます。歪みを最小化するには、"
+"最初に<xref linkend=\"ST_Segmentize\"/>を使って測地線上に頂点を追加してジオグ"
+"ラフィーを高密度化して、それから分割までの間にジオメトリーにキャストします。"
 
 #. Tag: para
 #, no-c-format
@@ -26301,6 +26473,10 @@ msgid ""
 "impact of changes to the geography representation of a geometry when "
 "subdividing."
 msgstr ""
+"<emphasis role=\"bold\">例:</emphasis> ST_Segmentize(geography, distance)を使"
+"って長いジオグラフィー型のラインの高密度化を行い、ST_Subdivideを使って結果ラ"
+"インを8頂点のラインに分割します。高密度化することで、分割時にジオメトリーのジ"
+"オグラフィー表現への変更によって与えられる影響が最小化されます。"
 
 #. Tag: para
 #, no-c-format
@@ -26709,6 +26885,11 @@ msgid ""
 "does not affect POINT or POLYGON geometries. By default end caps are square "
 "when 'left' or 'right' are specified."
 msgstr ""
+"'side=both|left|right' : デフォルトは'both'です。'left'または'right'でジオメ"
+"トリーの片側へのバッファーが行われますが、左右はラインの方向で決まります。こ"
+"れはLINESTRINGジオメトリーにのみ適用可能です。POINTまたはPOLYGONジオメトリに"
+"影響を与えません。'left'または'right'を指定した場合にはデフォルトの終端スタイ"
+"ルは正方形になります。"
 
 #. Tag: para
 #, no-c-format
@@ -27652,17 +27833,17 @@ msgstr "この関数はM値を取り除きます。"
 #. Tag: title
 #, no-c-format
 msgid "Cardinality 2"
-msgstr ""
+msgstr "次数2"
 
 #. Tag: para
 #, no-c-format
 msgid "Nodes with cardinality 2 are merged away."
-msgstr ""
+msgstr "次数2のノードはマージされます。"
 
 #. Tag: title
 #, no-c-format
 msgid "Cardinality 3 or More"
-msgstr ""
+msgstr "次数3以上"
 
 #. Tag: para
 #, no-c-format
@@ -27672,7 +27853,7 @@ msgstr "インタセクト位置で方向数 &gt; 2 となるラインはマー�
 #. Tag: title
 #, no-c-format
 msgid "Non-Touching Lines"
-msgstr ""
+msgstr "接触していないライン"
 
 #. Tag: para
 #, no-c-format
@@ -27686,7 +27867,7 @@ msgstr ""
 #. Tag: title
 #, no-c-format
 msgid "Directed Parameter"
-msgstr ""
+msgstr "directedパラメーター"
 
 #. Tag: para
 #, no-c-format
@@ -27696,7 +27877,7 @@ msgstr "directed = TRUEの場合には、対応方向のラインはマージさ
 #. Tag: title
 #, no-c-format
 msgid "Z-dimension Handling"
-msgstr ""
+msgstr "Z値を取り扱う"
 
 #. Tag: para
 #, no-c-format
@@ -30909,7 +31090,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "Non-georeferenced rasters and geometries use SRID 0."
-msgstr ""
+msgstr "地理参照を施していないラスターとジオメトリーのSRIDは0です。"
 
 #. Tag: refpurpose
 #, no-c-format
@@ -32805,6 +32986,13 @@ msgid ""
 "and set it to <varname>libproj.dll</varname>. You'll have to restart your "
 "PostgreSQL service/daemon after this change."
 msgstr ""
+"変換しようとしてうまくいかない場合には、環境変数PROJSOを使用しているPostGISの"
+"ビルドが使用している投影ライブラリに設定する必要があるかも知れません。ファイ"
+"ル名を指定します。Windowsではコントロールパネル -&gt; システム -&gt; "
+"システムの詳細設定 -&gt; 詳細設定タブ -&gt; 環境変数 で "
+"<varname>PROJSO</varname>というシステム変数を追加して<varname>libproj.dll</va"
+"rname>へのパスを指定します。変更後はPostgreSQLサービス/デーモンを再起動する必"
+"要があります。"
 
 #. Tag: para
 #, no-c-format
@@ -34759,14 +34947,15 @@ msgstr "複数のラスタ、複数のバンド"
 #. Tag: para
 #, no-c-format
 msgid "Complete example of tiles of a coverage with neighborhood."
-msgstr ""
+msgstr "近隣ピクセルを併用したカバレッジのタイルの完全な例です。"
 
 #. Tag: para
 #, no-c-format
 msgid ""
 "Example like the prior one for tiles of a coverage with neighborhood but "
 "using only basic SQL features."
-msgstr ""
+msgstr "前の例である近隣ピクセルを併用したカバレッジのタイルに似ていますが基本的なSQL"
+"機能だけを使用しています。"
 
 #. Tag: title
 #, no-c-format
@@ -36327,7 +36516,7 @@ msgstr ""
 #. Tag: para
 #, no-c-format
 msgid "Complete example of tiles of a coverage."
-msgstr ""
+msgstr "カバレッジのタイルの完全な例。"
 
 #. Tag: para
 #, no-c-format
@@ -36906,6 +37095,8 @@ msgid ""
 "Changed 3.7.0, the polygonization honours PostgreSQL interrupts so "
 "cancellations and statement timeouts halt processing promptly."
 msgstr ""
+"Changed 3.7.0, PostgreSQLの処理中断を尊重して、キャンセルや手続時間切れによる"
+"処理の停止を即座に行うようになりました。"
 
 #. Tag: para
 #, no-c-format
@@ -43385,6 +43576,9 @@ msgid ""
 "output from the linework. The requirement that no vertices are lost can "
 "generate complex collections as outputs."
 msgstr ""
+"\"linework\"はデフォルトのアルゴリズムで、最初に全てのラインを抽出して、その"
+"ラインを繋ぎ合わせ、最後に繋いだラインから値を出力します。頂点の欠落が無いこ"
+"とを求めているので、複雑なコレクションを出力として生成できます。"
 
 #. Tag: para
 #, no-c-format
@@ -43394,6 +43588,9 @@ msgid ""
 "differencing all interior rings. The results tend to be more intuitive, "
 "where collapsed lines are discarded in the output."
 msgstr ""
+"\"structure\"は内側リングと外側リングを区別します。外側リングを結合してジオメ"
+"トリーを新規生成してから、全ての内側リングの領域を差し引きます。次元崩壊した"
+"ラインは破棄されて結果が出力されるので、より直感的と言えるでしょう。"
 
 #. Tag: para
 #, no-c-format
@@ -43401,6 +43598,8 @@ msgid ""
 "The \"keepcollapsed\" key is only valid for the \"structure\" algorithm, and "
 "takes a value of \"true\" or \"false\"."
 msgstr ""
+"\"keepcollapsed\"キーは\"structure\"アルゴリズムの時だけ見られて、\"true\"ま"
+"たは\"false\"を取ります。"
 
 #. Tag: para
 #, no-c-format
@@ -43409,6 +43608,8 @@ msgid ""
 "components that collapse to a lower dimensionality, for example a one-point "
 "linestring will be dropped."
 msgstr ""
+"\"keepcollapsed\"のデフォルト値は\"false\"です。頂点が1個のラインストリングな"
+"どの低い空間次元に崩壊するジオメトリーは削除されます。"
 
 #. Tag: para
 #, no-c-format
@@ -43416,6 +43617,8 @@ msgid ""
 "Keep collapsed of \"true\" means geometry components that collapse to a "
 "lower dimensionality will be retained."
 msgstr ""
+"\"keepcollapsed\"が\"true\"の場合には、低い空間次元に崩壊するジオメトリー要素"
+"も保持されます。"
 
 #. Tag: para
 #, no-c-format
@@ -45438,6 +45641,11 @@ msgid ""
 "custom geodetic spatial reference system as described in <xref "
 "linkend=\"user-spatial-ref-sys\"/>."
 msgstr ""
+"ジオメトリー型のように、ジオグラフィデータは空間参照系識別子 (Spatial "
+"Reference System Identifier, SRID)を持っています。 <varname>spatial_ref_sys</"
+"varname>で定義されている地理座標系 (経度/緯度)の空間参照系で利用できます。独"
+"自の地理座標系の空間参照系を追加することもできます。<xref linkend=\"user-"
+"spatial-ref-sys\"/>を参照してください。"
 
 #. Tag: para
 #, no-c-format
@@ -47646,6 +47854,15 @@ msgid ""
 "href=\"https://www.postgresql.org/docs/current/brin.html\">PostgreSQL "
 "manual</link>."
 msgstr ""
+"BRINは\"Block Range Index\"の意味です。PostgreSQLが提供する汎用インデックスで"
+"す。BRINは<emphasis>不可逆</emphasis>インデックスですので、レコードが検索条件"
+"に合致するか確認する二次チェックが必要です (これは提供されているすべての空間"
+"インデックスと同じです)。BRINは、インデックス生成が非常に高速で、インデックス"
+"サイズが非常に小さく、読込み効率がそこそこ良いものです。これの主目的は、巨大"
+"テーブルに対してテーブル内の物理位置と相関するカラムの上にインデックスを生成"
+"することです。BRINは各種属性データ構造 (整数、配列など)の高速検索が可能です。"
+"詳細情報については<link xlink:href=\"https://www.postgresql.org/docs/current/"
+"brin.html\">PostgreSQL manual</link>を参照してください。"
 
 #. Tag: para
 #, no-c-format
@@ -50308,6 +50525,17 @@ msgstr "2.5次元/3次元対応"
 #, no-c-format
 msgid "Supports geography"
 msgstr "ジオグラフィ対応"
+
+#, no-c-format
+#~ msgid ""
+#~ "ImageMagick (<filename>convert</filename>) is required to generate the "
+#~ "images used in the documentation. ImageMagick is available from <link "
+#~ "xlink:href=\"http://www.imagemagick.org/\"> http://www.imagemagick.org/ </"
+#~ "link> ."
+#~ msgstr ""
+#~ "ImageMagick (<filename>convert</filename>)。文書で使う画像を生成するのに必"
+#~ "要です。<link xlink:href=\"http://www.imagemagick.org/\">http://www."
+#~ "imagemagick.org/</link>にあります。"
 
 #, no-c-format
 #~ msgid ""
