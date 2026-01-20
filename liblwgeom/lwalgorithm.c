@@ -31,33 +31,33 @@
 int
 p4d_same(const POINT4D *p1, const POINT4D *p2)
 {
-	return FP_EQUALS(p1->x, p2->x)
-	    && FP_EQUALS(p1->y, p2->y)
-	    && FP_EQUALS(p1->z, p2->z)
-	    && FP_EQUALS(p1->m, p2->m);
+	return p1->x == p2->x
+	    && p1->y == p2->y
+	    && p1->z == p2->z
+	    && p1->m == p2->m;
 }
 
 int
 p3d_same(const POINT3D *p1, const POINT3D *p2)
 {
-	return FP_EQUALS(p1->x, p2->x)
-	    && FP_EQUALS(p1->y, p2->y)
-	    && FP_EQUALS(p1->z, p2->z);
+	return p1->x == p2->x
+	    && p1->y == p2->y
+	    && p1->z == p2->z;
 }
 
 int
 p3dz_same(const POINT3DZ *p1, const POINT3DZ *p2)
 {
-	return FP_EQUALS(p1->x, p2->x)
-	    && FP_EQUALS(p1->y, p2->y)
-	    && FP_EQUALS(p1->z, p2->z);
+	return p1->x == p2->x
+	    && p1->y == p2->y
+	    && p1->z == p2->z;
 }
 
 int
 p2d_same(const POINT2D *p1, const POINT2D *p2)
 {
-	return FP_EQUALS(p1->x, p2->x)
-	    && FP_EQUALS(p1->y, p2->y);
+	return p1->x == p2->x
+	    && p1->y == p2->y;
 }
 
 /**
@@ -97,7 +97,7 @@ lw_pt_in_arc(const POINT2D *P, const POINT2D *A1, const POINT2D *A2, const POINT
 
 /**
 * Returns true if P is between A1/A2. Only makes sense if P has already been
-* deterined to be on the line defined by A1/A2.
+* determined to be on the line defined by A1/A2.
 */
 int
 lw_pt_in_seg(const POINT2D *P, const POINT2D *A1, const POINT2D *A2)
