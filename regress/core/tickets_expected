@@ -37,6 +37,10 @@ ERROR:  Invalid hex string, length (267) has to be a multiple of two!
 #175|SRID=26915;POINT(482020 4984378)
 #178a|0
 #178b|5
+#2863a|5
+#2863b|4
+#2863c|5
+#2863d|5
 NOTICE:  No points or linestrings in input array
 #179a|
 NOTICE:  No points or linestrings in input array
@@ -216,7 +220,7 @@ NOTICE:  SRID value -1 converted to the officially unknown SRID value 0
 #1776|POLYGON((0 0,10 0,10 10,0 0))|POLYGON((0 0,10 0,10 10,0 0))
 #1780|t
 ERROR:  ST_Segmentize: invalid max_distance 0 (must be >= 0)
-ERROR:  invalid GML representation
+CURVEPOLYGON(COMPOUNDCURVE((1070163.61 711540.35,1070166.54 711523.82,1070164.14 711521.3,1070162.44 711519.52,1070164.62 711518.57,1070824.94 712154.47),CIRCULARSTRING(1070824.94 712154.47,1070826.04 712154.98,1070827.22 712154.41),(1070827.22 712154.41,1070837.07 712160.31,1070835.36 712160.92,1071007.95 712207.89),CIRCULARSTRING(1071007.95 712207.89,1071005.59 712207.48,1071001.28 712208.38),(1071001.28 712208.38,1070949.67 712228.74,1070936.15 712233.98,1070788.72 712124.93),CIRCULARSTRING(1070788.72 712124.93,1070785.87 712124.28,1070783.38 712124.63),(1070783.38 712124.63,1070764.12 712141.04,1070757.01 712146.6,1070163.61 711540.35)),(1070354.46 713061.62,1070335.12 713053.59,1070315.92 713049.58,1070298.33 713049.65,1070354.46 713061.62))
 #1957|1
 #1978|3.1416
 #1996|{"type":"Point","coordinates":[]}
@@ -231,6 +235,7 @@ ERROR:  invalid GML representation
 #2112b|1|LINESTRING(1 1 1,1 0 1)
 #2108|SRID=3395;POINTM EMPTY
 #2117|SRID=3395;POINTM EMPTY
+pointonsurface_mixed_empty_multipoint|SRID=4326;POINT(2 4)
 #2110.1|f
 #2110.2|t
 #2110.3|t
@@ -302,6 +307,10 @@ ERROR:  invalid KML representation
 #3627a|o}~~|AdshNoSsBgd@eGoBlm@wKhj@~@?
 #3627b|t
 #3704|t
+#3705a|t
+#3705b|t
+#3705c|t
+#3705d|1 2
 #3709|t
 NOTICE:  Hole lies outside shell at or near point 25495368.044100001 6671726.9312000005
 #3719a|f
@@ -383,6 +392,12 @@ equals210|t
 equals211|t
 equals212|t
 equals213|t
+#4749.contains|t|t|f
+#4749.within|t|t|f
+#4749.covers|t|t|f
+#4749.coveredby|t|t|f
+#4749.intersects|t|t|t
+#4749.disjoint|f|f|f|t
 #4299|t
 #4304|t|t|t
 ERROR:  BOX3D_construct: args can not be empty points
@@ -414,8 +429,8 @@ ERROR:  BOX2D_construct: args can not be empty points
 #4399|ST_AsTWKB|\x030001040000020201000001
 #4399|ST_AsTWKB|\x070001030001040000020201000001
 #4399|ST_AsTWKB|\x0310
-#4399|ST_AsX3D|0 0 1 1 0 1
-#4399|ST_AsX3D|<IndexedTriangleSet  index='0 1 2'><Coordinate point='0 0 1 1 0 1'/></IndexedTriangleSet>
+#4399|ST_AsX3D|0 0 0 1 1 0 0 1 0
+#4399|ST_AsX3D|<IndexedTriangleSet  index='0 1 2'><Coordinate point='0 0 0 1 1 0 0 1 0'/></IndexedTriangleSet>
 #4399|ST_AsX3D|
 #4399|ST_GeoHash|s00
 #4399|ST_GeoHash|s00
@@ -426,6 +441,17 @@ ERROR:  BOX2D_construct: args can not be empty points
 #4599-1|LINESTRING(0 0 1,1 1 1,1 2 3)
 #4599-2|LINESTRING(1 2 3,0 0 1,1 1 1)
 #4599-3|LINESTRING(0 0 1,1 1 1,1 2 3)
+#1416a|t
+#1416b|t
+#1416c|t
+#1416d|t
+#1416e|t
+#1416f|t
+#1416g|t
+#1416h|t
+#1416i|t
+#1416j|<NurbsCurve  order='3' knot='0 0 0 1 1 1' weight='1 1 1'><Coordinate containerField='controlPoint' point='0 0 0 1 1 0 2 0 0' /></NurbsCurve>
+#1416k|t
 #4670-0|LINESTRING(2 2,0 0,1 1,3 3,4 4)
 #4670-1|LINESTRING(0 0,2 2,1 1,3 3,4 4)
 #4670-2|LINESTRING(0 0,1 1,2 2,3 3,4 4)
@@ -483,6 +509,7 @@ ERROR:  Geometry contains invalid coordinates
 #5686|0
 #5747|0
 #5855|Knosesmauet
+#5855.1|1
 #5876|LINESTRING(1 1,2 2)
 #5082|t
 public.test5978.shape SRID:4326 TYPE:POINT DIMS:2 
@@ -490,6 +517,21 @@ public.test5978.geometry SRID:4326 TYPE:POINT DIMS:2
 public|test5829|geom|2|4326|GEOMETRY
 public|test5978|geometry|2|4326|POINT
 public|test5978|shape|2|4326|POINT
+#1705|public|test1705|geom|2|4326|POINT
+#1705|public|test1705|geom_2160|2|2160|POINT
+#1705|public|test1705_alias_view|shape|2|0|GEOMETRY
+#1705|public|test1705_buffer_view|geom_2160|2|0|GEOMETRY
+#1705|public|test1705_matview|geom_2160|2|0|GEOMETRY
+#1705|public|test1705_mixed_view|buffered|2|0|GEOMETRY
+#1705|public|test1705_mixed_view|geom_2160|2|0|GEOMETRY
+#1705|public|test1705_nested_buffer_view|geom_2160|2|0|GEOMETRY
+#1705|public|test1705_scalar_buffer_view|geom_2160|2|0|GEOMETRY
+#1705|public|test1705_view|geom|2|4326|POINT
+#1705|public|test1705_view|geom_2160|2|0|GEOMETRY
+#3103.1|4326
+#3103.2|3857
+#3103.3|test3103b|3857
+#3103.3|test3103a|4326
 #4828|4326
 #5987|LINESTRING(20 20,20.1 20,20.2 19.9)|LINESTRING(20 20,20.1 20,20.2 19.9)
 #5962|MULTIPOINT((1 1),(3 4))|POINT(1 1)
@@ -498,3 +540,6 @@ public|test5978|shape|2|4326|POINT
 #5938|1FF00F212|t
 #5938|1FF00F212|t
 1|01030000209713000000000000
+#5357|LINESTRING(38.903876 55.336448,38.903875 55.336448)
+makepolygon-null-holes|4
+#6110|PASS

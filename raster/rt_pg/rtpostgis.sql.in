@@ -2,7 +2,6 @@
 --
 --
 -- PostGIS Raster - Raster Type for PostGIS
--- http://trac.osgeo.org/postgis/wiki/WKTRaster
 --
 -- Copyright (c) 2015-2017 Regina Obe <lr@pcorp.us>
 -- Copyright (c) 2009-2024 Sandro Santilli <strk@kbt.io>
@@ -164,7 +163,7 @@ CREATE OR REPLACE FUNCTION st_envelope(raster)
 CREATE OR REPLACE FUNCTION st_convexhull(raster)
     RETURNS geometry
     AS 'MODULE_PATHNAME','RASTER_convex_hull'
-    LANGUAGE 'c' IMMUTABLE STRICT
+    LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
     COST 300;
 
 CREATE OR REPLACE FUNCTION st_minconvexhull(
@@ -1388,7 +1387,7 @@ CREATE OR REPLACE FUNCTION st_colormap(
 		_ismap := TRUE;
 
 		-- clean colormap to see what it is
-		_colormap := split_part(colormap, E'\n', 1);
+		_colormap := split_part(trim(both E' \t\r\n' from colormap), E'\n', 1);
 		_colormap := regexp_replace(_colormap, E':+', ' ', 'g');
 		_colormap := regexp_replace(_colormap, E',+', ' ', 'g');
 		_colormap := regexp_replace(_colormap, E'\\t+', ' ', 'g');
@@ -2541,30 +2540,9 @@ CREATE OR REPLACE FUNCTION st_min4ma(matrix float[][], nodatamode text, variadic
     LANGUAGE 'plpgsql' IMMUTABLE PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION st_sum4ma(matrix float[][], nodatamode text, variadic args text[])
-    RETURNS float AS
-    $$
-    DECLARE
-        _matrix float[][];
-        sum float;
-    BEGIN
-        _matrix := matrix;
-        sum := 0;
-        FOR x in array_lower(matrix, 1)..array_upper(matrix, 1) LOOP
-            FOR y in array_lower(matrix, 2)..array_upper(matrix, 2) LOOP
-                IF _matrix[x][y] IS NULL THEN
-                    IF nodatamode = 'ignore' THEN
-                        _matrix[x][y] := 0;
-                    ELSE
-                        _matrix[x][y] := nodatamode::float;
-                    END IF;
-                END IF;
-                sum := sum + _matrix[x][y];
-            END LOOP;
-        END LOOP;
-        RETURN sum;
-    END;
-    $$
-    LANGUAGE 'plpgsql' IMMUTABLE PARALLEL SAFE;
+    RETURNS float
+    AS 'MODULE_PATHNAME', 'RASTER_sum4ma'
+    LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION st_mean4ma(matrix float[][], nodatamode text, variadic args text[])
     RETURNS float AS
@@ -4429,6 +4407,13 @@ CREATE OR REPLACE FUNCTION _st_grayscale4ma(value double precision[][][], pos in
 		green := _value[2][1][1];
 		blue := _value[3][1][1];
 
+		-- ST_Grayscale uses 255 as its output NODATA sentinel. Returning the
+		-- sentinel here lets the wrapper mark it as NODATA only when one of
+		-- the source RGB bands has a NODATA value.
+		IF red IS NULL OR green IS NULL OR blue IS NULL THEN
+			RETURN 255;
+		END IF;
+
 		gray = round(0.2989 * red + 0.5870 * green + 0.1140 * blue);
 		RETURN gray;
 
@@ -4459,6 +4444,8 @@ CREATE OR REPLACE FUNCTION st_grayscale(
 		nodata double precision;
 		nodataval integer;
 		reclassexpr text;
+		hasnodata boolean DEFAULT FALSE;
+		grayscale @extschema@.raster;
 
 	BEGIN
 
@@ -4483,11 +4470,16 @@ CREATE OR REPLACE FUNCTION st_grayscale(
 
 				RAISE EXCEPTION 'Band at index ''%'' not found for raster ''%''', nband, idx;
 
-			-- check that each band is 8BUI. if not, reclassify to 8BUI
-			ELSIF @extschema@.ST_BandPixelType(rast, nband) != _PIXTYPE THEN
+			END IF;
 
+			nodata := @extschema@.ST_BandNoDataValue(rast, nband);
+			IF nodata IS NOT NULL THEN
+				hasnodata := TRUE;
+			END IF;
+
+			-- check that each band is 8BUI. if not, reclassify to 8BUI
+			IF @extschema@.ST_BandPixelType(rast, nband) != _PIXTYPE THEN
 				stats := @extschema@.ST_SummaryStats(rast, nband);
-				nodata := @extschema@.ST_BandNoDataValue(rast, nband);
 
 				IF nodata IS NOT NULL THEN
 					nodataval := _NODATA;
@@ -4513,12 +4505,18 @@ CREATE OR REPLACE FUNCTION st_grayscale(
 		END LOOP;
 
 		-- call map algebra with _st_grayscale4ma
-		RETURN @extschema@.ST_MapAlgebra(
+		grayscale := @extschema@.ST_MapAlgebra(
 			_set,
 			'@extschema@._ST_Grayscale4MA(double precision[][][], integer[][], text[])'::regprocedure,
 			'8BUI',
 			extenttype
 		);
+
+		IF hasnodata THEN
+			grayscale := @extschema@.ST_SetBandNoDataValue(grayscale, 1, _NODATA);
+		END IF;
+
+		RETURN grayscale;
 
 	END;
 	$$ LANGUAGE 'plpgsql' IMMUTABLE PARALLEL SAFE;
@@ -6033,13 +6031,13 @@ CREATE OR REPLACE FUNCTION st_intersects(rast1 raster, nband1 integer, rast2 ras
 	RETURNS boolean
 	AS $$ SELECT $1 OPERATOR(@extschema@.&&) $3 AND CASE WHEN $2 IS NULL OR $4 IS NULL THEN @extschema@._st_intersects(@extschema@.st_convexhull($1), @extschema@.st_convexhull($3)) ELSE @extschema@._st_intersects($1, $2, $3, $4) END $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
-	COST 1000;
+	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION st_intersects(rast1 raster, rast2 raster)
 	RETURNS boolean
 	AS $$ SELECT @extschema@.st_intersects($1, NULL::integer, $2, NULL::integer) $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
-	COST 1000;
+	_COST_DEFAULT;
 
 -----------------------------------------------------------------------
 -- ST_Intersects(geometry, raster)
@@ -6078,7 +6076,7 @@ CREATE OR REPLACE FUNCTION st_intersects(geom geometry, rast raster, nband integ
 	RETURNS boolean AS
 	$$ SELECT $1 OPERATOR(@extschema@.&&) $2::@extschema@.geometry AND @extschema@._st_intersects($1, $2, $3); $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
-	COST 1000;
+	_COST_DEFAULT;
 
 -----------------------------------------------------------------------
 -- ST_Intersects(raster, geometry)
@@ -6088,13 +6086,13 @@ CREATE OR REPLACE FUNCTION st_intersects(rast raster, geom geometry, nband integ
 	RETURNS boolean
 	AS $$ SELECT $1::@extschema@.geometry OPERATOR(@extschema@.&&) $2 AND @extschema@._st_intersects($2, $1, $3) $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
-	COST 1000;
+	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION st_intersects(rast raster, nband integer, geom geometry)
 	RETURNS boolean
 	AS $$ SELECT $1::@extschema@.geometry OPERATOR(@extschema@.&&) $3 AND @extschema@._st_intersects($3, $1, $2) $$
 	LANGUAGE 'sql' IMMUTABLE PARALLEL SAFE
-	COST 1000;
+	_COST_DEFAULT;
 
 -----------------------------------------------------------------------
 -- ST_Overlaps(raster, raster)
@@ -8317,7 +8315,7 @@ CREATE OR REPLACE FUNCTION DropRasterConstraints (
 -- raster_columns
 --
 -- The metadata is documented in the PostGIS Raster specification:
--- http://trac.osgeo.org/postgis/wiki/WKTRaster/SpecificationFinal01
+-- doc/development/internals/raster-storage.md
 ------------------------------------------------------------------------------
 -- Availability: 2.0.0
 -- Changed: 2.2.0
@@ -8329,8 +8327,8 @@ CREATE OR REPLACE VIEW raster_columns AS
 		c.relname AS r_table_name,
 		a.attname AS r_raster_column,
 		COALESCE(_raster_constraint_info_srid(n.nspname, c.relname, a.attname), (SELECT ST_SRID('POINT(0 0)'::geometry))) AS srid,
-		_raster_constraint_info_scale(n.nspname, c.relname, a.attname, 'x') AS scale_x,
-		_raster_constraint_info_scale(n.nspname, c.relname, a.attname, 'y') AS scale_y,
+		_raster_constraint_info_scale(n.nspname, c.relname, a.attname, 'x'::char) AS scale_x,
+		_raster_constraint_info_scale(n.nspname, c.relname, a.attname, 'y'::char) AS scale_y,
 		_raster_constraint_info_blocksize(n.nspname, c.relname, a.attname, 'width') AS blocksize_x,
 		_raster_constraint_info_blocksize(n.nspname, c.relname, a.attname, 'height') AS blocksize_y,
 		COALESCE(_raster_constraint_info_alignment(n.nspname, c.relname, a.attname), FALSE) AS same_alignment,
@@ -8344,24 +8342,41 @@ CREATE OR REPLACE VIEW raster_columns AS
 	FROM
 		pg_class c,
 		pg_attribute a,
-		pg_type t,
 		pg_namespace n
-	WHERE t.typname = 'raster'::name
-		AND a.attisdropped = false
-		AND a.atttypid = t.oid
+	WHERE a.attisdropped = false
+		AND a.atttypid = '@extschema@.raster'::regtype
 		AND a.attrelid = c.oid
 		AND c.relnamespace = n.oid
-		AND c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", 'm'::"char", 'f'::"char", 'p'::"char"] )
-		AND NOT pg_is_other_temp_schema(c.relnamespace)  AND has_table_privilege(c.oid, 'SELECT'::text);
+		AND c.relkind = ANY (ARRAY['r'::pg_catalog."char", 'v'::pg_catalog."char", 'm'::pg_catalog."char", 'f'::pg_catalog."char", 'p'::pg_catalog."char"] )
+		AND NOT pg_catalog.pg_is_other_temp_schema(c.relnamespace) AND pg_catalog.has_column_privilege(c.oid, a.attname,'SELECT'::text);
 
 ------------------------------------------------------------------------------
 -- overview constraint functions
 -------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION _overview_constraint(ov raster, factor integer, refschema name, reftable name, refcolumn name)
-	RETURNS boolean AS
-	$$ SELECT COALESCE((SELECT TRUE FROM @extschema@.raster_columns WHERE r_table_catalog = current_database() AND r_table_schema = $3 AND r_table_name = $4 AND r_raster_column = $5), FALSE) $$
-	LANGUAGE 'sql' STABLE
+	RETURNS boolean AS $$
+	SELECT COALESCE((
+		SELECT TRUE
+		FROM pg_catalog.pg_class c
+		JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid
+		WHERE n.nspname = $3
+			AND c.relname = $4
+			AND a.attname = $5
+			AND a.attisdropped = false
+			AND a.atttypid = pg_catalog.pg_typeof($1)::pg_catalog.oid
+			AND c.relkind = ANY (ARRAY[
+				'r'::pg_catalog."char",
+				'v'::pg_catalog."char",
+				'm'::pg_catalog."char",
+				'f'::pg_catalog."char",
+				'p'::pg_catalog."char"
+			])
+			AND NOT pg_catalog.pg_is_other_temp_schema(c.relnamespace)
+			AND pg_catalog.has_column_privilege(c.oid, a.attname, 'SELECT'::text)
+	), FALSE)
+	$$ LANGUAGE 'sql' STABLE
 	COST 100;
 
 -- Changed: 3.1.2
@@ -8448,20 +8463,23 @@ CREATE OR REPLACE VIEW raster_overviews AS
 	FROM
 		pg_class c,
 		pg_attribute a,
-		pg_type t,
 		pg_namespace n,
 		(SELECT connamespace, conrelid, conkey, pg_get_constraintdef(oid) As consrc
 		    FROM pg_constraint) AS s
-	WHERE t.typname = 'raster'::name
-		AND a.attisdropped = false
-		AND a.atttypid = t.oid
+	WHERE a.attisdropped = false
+		AND a.atttypid = '@extschema@.raster'::regtype
 		AND a.attrelid = c.oid
 		AND c.relnamespace = n.oid
-		AND c.relkind = ANY(ARRAY['r'::char, 'v'::char, 'm'::char, 'f'::char])
+		AND c.relkind = ANY(ARRAY[
+			'r'::pg_catalog."char",
+			'v'::pg_catalog."char",
+			'm'::pg_catalog."char",
+			'f'::pg_catalog."char"
+		])
 		AND s.connamespace = n.oid
 		AND s.conrelid = c.oid
 		AND s.consrc LIKE '%_overview_constraint(%'
-		AND NOT pg_is_other_temp_schema(c.relnamespace)  AND has_table_privilege(c.oid, 'SELECT'::text);
+		AND NOT pg_catalog.pg_is_other_temp_schema(c.relnamespace) AND pg_catalog.has_column_privilege(c.oid, a.attname,'SELECT'::text);
 
 ------------------------------------------------------------------------------
 -- AddOverviewConstraints

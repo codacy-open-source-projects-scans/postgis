@@ -123,6 +123,10 @@ SELECT '#175', ST_AsEWKT(ST_GeomFromEWKT('SRID=26915;POINT(482020 4984378.)'));
 -- #178 --
 SELECT '#178a', ST_XMin(ST_MakeBox2D(ST_Point(5, 5), ST_Point(0, 0)));
 SELECT '#178b', ST_XMax(ST_MakeBox2D(ST_Point(5, 5), ST_Point(0, 0)));
+SELECT '#2863a', ST_XSize(ST_MakeBox2D(ST_Point(5, 5), ST_Point(0, 0)));
+SELECT '#2863b', ST_YSize('LINESTRING(1 2 3, 4 6 8)'::geometry);
+SELECT '#2863c', ST_ZSize('LINESTRING(1 2 3, 4 6 8)'::geometry);
+SELECT '#2863d', ST_MSize('LINESTRING M (1 2 3, 4 6 8)'::geometry);
 
 -- #179 --
 SELECT '#179a', ST_MakeLine(ARRAY[NULL,NULL,NULL,NULL]);
@@ -778,6 +782,7 @@ FROM (SELECT 'POLYGON((1 1 1, 5 1 1,5 5 1, 1 5 1,1 1 1))'::geometry as a, 'LINES
 
 SELECT '#2108', ST_AsEWKT(ST_LineInterpolatePoint('SRID=3395;LINESTRING M EMPTY'::geometry, 0.5));
 SELECT '#2117', ST_AsEWKT(ST_PointOnSurface('SRID=3395;MULTIPOLYGON M EMPTY'::geometry));
+SELECT 'pointonsurface_mixed_empty_multipoint', ST_AsEWKT(ST_PointOnSurface('SRID=4326;MULTIPOINT(EMPTY,2 1,2 4,4 5)'::geometry));
 
 SELECT '#2110.1', 'POINT(0 0)'::geometry = 'POINT EMPTY'::geometry;
 SELECT '#2110.2', 'POINT EMPTY'::geometry = 'POINT EMPTY'::geometry;
@@ -1007,6 +1012,12 @@ SELECT '#3627b', ST_Equals(geom, ST_LineFromEncodedPolyline(ST_AsEncodedPolyline
 
 -- #3704
 SELECT '#3704', ST_AsX3D('LINESTRING EMPTY') = '';
+
+-- #3705
+SELECT '#3705a', ST_AsX3D('MULTILINESTRING((2 3,4 5))'::geometry, 0) LIKE '<IndexedLineSet%<Coordinate%';
+SELECT '#3705b', ST_AsX3D('MULTIPOLYGON(((0 0,1 0,0 1,0 0)))'::geometry, 0) LIKE '<IndexedFaceSet%<Coordinate%';
+SELECT '#3705c', ST_AsX3D('GEOMETRYCOLLECTION(POINT(1 2),POINT(3 4))'::geometry, 0) LIKE '<Shape><Polypoint2D%';
+SELECT '#3705d', ST_AsX3D('POINTM(1 2 3)'::geometry, 0);
 
 -- #3709
 select '#3709', ST_SnapToGrid(ST_Project('SRID=4326;POINT(1 1)'::geography, 100000, 20)::geometry, 0.0001) = ST_SnapToGrid(ST_Project('SRID=4326;POINT(1 1)'::geography, -100000, 20+pi())::geometry, 0.0001);
@@ -1243,6 +1254,87 @@ SELECT 'equals212', ST_equals('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))'::geometry
 SELECT 'equals213', ST_equals('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))'::geometry,
 'GEOMETRYCOLLECTION (POLYGON((0 0, 10 0, 10 10, 0 10, 0 0)),MULTIPOINT(0 2, 5 5))'::geometry);
 
+-- #4749 point-only GeometryCollections in polygon predicates use the PIP path
+WITH g AS (
+	SELECT
+		'POLYGON((0 0,0 10,10 10,10 0,0 0))'::geometry AS poly,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(5 5)),MULTIPOINT((7 7),(8 8)))'::geometry AS pts_inside,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(0 0))'::geometry AS pts_boundary,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(11 11))'::geometry AS pts_outside
+)
+SELECT '#4749.contains',
+	ST_Contains(poly, pts_inside),
+	ST_Contains(poly, pts_boundary),
+	ST_Contains(poly, pts_outside)
+FROM g;
+
+WITH g AS (
+	SELECT
+		'POLYGON((0 0,0 10,10 10,10 0,0 0))'::geometry AS poly,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(5 5)),MULTIPOINT((7 7),(8 8)))'::geometry AS pts_inside,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(0 0))'::geometry AS pts_boundary,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(11 11))'::geometry AS pts_outside
+)
+SELECT '#4749.within',
+	ST_Within(pts_inside, poly),
+	ST_Within(pts_boundary, poly),
+	ST_Within(pts_outside, poly)
+FROM g;
+
+WITH g AS (
+	SELECT
+		'POLYGON((0 0,0 10,10 10,10 0,0 0))'::geometry AS poly,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(5 5)),MULTIPOINT((7 7),(8 8)))'::geometry AS pts_inside,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(0 0))'::geometry AS pts_boundary,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(11 11))'::geometry AS pts_outside
+)
+SELECT '#4749.covers',
+	ST_Covers(poly, pts_inside),
+	ST_Covers(poly, pts_boundary),
+	ST_Covers(poly, pts_outside)
+FROM g;
+
+WITH g AS (
+	SELECT
+		'POLYGON((0 0,0 10,10 10,10 0,0 0))'::geometry AS poly,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(5 5)),MULTIPOINT((7 7),(8 8)))'::geometry AS pts_inside,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(0 0))'::geometry AS pts_boundary,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(11 11))'::geometry AS pts_outside
+)
+SELECT '#4749.coveredby',
+	ST_CoveredBy(pts_inside, poly),
+	ST_CoveredBy(pts_boundary, poly),
+	ST_CoveredBy(pts_outside, poly)
+FROM g;
+
+WITH g AS (
+	SELECT
+		'POLYGON((0 0,0 10,10 10,10 0,0 0))'::geometry AS poly,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(5 5)),MULTIPOINT((7 7),(8 8)))'::geometry AS pts_inside,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(0 0))'::geometry AS pts_boundary,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(11 11))'::geometry AS pts_outside
+)
+SELECT '#4749.intersects',
+	ST_Intersects(poly, pts_inside),
+	ST_Intersects(pts_boundary, poly),
+	ST_Intersects(poly, pts_outside)
+FROM g;
+
+WITH g AS (
+	SELECT
+		'POLYGON((0 0,0 10,10 10,10 0,0 0))'::geometry AS poly,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(5 5)),MULTIPOINT((7 7),(8 8)))'::geometry AS pts_inside,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(0 0))'::geometry AS pts_boundary,
+		'GEOMETRYCOLLECTION(POINT(5 5),POINT(11 11))'::geometry AS pts_outside,
+		'GEOMETRYCOLLECTION(GEOMETRYCOLLECTION(POINT(-1 -1)),MULTIPOINT((11 11),(12 12)))'::geometry AS pts_disjoint
+)
+SELECT '#4749.disjoint',
+	ST_Disjoint(poly, pts_inside),
+	ST_Disjoint(pts_boundary, poly),
+	ST_Disjoint(poly, pts_outside),
+	ST_Disjoint(pts_disjoint, poly)
+FROM g;
+
 -- #4299
 SELECT '#4299', ST_Disjoint(ST_GeneratePoints(g, 1000), ST_GeneratePoints(g, 1000))
 FROM (SELECT 'POLYGON((0 0,1 0,1 1,0 1,0 0))'::geometry AS g) AS f;
@@ -1292,15 +1384,15 @@ WITH geom AS (
 	union all
 	SELECT 'TRIANGLE EMPTY'::geometry geom
 )
-select '#4399', 'ST_AsBinary', ST_AsBinary(geom)::text from geom
+select '#4399', 'ST_AsBinary', ST_AsBinary(geom, 'NDR')::text from geom
 union all
-select '#4399', 'ST_AsEWKB', ST_AsEWKB(geom)::text from geom
+select '#4399', 'ST_AsEWKB', ST_AsEWKB(geom, 'NDR')::text from geom
 union all
 select '#4399', 'ST_AsEWKT', ST_AsEWKT(geom)::text from geom
 union all
 select '#4399', 'ST_AsGML', ST_AsGML(3,geom)::text from geom
 union all
-select '#4399', 'ST_AsHEXEWKB', ST_AsHEXEWKB(geom)::text from geom
+select '#4399', 'ST_AsHEXEWKB', ST_AsHEXEWKB(geom, 'NDR')::text from geom
 union all
 select '#4399', 'ST_AsKML', ST_AsKML(ST_SetSRID(geom, 4326))::text from geom
 union all
@@ -1317,6 +1409,18 @@ select '#4399', 'ST_AsGeoJSON', ST_AsGeoJSON(geom)::text from geom;
 SELECT '#4599-1', ST_AsEWKT(ST_AddPoint(ST_GeomFromEWKT('LINESTRING(0 0 1, 1 1 1)'), ST_MakePoint(1, 2, 3)));
 SELECT '#4599-2', ST_AsEWKT(ST_AddPoint(ST_GeomFromEWKT('LINESTRING(0 0 1, 1 1 1)'), ST_MakePoint(1, 2, 3), 0));
 SELECT '#4599-3', ST_AsEWKT(ST_AddPoint(ST_GeomFromEWKT('LINESTRING(0 0 1, 1 1 1)'), ST_MakePoint(1, 2, 3), -1));
+
+SELECT '#1416a', ST_AsX3D('CIRCULARSTRING(0 0 1,1 1 1,2 0 1)'::geometry, 0) LIKE '<LineSet%';
+SELECT '#1416b', ST_AsX3D('COMPOUNDCURVE(CIRCULARSTRING(0 0 1,1 1 1,2 0 1),(2 0 1,3 1 1))'::geometry, 0) LIKE '<LineSet%';
+SELECT '#1416c', ST_AsX3D('CURVEPOLYGON(CIRCULARSTRING(0 0 1,1 1 1,2 0 1,1 -1 1,0 0 1))'::geometry, 0) LIKE '<IndexedFaceSet%';
+SELECT '#1416d', ST_AsX3D('MULTICURVE(CIRCULARSTRING(0 0 1,1 1 1,2 0 1))'::geometry, 0) LIKE '<IndexedLineSet%';
+SELECT '#1416e', ST_AsX3D('MULTISURFACE(CURVEPOLYGON(CIRCULARSTRING(0 0 1,1 1 1,2 0 1,1 -1 1,0 0 1)))'::geometry, 0) LIKE '<IndexedFaceSet%';
+SELECT '#1416f', ST_AsX3D('GEOMETRYCOLLECTION(CIRCULARSTRING(0 0 1,1 1 1,2 0 1))'::geometry, 0) LIKE '<Shape><LineSet%';
+SELECT '#1416g', ST_AsX3D('GEOMETRYCOLLECTION(COMPOUNDCURVE(CIRCULARSTRING(0 0 1,1 1 1,1 0 1),(1 0 1,0 1 1)))'::geometry, 0) LIKE '<Shape><LineSet%';
+SELECT '#1416h', ST_AsX3D('GEOMETRYCOLLECTION(CURVEPOLYGON(CIRCULARSTRING(0 0 1,1 1 1,2 0 1,1 -1 1,0 0 1)))'::geometry, 0) LIKE '<Shape><IndexedFaceSet%';
+SELECT '#1416i', ST_AsX3D('CIRCULARSTRING(0 0 1,1 1 1,2 0 1,1 -1 1,0 0 1)'::geometry, 0) LIKE '<LineSet  vertexCount=''129''><Coordinate point=%';
+SELECT '#1416j', ST_AsX3D('NURBSCURVE(2, (0 0, 1 1, 2 0))'::geometry, 0);
+SELECT '#1416k', ST_AsX3D('NURBSCURVE(2, (0 0, 1 1, 2 0))'::geometry, 0) NOT LIKE '%<LineSet%';
 
 SELECT '#4670-0', ST_AsEWKT(ST_AddPoint('LINESTRING(0 0, 1 1, 3 3, 4 4)'::geometry, 'POINT(2 2)'::geometry, 0));
 SELECT '#4670-1', ST_AsEWKT(ST_AddPoint('LINESTRING(0 0, 1 1, 3 3, 4 4)'::geometry, 'POINT(2 2)'::geometry, 1));
@@ -1542,9 +1646,11 @@ SELECT '#5747', ST_Length('MULTISURFACE (((0 0, 1 0, 1 1, 0 1, 0 0)), CURVEPOLYG
 -- #5855
 CREATE TEMP TABLE TEST (street text, extent geometry(Polygon,32633));
 INSERT INTO test VALUES ('Knosesmauet','0103000020797F0000010000000500000010B2468761BDDFC06390523AA1B0594110B2468761BDDFC030554D9BC3B0594107992AF50799DFC030554D9BC3B0594107992AF50799DFC06390523AA1B0594110B2468761BDDFC06390523AA1B05941');
-SET enable_seqscan=false;
 CREATE INDEX test_idx ON test USING GIST ( extent );
 
+-- These checks protect index-support rewrites, so keep sequential scans
+-- disabled only around the #5855 queries that must exercise GiST paths.
+SET enable_seqscan = off;
 SELECT '#5855', street
 FROM test
 WHERE ST_DFullyWithin(
@@ -1552,6 +1658,21 @@ WHERE ST_DFullyWithin(
     extent,
     1700
 );
+
+CREATE TEMP TABLE dfullywithin_indexed_first_arg (id integer, geom geometry);
+INSERT INTO dfullywithin_indexed_first_arg
+VALUES (1, 'POLYGON((-10 -10,-10 10,10 10,10 -10,-10 -10))');
+CREATE INDEX dfullywithin_indexed_first_arg_gist
+ON dfullywithin_indexed_first_arg USING GIST (geom);
+
+SELECT '#5855.1', id
+FROM dfullywithin_indexed_first_arg
+WHERE ST_DFullyWithin(
+    geom,
+    ST_GeomFromText('POINT(0 0)'),
+    0
+);
+RESET enable_seqscan;
 
 SELECT '#5876', ST_AsText(ST_AddPoint(
 		'LINESTRING (1 1, 2 2)'::geometry,
@@ -1583,6 +1704,69 @@ SELECT f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, t
  FROM geometry_columns WHERE f_table_name IN ('test5829', 'test5978')
  ORDER BY f_table_name, f_geometry_column;
 DROP TABLE IF EXISTS test5829, test5978;
+
+-- #1705, view columns do not inherit constraint-based geometry metadata; only typmod-based view columns and constraint-based table columns register
+CREATE TABLE test1705 (
+  gid integer,
+  geom geometry(Point, 4326),
+  geom_2160 geometry);
+ALTER TABLE test1705
+  ADD CONSTRAINT enforce_dims_geom_2160
+  CHECK (st_ndims(geom_2160) = 2);
+ALTER TABLE test1705
+  ADD CONSTRAINT enforce_srid_geom_2160
+  CHECK (st_srid(geom_2160) = 2160);
+ALTER TABLE test1705
+  ADD CONSTRAINT enforce_geotype_geom_2160
+  CHECK (geometrytype(geom_2160) = 'POINT'::text OR geom_2160 IS NULL);
+CREATE VIEW test1705_view AS
+  SELECT *
+    FROM test1705
+   WHERE gid > 0;
+CREATE VIEW test1705_alias_view AS
+  SELECT geom_2160 AS shape
+    FROM test1705;
+CREATE VIEW test1705_buffer_view AS
+  SELECT ST_Buffer(geom_2160, 1) AS geom_2160
+    FROM test1705;
+CREATE VIEW test1705_nested_buffer_view AS
+  SELECT ST_Buffer(geom_2160, 1) AS geom_2160
+    FROM (SELECT geom_2160 FROM test1705) AS nested;
+CREATE VIEW test1705_scalar_buffer_view AS
+  SELECT ST_Buffer((SELECT geom_2160 FROM test1705 LIMIT 1), 1) AS geom_2160;
+CREATE VIEW test1705_mixed_view AS
+  SELECT ST_Buffer(geom_2160, 1) AS buffered,
+         geom_2160
+    FROM test1705;
+CREATE MATERIALIZED VIEW test1705_matview AS
+  SELECT geom_2160
+    FROM test1705;
+SELECT '#1705', f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type
+ FROM geometry_columns WHERE f_table_name IN ('test1705', 'test1705_view', 'test1705_alias_view', 'test1705_buffer_view', 'test1705_nested_buffer_view', 'test1705_scalar_buffer_view', 'test1705_mixed_view', 'test1705_matview')
+ ORDER BY f_table_name, f_geometry_column;
+DROP MATERIALIZED VIEW test1705_matview;
+DROP VIEW test1705_alias_view, test1705_buffer_view, test1705_nested_buffer_view, test1705_scalar_buffer_view, test1705_mixed_view, test1705_view;
+DROP TABLE test1705;
+
+-- -------------------------------------------------------------------------------------
+-- #3103, geometry_columns/find_srid exact-match behavior
+CREATE SCHEMA test3103a;
+CREATE SCHEMA test3103b;
+CREATE TABLE test3103a.geomtab (geom geometry(Point, 4326));
+CREATE TABLE test3103b.geomtab (geom geometry(Point, 3857));
+
+SELECT '#3103.1', find_srid('test3103a', 'geomtab', 'geom');
+SELECT '#3103.2', find_srid('', 'test3103b.geomtab', 'geom');
+SELECT '#3103.3', f_table_schema, srid
+  FROM geometry_columns
+ WHERE f_table_name = 'geomtab'
+   AND f_geometry_column = 'geom'
+ ORDER BY srid;
+
+DROP TABLE test3103a.geomtab;
+DROP TABLE test3103b.geomtab;
+DROP SCHEMA test3103a;
+DROP SCHEMA test3103b;
 
 -- -------------------------------------------------------------------------------------
 -- #4828, geometry_columns should ignore pending NOT VALID SRID checks
@@ -1638,6 +1822,89 @@ CREATE TABLE fault6028 (fid integer, geom geometry(Polygon,5015));
 CREATE INDEX fault6028_x ON fault6028 USING GIST (geom);
 INSERT INTO fault6028 (fid, geom)
   VALUES (1, '0103000020971300000100000000000000'::GEOMETRY);
-SELECT * FROM fault6028;
+SELECT fid, ST_AsHEXEWKB(geom, 'NDR') FROM fault6028;
 DROP TABLE IF EXISTS fault6028;
 
+-- #5357
+SELECT '#5357', ST_AsText(ST_LineFromEncodedPolyline('__nphBgcoeiA?@', 6), 6);
+
+-- ST_MakePolygon with NULL holes
+SELECT 'makepolygon-null-holes', ST_NPoints(ST_MakePolygon(
+	'LINESTRING ZM (0 0 0 0,0 1 0 0,1 1 0 0,0 0 0 0)'::geometry,
+	ARRAY[NULL::geometry]));
+
+-- -------------------------------------------------------------------------------------
+-- #6110, geometry_columns view should be fast even with many spatial tables
+CREATE SCHEMA test6110;
+
+CREATE FUNCTION test6110_plan_has(param_sql text, needle text) RETURNS boolean
+AS $$
+DECLARE
+    plan_line text;
+BEGIN
+    FOR plan_line IN EXECUTE 'EXPLAIN (COSTS OFF) ' || param_sql LOOP
+        IF plan_line LIKE '%' || needle || '%' THEN
+            RETURN true;
+        END IF;
+    END LOOP;
+    RETURN false;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION test6110_check() RETURNS text AS $check$
+DECLARE
+    n bigint;
+BEGIN
+    SELECT count(*) INTO n FROM geometry_columns
+      WHERE f_table_schema = 'test6110';
+    IF n <> 2002 THEN
+        RETURN 'FAIL: count=' || n || ' (expected 2002)';
+    END IF;
+
+    /* The #6110 fix depends on inlining the three-use CTE in
+     * geometry_columns.  Wall-clock time also measures concurrent CI work. */
+    IF test6110_plan_has(
+        $sql$SELECT count(*) FROM geometry_columns
+              WHERE f_table_schema = 'test6110'$sql$,
+        'CTE Scan on s'
+    ) THEN
+        RETURN 'FAIL: geometry_columns materialized CTE s';
+    END IF;
+
+    /* Verify the assertion with a deliberately materialized three-use CTE. */
+    IF NOT test6110_plan_has(
+        $sql$WITH s AS MATERIALIZED (SELECT 1 AS n)
+              SELECT count(*) FROM s AS s1, s AS s2, s AS s3$sql$,
+        'CTE Scan on s'
+    ) THEN
+        RETURN 'FAIL: test did not detect materialized CTE';
+    END IF;
+    RETURN 'PASS';
+END;
+$check$ LANGUAGE plpgsql;
+
+DO $$
+DECLARE i integer;
+BEGIN
+		CREATE TABLE test6110.geom_partition(id bigint, part_key integer)
+			PARTITION BY LIST (part_key);
+    FOR i IN 1..500 LOOP
+        EXECUTE format('CREATE TABLE test6110.typmod_%s (geom geometry(Point, 4326))', i);
+        EXECUTE format('CREATE TABLE test6110.constraint_%s (id integer)', i);
+        EXECUTE format('SELECT AddGeometryColumn(%L, %L, %L, 4326, %L, 2, false)',
+                       'test6110', 'constraint_' || i, 'geom', 'POINT');
+				EXECUTE format('CREATE TABLE test6110.geom_partition_%s PARTITION OF test6110.geom_partition FOR VALUES IN(%s)', i, i);
+    END LOOP;
+		ALTER TABLE test6110.geom_partition ADD COLUMN geom_typmod geometry(LINESTRING, 4269);
+		EXECUTE format('SELECT AddGeometryColumn(%L, %L, %L, 4326, %L, 2, false)',
+                       'test6110', 'geom_partition', 'geom_constraint', 'POINT');
+END
+$$;
+
+SELECT '#6110', test6110_check();
+
+SET client_min_messages TO WARNING;
+DROP FUNCTION test6110_check();
+DROP FUNCTION test6110_plan_has(text, text);
+DROP SCHEMA test6110 CASCADE;
+RESET client_min_messages;

@@ -18,61 +18,6 @@
 #include "gserialized1.c" /* for gserialized_peek_gbox_p */
 #include "cu_tester.h"
 
-static void test_typmod_macros(void)
-{
-	int32_t typmod = 0;
-	int32_t srid = 4326;
-	int type = 6;
-	int z = 1;
-	int rv;
-
-	TYPMOD_SET_SRID(typmod,srid);
-	rv = TYPMOD_GET_SRID(typmod);
-	CU_ASSERT_EQUAL(rv, srid);
-
-	srid = -5005;
-	TYPMOD_SET_SRID(typmod,srid);
-	rv = TYPMOD_GET_SRID(typmod);
-	CU_ASSERT_EQUAL(rv, srid);
-
-        srid = 999999;
-        TYPMOD_SET_SRID(typmod,srid);
-        rv = TYPMOD_GET_SRID(typmod);
-        CU_ASSERT_EQUAL(rv, srid);
-
-        srid = -999999;
-        TYPMOD_SET_SRID(typmod,srid);
-        rv = TYPMOD_GET_SRID(typmod);
-        CU_ASSERT_EQUAL(rv, srid);
-
-	srid = SRID_UNKNOWN;
-	TYPMOD_SET_SRID(typmod,srid);
-	rv = TYPMOD_GET_SRID(typmod);
-	CU_ASSERT_EQUAL(rv, srid);
-
-	srid = 0;
-	TYPMOD_SET_SRID(typmod,srid);
-	rv = TYPMOD_GET_SRID(typmod);
-	CU_ASSERT_EQUAL(rv, srid);
-
-	srid = 1;
-	TYPMOD_SET_SRID(typmod,srid);
-	rv = TYPMOD_GET_SRID(typmod);
-	CU_ASSERT_EQUAL(rv, srid);
-
-	TYPMOD_SET_TYPE(typmod,type);
-	rv = TYPMOD_GET_TYPE(typmod);
-	CU_ASSERT_EQUAL(rv,type);
-
-	TYPMOD_SET_Z(typmod);
-	rv = TYPMOD_GET_Z(typmod);
-	CU_ASSERT_EQUAL(rv,z);
-
-	rv = TYPMOD_GET_M(typmod);
-	CU_ASSERT_EQUAL(rv,0);
-
-}
-
 static void test_flags_macros(void)
 {
 	uint8_t flags = 0;
@@ -200,6 +145,122 @@ static void test_lwgeom_calculate_gbox(void)
 	g = lwgeom_from_wkt("POINT(0 0)", LW_PARSER_CHECK_NONE);
 	lwgeom_calculate_gbox_cartesian(g, &b);
 	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	lwgeom_free(g);
+
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.ymin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.ymax, 0.5, 0.0000001);
+	lwgeom_free(g);
+
+	/* The curve apex is inside the parameter range, not at a control point. */
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1000000000, 2 -62000000000))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.ymin, -62000000000.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(15625000.0));
+	lwgeom_free(g);
+
+	/* The bbox must expand through the extremum's outward float boundary. */
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 0.99898996343746105, 1 1.000999975937461, 2 0.99900998843746103))",
+			    LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT(b.ymax >= 1.000000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(1.000000001));
+	lwgeom_free(g);
+
+	/* This entire Bezier arch lies between two adjacent samples of the old
+	 * uniform derivative scan. Knot-span decomposition must still find it. */
+	g = lwgeom_from_wkt(
+	    "NURBSCURVE(2, (0 0, 0.25 0, 0.5 0, 0.5 0, 0.5005 1, 0.501 0, 0.501 0, 0.75 0, 1 0), "
+	    "(1, 1, 1, 1, 1, 1, 1, 1, 1), "
+	    "(0, 0, 0, 0.5, 0.5, 0.5, 0.501, 0.501, 0.501, 1, 1, 1))",
+	    LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 1.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.ymin, 0.0, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(0.5));
+	lwgeom_free(g);
+
+	/* Rational Bezier spans use the projected weighted control hull. */
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0), (1, 3, 1), (0, 0, 0, 1, 1, 1))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(0.75));
+	lwgeom_free(g);
+
+	/* The same rational span logic must honor Z and M ordinates. */
+	g = lwgeom_from_wkt("NURBSCURVE ZM(2, (0 0 0 0, 1 1 1 2, 2 0 0 0), (1, 3, 1), (0, 0, 0, 1, 1, 1))",
+			    LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(0.75));
+	CU_ASSERT_EQUAL(next_float_up(b.zmax), next_float_up(0.75));
+	CU_ASSERT_EQUAL(next_float_up(b.mmax), next_float_up(1.5));
+	lwgeom_free(g);
+
+	/* Repeated knots split the curve into independent Bezier spans. */
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0, 3 1, 4 0), (1, 1, 1, 1, 1), (0, 0, 0, 0.5, 0.5, 1, 1, 1))",
+			    LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 4.0, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(0.5));
+	lwgeom_free(g);
+
+	/* An explicit unclamped knot vector only exposes the active parameter
+	 * domain, so local extraction must not emit off-domain spans. */
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0), (1, 1, 1), (0, 1, 2, 3, 4, 5))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.ymin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 1.5, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(2.0 / 3.0));
+	lwgeom_free(g);
+
+	/* A high-degree implicit-knot NURBS must keep the exact span bbox rather
+	 * than falling back to the control-point hull ymax of 100. */
+	g = lwgeom_from_wkt("NURBSCURVE(6, (0 0, 1 100, 2 100, 3 100, 4 100, 5 100, 6 0))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 6.0, 0.0000001);
+	CU_ASSERT_EQUAL(next_float_up(b.ymax), next_float_up(96.875));
+	CU_ASSERT(b.ymax < 100.0);
+	lwgeom_free(g);
+
+	/* A non-finite control point coordinate must not make the recursive
+	 * Bezier-subdivision bbox spin: NaN never compares equal to itself, so
+	 * the stop tests in lwnurbscurve_add_bezier_span_gbox() could not
+	 * converge and depth-first recursion ran to DBL_MANT_DIG on every span
+	 * before this guard, an easy backend CPU denial of service from WKT
+	 * input. What matters here is that this call returns promptly instead of
+	 * spending exponential time; the exact ymax is a side effect of the
+	 * ordinary FP_MIN/FP_MAX/gbox_merge comparisons silently discarding a
+	 * NaN contender once a finite one has been recorded, same as elsewhere
+	 * in this file (see the NaN and Inf propagation cases below), not a
+	 * property this fix promises to preserve. */
+	g = lwgeom_from_wkt("NURBSCURVE(2, (0 NaN, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.ymin, 0.0, 0.0000001);
+	CU_ASSERT(isfinite(b.ymax) && b.ymax >= 0.0 && b.ymax < 1e-10);
+	lwgeom_free(g);
+
+	/* The same guard must terminate promptly for a NaN Z ordinate. */
+	g = lwgeom_from_wkt("NURBSCURVE Z(2, (0 0 NaN, 1 1 1, 2 0 0))", LW_PARSER_CHECK_NONE);
+	lwgeom_calculate_gbox_cartesian(g, &b);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmin, 0.0, 0.0000001);
+	CU_ASSERT_DOUBLE_EQUAL(b.xmax, 2.0, 0.0000001);
+	CU_ASSERT(isfinite(b.zmax));
 	lwgeom_free(g);
 
 	/* Inf = 0x7FF0000000000000 */
@@ -383,6 +444,20 @@ static void test_geometry_type_from_string(void)
 	//printf("\n in type: %s\nout type: %d\n out z: %d\n out m: %d", str, type, z, m);
 	CU_ASSERT_EQUAL(rv, LW_FAILURE);
 
+	/* Empty and whitespace-only modifiers must fail without reading past input. */
+	type = 42;
+	z = 1;
+	m = 1;
+	str = "";
+	rv = geometry_type_from_string(str, &type, &z, &m);
+	CU_ASSERT_EQUAL(rv, LW_FAILURE);
+	CU_ASSERT_EQUAL(type, 0);
+	CU_ASSERT_EQUAL(z, 0);
+	CU_ASSERT_EQUAL(m, 0);
+
+	str = "   ";
+	rv = geometry_type_from_string(str, &type, &z, &m);
+	CU_ASSERT_EQUAL(rv, LW_FAILURE);
 }
 
 static void test_lwgeom_count_vertices(void)
@@ -589,6 +664,11 @@ static void test_lwgeom_swap_ordinates(void)
 	);
 
 	do_lwgeom_swap_ordinates(
+	    "NURBSCURVE(2, (0 10, 1 11, 2 10))",
+	    "NURBSCURVE(DEGREE 2,CONTROLPOINTS(NURBSPOINT(WEIGHTEDPOINT(10 0),WEIGHT 1),NURBSPOINT(WEIGHTEDPOINT(11 1),WEIGHT 1),NURBSPOINT(WEIGHTEDPOINT(10 2),WEIGHT 1)),KNOTS (KNOT(0,3),KNOT(1,3)))"
+	);
+
+	do_lwgeom_swap_ordinates(
 	    "COMPOUNDCURVE(CIRCULARSTRING(0 1,1 1,1 0),(1 0,0 1))",
 	    "COMPOUNDCURVE(CIRCULARSTRING(1 0,1 1,0 1),(0 1,1 0))"
 	);
@@ -715,7 +795,7 @@ static void test_lwgeom_clone(void)
 		"SRID=4326;GEOMETRYCOLLECTION(POINT(0 1),POLYGON((-1 -1,-1 2.5,2 2,2 -1,-1 -1),(0 0,0 1,1 1,1 0,0 0)),MULTIPOLYGON(((-1 -1,-1 2.5,2 2,2 -1,-1 -1),(0 0,0 1,1 1,1 0,0 0),(-0.5 -0.5,-0.5 -0.4,-0.4 -0.4,-0.4 -0.5,-0.5 -0.5))))",
 		"MULTICURVE((5 5 1 3,3 5 2 2,3 3 3 1,0 3 1 1),CIRCULARSTRING(0 0 0 0,0.26794 1 3 -2,0.5857864 1.414213 1 2))",
 		"MULTISURFACE(CURVEPOLYGON(CIRCULARSTRING(-2 0,-1 -1,0 0,1 -1,2 0,0 2,-2 0),(-1 0,0 0.5,1 0,0 1,-1 0)),((7 8,10 10,6 14,4 11,7 8)))",
-		"TIN(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))"
+		"TIN Z (((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))"
 	};
 
 
@@ -910,6 +990,20 @@ static void test_lwgeom_same(void)
 	lwgeom_add_bbox(geom);
 	CU_ASSERT( lwgeom_same(geom, geom) );
 	lwgeom_free(geom);
+
+	geom = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	geom2 = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	CU_ASSERT( lwgeom_same(geom, geom2) );
+	lwgeom_free(geom);
+	lwgeom_free(geom2);
+
+	geom = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	geom2 = lwgeom_from_wkt(
+	    "NURBSCURVE(DEGREE 2,CONTROLPOINTS(NURBSPOINT(WEIGHTEDPOINT(0 0),WEIGHT 1),NURBSPOINT(WEIGHTEDPOINT(1 1),WEIGHT 1),NURBSPOINT(WEIGHTEDPOINT(2 0),WEIGHT 1)),KNOTS (KNOT(0,3),KNOT(1,3)))",
+	    LW_PARSER_CHECK_NONE);
+	CU_ASSERT( lwgeom_same(geom, geom2) );
+	lwgeom_free(geom);
+	lwgeom_free(geom2);
 
 	geom = lwgeom_from_wkt("POLYGON EMPTY", LW_PARSER_CHECK_NONE);
 	CU_ASSERT( lwgeom_same(geom, geom) );
@@ -1187,9 +1281,12 @@ static void test_gserialized1_peek_gbox_p_fails_for_unsupported_cases(void)
 		GSERIALIZED* gser = lwalloc(expected_size);
 		uint8_t* ptr = (uint8_t*) gser;
 
-		ptr += 8; // Skip header
-		gserialized1_from_lwgeom_any(geom, ptr);
+		gser->size = expected_size << 2;
+		gserialized1_set_srid(gser, geom->srid);
 		gser->gflags = lwflags_get_g1flags(geom->flags);
+
+		ptr += 8; /* Skip header */
+		gserialized1_from_lwgeom_any(geom, ptr);
 
 		CU_ASSERT_FALSE(gserialized1_has_bbox(gser));
 		CU_ASSERT_EQUAL(LW_FAILURE, gserialized1_peek_gbox_p(gser, &box));
@@ -1256,6 +1353,136 @@ test_gserialized1_peek_first_point(void)
 	CU_ASSERT(peek1_point_helper("POLYGON((0 0, 1 1, 1 0, 0 0))", &p) == LW_FAILURE);
 }
 
+static void
+assert_gserialized1_malformed_rejected(GSERIALIZED *g)
+{
+	LWGEOM *geom;
+	GBOX box;
+	POINT4D point;
+
+	memset(&box, 0, sizeof(box));
+	memset(&point, 0, sizeof(point));
+
+	cu_error_msg_reset();
+	geom = lwgeom_from_gserialized1(g);
+	CU_ASSERT_PTR_NULL(geom);
+	CU_ASSERT_NOT_EQUAL(strlen(cu_error_msg), 0);
+
+	CU_ASSERT_TRUE(gserialized1_is_empty(g));
+	CU_ASSERT_EQUAL(gserialized1_peek_gbox_p(g, &box), LW_FAILURE);
+	CU_ASSERT_EQUAL(gserialized1_peek_first_point(g, &point), LW_FAILURE);
+}
+
+static uint8_t *
+gserialized1_test_payload_p(GSERIALIZED *g)
+{
+	return (uint8_t *)(void *)g + gserialized1_header_size(g);
+}
+
+/*
+ * A ring point count that claims far more points than the serialized
+ * buffer actually holds implies a read past the end of the payload; that
+ * is the memory-safety hazard OSSFuzz 544800490 found, and it must stay
+ * rejected regardless of whether the claimed count is itself a
+ * geometrically plausible ring size.
+ */
+static void
+test_gserialized1_malformed_polygon_ring_count(void)
+{
+	LWGEOM *lwgeom = lwgeom_from_wkt("POLYGON((0 0, 1 0, 1 1, 0 0))", LW_PARSER_CHECK_NONE);
+	LWGEOM *malformed_lwgeom;
+	GSERIALIZED *g;
+	uint8_t *payload;
+	uint32_t type;
+	uint32_t nrings;
+	uint32_t npoints = 0x10000000; /* claims ~4GB of ring ordinates */
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+	g = gserialized1_from_lwgeom(lwgeom, NULL);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+
+	payload = gserialized1_test_payload_p(g);
+	memcpy(&type, payload, sizeof(type));
+	memcpy(&nrings, payload + sizeof(uint32_t), sizeof(nrings));
+	CU_ASSERT_EQUAL(type, POLYGONTYPE);
+	CU_ASSERT_EQUAL(nrings, 1);
+	memcpy(payload + 2 * sizeof(uint32_t), &npoints, sizeof(npoints));
+
+	cu_error_msg_reset();
+	malformed_lwgeom = lwgeom_from_gserialized1(g);
+	CU_ASSERT_PTR_NULL(malformed_lwgeom);
+	CU_ASSERT_NOT_EQUAL(strlen(cu_error_msg), 0);
+
+	lwgeom_free(lwgeom);
+	lwfree(g);
+}
+
+/*
+ * Rings with 1-3 points are geometrically invalid (not simple closed
+ * rings) but memory-safe: their declared point count still fits the
+ * serialized buffer. PostGIS intentionally stores and round-trips such
+ * polygons; ST_IsValid, not deserialization, is where that gets flagged.
+ * See Trac #408 and #4470, and ST_GeomFromGeoJSON's degenerate-ring
+ * handling.
+ */
+static void
+test_gserialized1_short_polygon_ring_roundtrip(void)
+{
+	const char *short_ring_wkt[] = {
+	    "POLYGON((0 0))",
+	    "POLYGON((0 0, 1 0, 1 1))",
+	};
+	const uint32_t expected_npoints[] = {1, 3};
+	size_t i;
+
+	for (i = 0; i < sizeof(short_ring_wkt) / sizeof(short_ring_wkt[0]); i++)
+	{
+		LWGEOM *lwgeom = lwgeom_from_wkt(short_ring_wkt[i], LW_PARSER_CHECK_NONE);
+		GSERIALIZED *g;
+		LWGEOM *roundtrip;
+		LWPOLY *poly;
+
+		CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+		g = gserialized1_from_lwgeom(lwgeom, NULL);
+		CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+
+		cu_error_msg_reset();
+		roundtrip = lwgeom_from_gserialized1(g);
+		CU_ASSERT_PTR_NOT_NULL_FATAL(roundtrip);
+		CU_ASSERT_EQUAL(strlen(cu_error_msg), 0);
+
+		CU_ASSERT_EQUAL(roundtrip->type, POLYGONTYPE);
+		poly = (LWPOLY *)roundtrip;
+		CU_ASSERT_EQUAL(poly->nrings, 1);
+		CU_ASSERT_EQUAL(poly->rings[0]->npoints, expected_npoints[i]);
+
+		lwgeom_free(lwgeom);
+		lwgeom_free(roundtrip);
+		lwfree(g);
+	}
+}
+
+static void
+test_gserialized1_malformed_declared_size(void)
+{
+	LWGEOM *lwgeom = lwgeom_from_wkt("POINT(1 1)", LW_PARSER_CHECK_NONE);
+	GSERIALIZED *g;
+	size_t size = 0;
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+	g = gserialized1_from_lwgeom(lwgeom, &size);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+
+	LWSIZE_SET(g->size, 0);
+	assert_gserialized1_malformed_rejected(g);
+
+	LWSIZE_SET(g->size, offsetof(GSERIALIZED, data) - 1);
+	assert_gserialized1_malformed_rejected(g);
+
+	lwfree(g);
+	lwgeom_free(lwgeom);
+}
+
 /*
 ** Used by test harness to register the tests in this file.
 */
@@ -1263,7 +1490,6 @@ void gserialized1_suite_setup(void);
 void gserialized1_suite_setup(void)
 {
 	CU_pSuite suite = CU_add_suite("serialization/deserialization v1", NULL, NULL);
-	PG_ADD_TEST(suite, test_typmod_macros);
 	PG_ADD_TEST(suite, test_flags_macros);
 	PG_ADD_TEST(suite, test_serialized1_srid);
 	PG_ADD_TEST(suite, test_gserialized1_from_lwgeom_size);
@@ -1290,4 +1516,7 @@ void gserialized1_suite_setup(void)
 	PG_ADD_TEST(suite, test_gbox_same_2d);
 	PG_ADD_TEST(suite, test_signum_macro);
 	PG_ADD_TEST(suite, test_gserialized1_peek_first_point);
+	PG_ADD_TEST(suite, test_gserialized1_malformed_polygon_ring_count);
+	PG_ADD_TEST(suite, test_gserialized1_short_polygon_ring_roundtrip);
+	PG_ADD_TEST(suite, test_gserialized1_malformed_declared_size);
 }

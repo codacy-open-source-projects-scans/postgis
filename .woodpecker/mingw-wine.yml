@@ -1,0 +1,18 @@
+labels:
+  platform: linux/amd64
+when:
+  event: [tag]
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      depth: 50
+      partial: false
+
+steps:
+  mingw-wine:
+    image: debian:bookworm
+    pull: true
+    commands:
+      - bash ci/woodie/postgis_mingw_wine.sh

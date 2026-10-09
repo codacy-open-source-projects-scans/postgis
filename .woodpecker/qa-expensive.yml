@@ -1,0 +1,57 @@
+labels:
+  platform: linux/amd64
+when:
+  - event: push
+    branch: master
+  - event: tag
+variables:
+  test-image: &test-image repo.osgeo.org/postgis/build-test:debian13
+  steps-env: &steps-env
+    - export PGVER=18
+    - export PATH=/usr/lib/postgresql/$${PGVER}/bin:$${PATH}
+    - export POSTGIS_REGRESS_DB_OWNER=postgis_reg_unprivileged_user
+    - export SRCDIR=$${CI_WORKSPACE}
+    - export BUILDDIR=$${SRCDIR}/build/qa-$${QA_MODE}-pg$${PGVER}
+    - export QA_REGRESS_HOOKS="--after-create-db-script $${CI_WORKSPACE}/regress/hooks/configure-pgextwlist.sql"
+    - pg_config --version
+  steps-start-postgresql: &steps-start-postgresql
+    - . ci/start-postgresql.sh
+    - psql -c 'select version()' template1
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      depth: 50
+      partial: false
+
+steps:
+  autogen:
+    image: *test-image
+    pull: true
+    commands:
+      - ./autogen.sh
+
+  coverage:
+    image: *test-image
+    depends_on: autogen
+    commands:
+      - export QA_MODE=coverage
+      - <<: *steps-env
+      - <<: *steps-start-postgresql
+      - mkdir -p "$${BUILDDIR}"
+      - cd "$${BUILDDIR}"
+      - apt-get update
+      - apt-get install -y --no-install-recommends lcov
+      - rm -rf /var/lib/apt/lists/*
+      - $${SRCDIR}/configure
+        CFLAGS="-g -O0 --coverage"
+        LDFLAGS="--coverage"
+        --enable-debug
+      - make -j1
+      - make check RUNTESTFLAGS="--verbose $${QA_REGRESS_HOOKS}"
+      - lcov --capture --directory "$${BUILDDIR}" --output-file "$${BUILDDIR}/coverage.info" --ignore-errors source
+      - lcov --list "$${BUILDDIR}/coverage.info"
+
+# Coverage is much more expensive than the sanitizer and string-literal smoke
+# modes, so keep it off pull-request fan-out.

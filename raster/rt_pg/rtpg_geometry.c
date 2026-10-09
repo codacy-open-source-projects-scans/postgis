@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2011-2013 Regents of the University of California
  *   <bkpark@ucdavis.edu>
@@ -58,6 +57,37 @@ Datum RASTER_getPolygon(PG_FUNCTION_ARGS);
 
 /* rasterize a geometry */
 Datum RASTER_asRaster(PG_FUNCTION_ARGS);
+
+static int
+rtpg_lwgeom_needs_curve_linearize(const LWGEOM *geom)
+{
+	uint32_t i;
+	const LWCOLLECTION *collection;
+
+	/*
+	 * GDAL 3.14 linearizes OGR curve geometries in
+	 * GDALRasterizeGeometries(). Older versions ignore them. NURBSCURVE is
+	 * not an OGR geometry type, so it must always be linearized here.
+	 */
+#if GDAL_VERSION_NUM >= GDAL_COMPUTE_VERSION(3, 14, 0)
+	if (geom->type == NURBSCURVETYPE)
+#else
+	if (lwgeom_type_arc(geom))
+#endif
+		return LW_TRUE;
+
+	if (!lwgeom_is_collection(geom))
+		return LW_FALSE;
+
+	collection = (const LWCOLLECTION *)geom;
+	for (i = 0; i < collection->ngeoms; i++)
+	{
+		if (rtpg_lwgeom_needs_curve_linearize(collection->geoms[i]))
+			return LW_TRUE;
+	}
+
+	return LW_FALSE;
+}
 
 /* ---------------------------------------------------------------- */
 /*  Raster envelope                                                 */
@@ -1124,6 +1154,20 @@ Datum RASTER_asRaster(PG_FUNCTION_ARGS)
 		geom = geom2d;
 	}
 
+	if (rtpg_lwgeom_needs_curve_linearize(geom))
+	{
+		LWGEOM *linearized = lwcurve_linearize(geom, 32, LW_LINEARIZE_TOLERANCE_TYPE_SEGS_PER_QUAD, 0);
+		if (linearized == NULL)
+		{
+			lwgeom_free(geom);
+			PG_FREE_IF_COPY(gser, 0);
+			elog(ERROR, "RASTER_asRaster: Could not linearize geometry");
+			PG_RETURN_NULL();
+		}
+		lwgeom_free(geom);
+		geom = linearized;
+	}
+
 	/* empty geometry, return empty raster */
 	if (lwgeom_is_empty(geom)) {
 		POSTGIS_RT_DEBUG(3, "Input geometry is empty. Returning empty raster");
@@ -1534,7 +1578,7 @@ Datum RASTER_asRaster(PG_FUNCTION_ARGS)
 			options = (char **) repalloc(options, sizeof(char *) * options_len);
 		}
 
-		options[options_len - 1] = palloc(sizeof(char*) * (strlen("ALL_TOUCHED=TRUE") + 1));
+		options[options_len - 1] = palloc(sizeof(char) * (strlen("ALL_TOUCHED=TRUE") + 1));
 		strcpy(options[options_len - 1], "ALL_TOUCHED=TRUE");
 	}
 

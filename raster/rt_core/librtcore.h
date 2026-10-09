@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2011-2013 Regents of the University of California
  *   <bkpark@ucdavis.edu>
@@ -1475,8 +1474,13 @@ rt_errorstate rt_band_get_pixel_bilinear(
 	double *r_value, int *r_nodata
 );
 
-typedef enum {
+typedef enum
+{
 	RT_NEAREST,
+	RT_NEAREST_UL,
+	RT_NEAREST_UR,
+	RT_NEAREST_LL,
+	RT_NEAREST_LR,
 	RT_BILINEAR
 } rt_resample_type;
 
@@ -1487,7 +1491,7 @@ typedef enum {
  * @param band : the band to read for values
  * @param xr : x unrounded raster coordinate
  * @param yr : y unrounded raster coordinate
- * @param resample : algorithm for reading raster (nearest or bilinear)
+ * @param resample : algorithm for reading raster
  * @param r_value : return pointer for point value
  * @param r_nodata : return pointer for if this is a nodata
  *
@@ -1544,21 +1548,17 @@ rt_errorstate rt_raster_get_perimeter(
 /*
  * Compute skewed extent that covers unskewed extent.
  *
- * @param envelope : unskewed extent of type rt_envelope
- * @param skew : pointer to 2-element array (x, y) of skew
- * @param scale : pointer to 2-element array (x, y) of scale
- * @param tolerance : value between 0 and 1 where the smaller the tolerance
- * results in an extent approaching the "minimum" skewed extent.
- * If value <= 0, tolerance = 0.1.  If value > 1, tolerance = 1.
+ * @param extent : unskewed extent of type rt_envelope
+ * @param skew   : pointer to 2-element array {skew_x, skew_y}
+ * @param scale  : pointer to 2-element array {fabs(scale_x), fabs(scale_y)}
  *
- * @return skewed raster who's extent covers unskewed extent, NULL on error
+ * @return skewed raster whose extent covers unskewed extent, NULL on error
  */
 rt_raster
 rt_raster_compute_skewed_raster(
 	rt_envelope extent,
 	double *skew,
-	double *scale,
-	double tolerance
+	double *scale
 );
 
 /**

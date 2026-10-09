@@ -75,7 +75,8 @@ static char *lwgeomTypeName[] =
 	"MultiSurface",
 	"PolyhedralSurface",
 	"Triangle",
-	"Tin"
+	"Tin",
+	"NurbsCurve"
 };
 
 /*
@@ -216,7 +217,7 @@ lwdebug(int level, const char *fmt, ...)
 const char*
 lwtype_name(uint8_t type)
 {
-	if ( type > 15 )
+	if ( type > NUMTYPES-1 )
 	{
 		/* assert(0); */
 		return "Invalid type";
@@ -421,7 +422,12 @@ struct geomtype_struct geomtype_struct_array[] =
 	{ "POINTZM", POINTTYPE, 1, 1 },
 	{ "POINTZ", POINTTYPE, 1, 0 },
 	{ "POINTM", POINTTYPE, 0, 1 },
-	{ "POINT", POINTTYPE, 0, 0 }
+	{ "POINT", POINTTYPE, 0, 0 },
+
+	{ "NURBSCURVEZM", NURBSCURVETYPE, 1, 1 },
+	{ "NURBSCURVEZ", NURBSCURVETYPE, 1, 0 },
+	{ "NURBSCURVEM", NURBSCURVETYPE, 0, 1 },
+	{ "NURBSCURVE", NURBSCURVETYPE, 0, 0 }
 
 };
 #define GEOMTYPE_STRUCT_ARRAY_LEN (sizeof geomtype_struct_array/sizeof(struct geomtype_struct))
@@ -465,6 +471,7 @@ int geometry_type_from_string(const char *str, uint8_t *type, int *z, int *m)
 	char *tmpstr;
 	size_t tmpstartpos, tmpendpos;
 	size_t i;
+	size_t str_len;
 
 	assert(str);
 	assert(type);
@@ -476,9 +483,14 @@ int geometry_type_from_string(const char *str, uint8_t *type, int *z, int *m)
 	*z = 0;
 	*m = 0;
 
+	str_len = strlen(str);
+	/* Empty string is not a valid type. */
+	if (str_len == 0)
+		return LW_FAILURE;
+
 	/* Locate any leading/trailing spaces */
 	tmpstartpos = 0;
-	for (i = 0; i < strlen(str); i++)
+	for (i = 0; i < str_len; i++)
 	{
 		if (str[i] != ' ')
 		{
@@ -487,8 +499,8 @@ int geometry_type_from_string(const char *str, uint8_t *type, int *z, int *m)
 		}
 	}
 
-	tmpendpos = strlen(str) - 1;
-	for (i = strlen(str) - 1; i != 0; i--)
+	tmpendpos = str_len - 1;
+	for (i = str_len - 1; i != 0; i--)
 	{
 		if (str[i] != ' ')
 		{

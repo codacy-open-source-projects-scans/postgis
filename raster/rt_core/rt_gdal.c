@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2021 Paul Ramsey <pramsey@cleverelephant.ca>
  * Copyright (C) 2025 Darafei Praliaskouski <me@komzpa.net>
@@ -67,6 +66,9 @@ rt_util_gdal_progress_func(double dfComplete, const char *pszMessage, void *pPro
 {
 	(void)dfComplete;
 	(void)pszMessage;
+
+	if (_lwgeom_interrupt_callback)
+		(*_lwgeom_interrupt_callback)();
 
 	if (_lwgeom_interrupt_requested)
 	{
@@ -307,4 +309,3 @@ int rt_raster_gdal_contour(
 	/* Done */
 	return TRUE;
 }
-

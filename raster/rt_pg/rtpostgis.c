@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2011-2013 Regents of the University of California
  *   <bkpark@ucdavis.edu>
@@ -137,6 +136,7 @@
 #include "utils/builtins.h"
 #include "utils/memutils.h"
 #include "utils/elog.h"
+#include "miscadmin.h"
 
 /* PostGIS */
 #include "postgis_config.h"
@@ -149,6 +149,20 @@
 #include "rtpostgis.h"
 #include "rtpg_internal.h"
 
+static void
+rtpg_interrupt_liblwgeom_callback(void)
+{
+#ifdef WIN32
+	if (UNBLOCKED_SIGNAL_QUEUE())
+		pgwin32_dispatch_queued_signals();
+#endif
+	if (QueryCancelPending || ProcDiePending)
+		lwgeom_request_interrupt();
+	else
+		lwgeom_cancel_interrupt();
+}
+
+static lwinterrupt_callback *prev_liblwgeom_interrupt_callback = NULL;
 
 #ifndef __GNUC__
 # define __attribute__ (x)
@@ -467,7 +481,8 @@ rt_pg_vsi_check_options(char **newval, void **extra, GucSource source)
 static char *gdal_datapath = NULL;
 static char *gdal_vsi_options = NULL;
 static char *gdal_enabled_drivers = NULL;
-static bool enable_outdb_rasters = false;
+/* Defined in rt_band.c and used by the offline-band access guards. */
+extern bool enable_outdb_rasters;
 static bool gdal_cpl_debug = false;
 
 /* ---------------------------------------------------------------- */
@@ -715,6 +730,7 @@ _PG_init(void) {
 
 	/* Install liblwgeom handlers */
 	pg_install_lwgeom_handlers();
+	prev_liblwgeom_interrupt_callback = lwgeom_register_interrupt_callback(rtpg_interrupt_liblwgeom_callback);
 
 	/* Install rtcore handlers */
 	rt_set_handlers_options(rt_pg_alloc, rt_pg_realloc, rt_pg_free,
@@ -767,6 +783,10 @@ _PG_init(void) {
 			NULL  /* GucShowHook show_hook */
 		);
 	}
+
+	/* Initialize to boot value so backend doesn't crash on create extension
+		, needed because this is now extern to satisfy CUnit and raster2pgsql  */
+	enable_outdb_rasters = boot_postgis_enable_outdb_rasters;
 
 	if ( postgis_guc_find_option("postgis.enable_outdb_rasters") )
 	{
@@ -847,6 +867,9 @@ _PG_fini(void) {
 
 	elog(NOTICE, "Goodbye from PostGIS Raster %s", POSTGIS_VERSION);
 
+	lwgeom_register_interrupt_callback(prev_liblwgeom_interrupt_callback);
+	prev_liblwgeom_interrupt_callback = NULL;
+
 	/* Clean up */
 	pfree(env_postgis_gdal_enabled_drivers);
 	pfree(boot_postgis_gdal_enabled_drivers);
@@ -859,6 +882,3 @@ _PG_fini(void) {
 	/* Revert back to old context */
 	MemoryContextSwitchTo(old_context);
 }
-
-
-

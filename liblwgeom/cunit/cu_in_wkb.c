@@ -212,6 +212,10 @@ static void test_wkb_in_multisurface(void) {}
 
 static void test_wkb_in_malformed(void)
 {
+	char highbit_hex[3] = {(char)0xff, '0', '\0'};
+
+	cu_wkb_malformed_in(highbit_hex);
+
 	/* OSSFUXX */
 	cu_wkb_malformed_in("0000000008200000002020202020202020");
 
@@ -236,7 +240,7 @@ test_wkb_fuzz(void)
 	uint8_t wkb[36] = {000, 000, 000, 000, 015, 000, 000, 000, 003, 000, 200, 000, 000, 010, 000, 000, 000, 000,
 			   000, 000, 000, 000, 010, 000, 000, 000, 000, 000, 000, 000, 000, 010, 000, 000, 000, 000};
 	LWGEOM *g = lwgeom_from_wkb(wkb, 36, LW_PARSER_CHECK_NONE);
-	lwgeom_free(g);
+	CU_ASSERT(g == NULL);
 
 	/* OSS-FUZZ https://trac.osgeo.org/postgis/ticket/4536 */
 	uint8_t wkb2[319] = {
@@ -257,26 +261,81 @@ test_wkb_fuzz(void)
 	    001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001,
 	    001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001, 001};
 	g = lwgeom_from_wkb(wkb2, 319, LW_PARSER_CHECK_NONE);
-	lwgeom_free(g);
+	CU_ASSERT(g == NULL);
 
 	/* OSS-FUZZ: https://trac.osgeo.org/postgis/ticket/4535 */
 	uint8_t wkb3[9] = {0x01, 0x03, 0x00, 0x00, 0x10, 0x8d, 0x55, 0xf3, 0xff};
 	g = lwgeom_from_wkb(wkb3, 9, LW_PARSER_CHECK_NONE);
-	lwgeom_free(g);
+	CU_ASSERT(g == NULL);
 
 	/* OSS-FUZZ: https://trac.osgeo.org/postgis/ticket/4544 */
 	uint8_t wkb4[22] = {0x01, 0x0f, 0x00, 0x00, 0x00, 0x20, 0x20, 0x20, 0x20, 0x00, 0x00,
 			    0x00, 0x00, 0x11, 0x20, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00, 0x00};
 	g = lwgeom_from_wkb(wkb4, 22, LW_PARSER_CHECK_NONE);
-	lwgeom_free(g);
+	CU_ASSERT(g == NULL);
 
 	/* OSS-FUZZ: https://trac.osgeo.org/postgis/ticket/4621 */
 	uint32_t big_size = 20000000;
 	uint8_t *wkb5 = lwalloc(big_size);
 	memset(wkb5, 0x01, big_size);
 	g = lwgeom_from_wkb(wkb5, big_size, LW_PARSER_CHECK_NONE);
-	lwgeom_free(g);
+	CU_ASSERT(g == NULL);
 	lwfree(wkb5);
+
+	/* OSS-Fuzz issue 525520951: NURBSCURVE WKB claiming 119M points in 13 bytes → OOM */
+	uint8_t nurbs_oom[13] = {0x01, 0x15, 0x00, 0x00, 0x40, 0x01, 0x00, 0x00, 0x00, 0x20, 0x20, 0x20, 0x07};
+	g = lwgeom_from_wkb(nurbs_oom, 13, LW_PARSER_CHECK_NONE);
+	CU_ASSERT(g == NULL);
+}
+
+static void
+test_wkb_in_linestring_zm_count_exceeds_payload(void)
+{
+	const uint8_t wkb[] = {0x01, 0x02, 0x00, 0x00, 0xc0, 0xff, 0xff, 0xff, 0x07};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_wkb(wkb, sizeof(wkb), LW_PARSER_CHECK_NONE);
+
+	ASSERT_STRING_EQUAL(cu_error_msg, "WKB structure does not match expected size!");
+	CU_ASSERT_PTR_NULL(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_wkb_in_nurbscurve_count_exceeds_payload(void)
+{
+	const uint8_t wkb[] = {
+	    0x01, 0x15, 0x00, 0x00, 0x40, 0x01, 0x00, 0x00, 0x00, 0xc4, 0x0c, 0xb7, 0x07, 0x21, 0xc7};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_wkb(wkb, sizeof(wkb), LW_PARSER_CHECK_NONE);
+
+	ASSERT_STRING_EQUAL(cu_error_msg, "WKB structure does not match expected size!");
+	CU_ASSERT_PTR_NULL(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_wkb_in_invalid_endian_flag(void)
+{
+	const uint8_t wkb[] = {0x02, /* invalid endian flag */
+			       0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_wkb(wkb, sizeof(wkb), LW_PARSER_CHECK_NONE);
+
+	ASSERT_STRING_EQUAL(cu_error_msg, "Invalid endian flag value encountered.");
+	CU_ASSERT_PTR_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
 }
 
 /*
@@ -300,4 +359,7 @@ void wkb_in_suite_setup(void)
 	PG_ADD_TEST(suite, test_wkb_in_multisurface);
 	PG_ADD_TEST(suite, test_wkb_in_malformed);
 	PG_ADD_TEST(suite, test_wkb_fuzz);
+	PG_ADD_TEST(suite, test_wkb_in_linestring_zm_count_exceeds_payload);
+	PG_ADD_TEST(suite, test_wkb_in_nurbscurve_count_exceeds_payload);
+	PG_ADD_TEST(suite, test_wkb_in_invalid_endian_flag);
 }

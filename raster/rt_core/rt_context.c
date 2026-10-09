@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2011-2013 Regents of the University of California
  *   <bkpark@ucdavis.edu>
@@ -266,6 +265,8 @@ rtstrdup(const char *str) {
 	if (!str) return NULL;
 	sz = strlen(str) + 1;
 	dup = rtalloc(sz);
-	memcpy(dup, str, sz);
+	if (dup) {
+		memcpy(dup, str, sz);
+	}
 	return dup;
 }

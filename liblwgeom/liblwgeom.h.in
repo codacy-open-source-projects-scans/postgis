@@ -114,8 +114,9 @@ const char* lwgeom_version(void);
 #define POLYHEDRALSURFACETYPE   13
 #define TRIANGLETYPE            14
 #define TINTYPE                 15
+#define NURBSCURVETYPE          16
 
-#define NUMTYPES                16
+#define NUMTYPES                17
 
 /**
 * Flags applied in EWKB to indicate Z/M dimensions and
@@ -179,25 +180,6 @@ typedef enum LWORD_T {
 #define FLAGS_NDIMS(flags) (2 + FLAGS_GET_Z(flags) + FLAGS_GET_M(flags))
 #define FLAGS_GET_ZM(flags) (FLAGS_GET_M(flags) + FLAGS_GET_Z(flags) * 2)
 #define FLAGS_NDIMS_BOX(flags) (FLAGS_GET_GEODETIC(flags) ? 3 : FLAGS_NDIMS(flags))
-
-/**
-* Macros for manipulating the 'typemod' int. An int32_t used as follows:
-* Plus/minus = Top bit.
-* Spare bits = Next 2 bits.
-* SRID = Next 21 bits.
-* TYPE = Next 6 bits.
-* ZM Flags = Bottom 2 bits.
-*/
-
-#define TYPMOD_GET_SRID(typmod) ((((typmod) & 0x0FFFFF00) - ((typmod) & 0x10000000)) >> 8)
-#define TYPMOD_SET_SRID(typmod, srid) ((typmod) = (((typmod) & 0xE00000FF) | ((srid & 0x001FFFFF)<<8)))
-#define TYPMOD_GET_TYPE(typmod) ((typmod & 0x000000FC)>>2)
-#define TYPMOD_SET_TYPE(typmod, type) ((typmod) = (typmod & 0xFFFFFF03) | ((type & 0x0000003F)<<2))
-#define TYPMOD_GET_Z(typmod) ((typmod & 0x00000002)>>1)
-#define TYPMOD_SET_Z(typmod) ((typmod) = typmod | 0x00000002)
-#define TYPMOD_GET_M(typmod) (typmod & 0x00000001)
-#define TYPMOD_SET_M(typmod) ((typmod) = typmod | 0x00000001)
-#define TYPMOD_GET_NDIMS(typmod) (2+TYPMOD_GET_Z(typmod)+TYPMOD_GET_M(typmod))
 
 /**
 * Maximum allowed SRID value in serialized geometry.
@@ -666,6 +648,39 @@ typedef struct
 }
 LWTIN;
 
+/**
+ * NURBS curve type
+ *
+ * Represents a Non-Uniform Rational B-Spline curve, a mathematical
+ * representation for smooth curves defined by control points, weights,
+ * and a knot vector. NURBS curves are widely used in computer graphics
+ * and CAD applications for their flexibility and precision.
+ *
+ * Mathematical properties:
+ * - Polynomial degree: controls curve smoothness (1=linear, 3=cubic)
+ * - Control points: define the approximate shape of the curve
+ * - Weights: enable rational curves (conic sections, circles)
+ * - Knot vector: controls parameterization and continuity
+ *
+ * Constraints:
+ * - nknots = npoints + degree + 1 (when knots are explicit)
+ * - nweights = npoints (when curve is rational)
+ * - degree >= 1 and typically <= 10 for practical use
+ */
+typedef struct {
+    GBOX *bbox;           /* Bounding box (computed on demand) */
+    POINTARRAY *points;   /* Control points array (required) */
+    int32_t    srid;      /* Spatial reference system identifier */
+    lwflags_t  flags;     /* Dimensional flags (2D/3D/4D) */
+    uint8_t    type;      /* Always NURBSCURVETYPE */
+    char       pad[1];    /* Padding for memory alignment */
+    uint32_t   degree;    /* Polynomial degree (1-10) */
+    uint32_t   nweights;  /* Number of weights (0 for non-rational) */
+    uint32_t   nknots;    /* Number of knots (0 for uniform) */
+    double    *weights;   /* Weight values (NULL if non-rational) */
+    double    *knots;     /* Knot vector (NULL for uniform) */
+} LWNURBSCURVE;
+
 /* Casts LWGEOM->LW* (return NULL if cast is illegal) */
 extern LWMPOLY *lwgeom_as_lwmpoly(const LWGEOM *lwgeom);
 extern LWMLINE *lwgeom_as_lwmline(const LWGEOM *lwgeom);
@@ -680,10 +695,12 @@ extern LWCOMPOUND *lwgeom_as_lwcompound(const LWGEOM *lwgeom);
 extern LWPSURFACE *lwgeom_as_lwpsurface(const LWGEOM *lwgeom);
 extern LWTRIANGLE *lwgeom_as_lwtriangle(const LWGEOM *lwgeom);
 extern LWTIN *lwgeom_as_lwtin(const LWGEOM *lwgeom);
+extern LWNURBSCURVE* lwgeom_as_lwnurbscurve(const LWGEOM *lwgeom);
 extern LWGEOM *lwgeom_as_multi(const LWGEOM *lwgeom);
 extern LWGEOM *lwgeom_as_curve(const LWGEOM *lwgeom);
 
 /* Casts LW*->LWGEOM (always cast) */
+extern LWGEOM* lwnurbscurve_as_lwgeom(const LWNURBSCURVE *obj);
 extern LWGEOM *lwtin_as_lwgeom(const LWTIN *obj);
 extern LWGEOM *lwtriangle_as_lwgeom(const LWTRIANGLE *obj);
 extern LWGEOM *lwpsurface_as_lwgeom(const LWPSURFACE *obj);
@@ -1132,6 +1149,7 @@ extern LWGEOM* lwgeom_force_4d(const LWGEOM *geom, double zval, double mval);
 
 extern LWGEOM* lwgeom_set_effective_area(const LWGEOM *igeom, int set_area, double area);
 extern LWGEOM* lwgeom_chaikin(const LWGEOM *igeom, int n_iterations, int preserve_endpoint);
+extern LWGEOM* lwgeom_catmull_rom(const LWGEOM *igeom, int n_segments);
 extern LWGEOM* lwgeom_filter_m(LWGEOM *geom, double min, double max, int returnm);
 
 /*
@@ -1283,6 +1301,7 @@ extern void lwpsurface_free(LWPSURFACE *psurf);
 extern void lwtin_free(LWTIN *tin);
 extern void lwcollection_free(LWCOLLECTION *col);
 extern void lwcircstring_free(LWCIRCSTRING *curve);
+extern void lwnurbscurve_free(LWNURBSCURVE *curve);
 extern void lwgeom_free(LWGEOM *geom);
 
 /*
@@ -1523,6 +1542,8 @@ extern LWPOLY* lwpoly_construct(int32_t srid, GBOX *bbox, uint32_t nrings, POINT
 extern LWCURVEPOLY* lwcurvepoly_construct(int32_t srid, GBOX *bbox, uint32_t nrings, LWGEOM **geoms);
 extern LWTRIANGLE* lwtriangle_construct(int32_t srid, GBOX *bbox, POINTARRAY *points);
 extern LWCOLLECTION* lwcollection_construct(uint8_t type, int32_t srid, GBOX *bbox, uint32_t ngeoms, LWGEOM **geoms);
+extern LWNURBSCURVE* lwnurbscurve_construct(int32_t srid, GBOX *bbox, uint32_t degree, POINTARRAY *points, const double *weights, const double *knots, uint32_t nweights, uint32_t nknots);
+
 /*
 * Empty geometry constructors.
 */
@@ -1538,7 +1559,7 @@ extern LWMPOINT* lwmpoint_construct_empty(int32_t srid, char hasz, char hasm);
 extern LWMLINE* lwmline_construct_empty(int32_t srid, char hasz, char hasm);
 extern LWMPOLY* lwmpoly_construct_empty(int32_t srid, char hasz, char hasm);
 extern LWCOLLECTION* lwcollection_construct_empty(uint8_t type, int32_t srid, char hasz, char hasm);
-
+extern LWNURBSCURVE* lwnurbscurve_construct_empty(int32_t srid, char hasz, char hasm);
 
 /* Other constructors */
 extern LWPOINT *lwpoint_make2d(int32_t srid, double x, double y);
@@ -1622,6 +1643,7 @@ extern LWCOLLECTION* lwgeom_locate_between(const LWGEOM *lwin, double from, doub
 * Find the measure value at the location on the line closest to the point.
 */
 extern double lwgeom_interpolate_point(const LWGEOM *lwin, const LWPOINT *lwpt);
+extern double lwgeom_interpolate_point_3d(const LWGEOM *lwin, const LWPOINT *lwpt);
 
 /**
 * Find the time of closest point of approach
@@ -1813,6 +1835,10 @@ extern double lwgeom_area_spheroid(const LWGEOM *lwgeom, const SPHEROID *spheroi
 */
 extern double lwgeom_length_spheroid(const LWGEOM *geom, const SPHEROID *s);
 
+/**
+* Calculate the geodetic perimeter of a lwgeom on the unit sphere.
+*/
+extern double lwgeom_perimeter_spheroid(const LWGEOM *geom, const SPHEROID *s);
 /**
 * Calculate covers predicate for two lwgeoms on the sphere. Currently
 * only handles point-in-polygon.
@@ -2657,7 +2683,11 @@ LWGEOM* lwgeom_triangulate_polygon(const LWGEOM* geom);
 */
 int * lwgeom_cluster_kmeans(const LWGEOM **geoms, uint32_t n, uint32_t k, double max_radius);
 
+/* NURBS */
+extern POINTARRAY* lwnurbscurve_get_control_points(const LWNURBSCURVE *curve);
+extern LWPOINT* lwnurbscurve_evaluate(const LWNURBSCURVE *curve, double t);
+extern LWLINE* lwnurbscurve_to_linestring(const LWNURBSCURVE *curve, uint32_t num_segments);
+
 #include "lwinline.h"
 
 #endif /* !defined _LIBLWGEOM_H  */
-

@@ -3,7 +3,7 @@
  * PostGIS - Spatial Types for PostgreSQL
  * http://postgis.net
  * Copyright 2008 Paul Ramsey
- * Copyright 2018 Darafei Praliaskouski, me@komzpa.net
+ * Copyright 2018, 2026 Darafei Praliaskouski <me@komzpa.net>
  *
  * This is free software; you can redistribute and/or modify it under
  * the terms of the GNU General Public Licence. See the COPYING file.
@@ -596,6 +596,52 @@ test_lwline_interpolate_point_3d(void)
 	lwline_free(line);
 }
 
+static void
+test_lwgeom_interpolate_point_3d(void)
+{
+	LWGEOM *line;
+	LWPOINT *pt;
+	double result;
+
+	/* Simple diagonal line in XYZ, point at 3D midpoint */
+	line = lwgeom_from_wkt("LINESTRING ZM (0 0 0 0, 10 0 10 20)", LW_PARSER_CHECK_NONE);
+	pt = lwgeom_as_lwpoint(lwgeom_from_wkt("POINT Z (5 0 5)", LW_PARSER_CHECK_NONE));
+	result = lwgeom_interpolate_point_3d(line, pt);
+	CU_ASSERT_DOUBLE_EQUAL(result, 10.0, 1e-10);
+	lwpoint_free(pt);
+
+	/* Point offset in Y but same XZ projection: same result */
+	pt = lwgeom_as_lwpoint(lwgeom_from_wkt("POINT Z (5 99 5)", LW_PARSER_CHECK_NONE));
+	result = lwgeom_interpolate_point_3d(line, pt);
+	CU_ASSERT_DOUBLE_EQUAL(result, 10.0, 1e-10);
+	lwpoint_free(pt);
+	lwgeom_free(line);
+
+	/* Vertical line (zero XY extent): 3D projection works where 2D would not */
+	line = lwgeom_from_wkt("LINESTRING ZM (0 0 0 0, 0 0 10 100)", LW_PARSER_CHECK_NONE);
+	pt = lwgeom_as_lwpoint(lwgeom_from_wkt("POINT Z (5 5 5)", LW_PARSER_CHECK_NONE));
+	result = lwgeom_interpolate_point_3d(line, pt);
+	CU_ASSERT_DOUBLE_EQUAL(result, 50.0, 1e-10);
+	lwpoint_free(pt);
+	lwgeom_free(line);
+
+	/* Point beyond end of line: clamped to end M */
+	line = lwgeom_from_wkt("LINESTRING ZM (0 0 0 0, 10 0 0 100)", LW_PARSER_CHECK_NONE);
+	pt = lwgeom_as_lwpoint(lwgeom_from_wkt("POINT Z (20 0 0)", LW_PARSER_CHECK_NONE));
+	result = lwgeom_interpolate_point_3d(line, pt);
+	CU_ASSERT_DOUBLE_EQUAL(result, 100.0, 1e-10);
+	lwpoint_free(pt);
+	lwgeom_free(line);
+
+	/* Point before start of line: clamped to start M */
+	line = lwgeom_from_wkt("LINESTRING ZM (0 0 0 0, 10 0 0 100)", LW_PARSER_CHECK_NONE);
+	pt = lwgeom_as_lwpoint(lwgeom_from_wkt("POINT Z (-5 0 0)", LW_PARSER_CHECK_NONE));
+	result = lwgeom_interpolate_point_3d(line, pt);
+	CU_ASSERT_DOUBLE_EQUAL(result, 0.0, 1e-10);
+	lwpoint_free(pt);
+	lwgeom_free(line);
+}
+
 static void test_lwline_clip(void)
 {
 	LWCOLLECTION *c;
@@ -752,7 +798,7 @@ test_lwtriangle_clip(void)
 
 	ewkt = lwgeom_to_ewkt((LWGEOM *)c);
 	// printf("c = %s\n", ewkt);
-	ASSERT_STRING_EQUAL(ewkt, "TIN(((0 0 0,1 1 1,3 2 2,0 0 0)))");
+	ASSERT_STRING_EQUAL(ewkt, "TIN Z (((0 0 0,1 1 1,3 2 2,0 0 0)))");
 	lwfree(ewkt);
 	lwcollection_free(c);
 	lwgeom_free(g);
@@ -762,7 +808,7 @@ test_lwtriangle_clip(void)
 
 	ewkt = lwgeom_to_ewkt((LWGEOM *)c);
 	// printf("c = %s\n", ewkt);
-	ASSERT_STRING_EQUAL(ewkt, "TIN(((0 0 0,1 1 1,1.5 1 1,0 0 0)))");
+	ASSERT_STRING_EQUAL(ewkt, "TIN Z (((0 0 0,1 1 1,1.5 1 1,0 0 0)))");
 	lwfree(ewkt);
 	lwcollection_free(c);
 	lwgeom_free(g);
@@ -774,7 +820,7 @@ test_lwtriangle_clip(void)
 	// printf("c = %s\n", ewkt);
 	ASSERT_STRING_EQUAL(
 	    ewkt,
-	    "TIN(((1 1 1,2 1.5 2,2 1.333333333333 2,1 1 1)),((1 1 1,2 1.333333333333 2,1 0.666666666667 1,1 1 1)))");
+	    "TIN Z (((1 1 1,2 1.5 2,2 1.333333333333 2,1 1 1)),((1 1 1,2 1.333333333333 2,1 0.666666666667 1,1 1 1)))");
 	lwfree(ewkt);
 	lwcollection_free(c);
 	lwgeom_free(g);
@@ -793,7 +839,7 @@ test_lwtriangle_clip(void)
 	// printf("c = %s\n", ewkt);
 	ASSERT_STRING_EQUAL(
 	    ewkt,
-	    "TIN(((0 0 2,0 1 2,-1 2 2,0 0 2)),((0 1 2,0 0 2,0 1 4,0 1 2)),((-1 2 2,0 1 2,1 1 2,-1 2 2)),((0 0 2,-1 2 2,-1 -1 2,0 0 2)),((0 1 4,0 0 2,0 0 4,0 1 4)),((0 1 2,0 1 4,1 1 4,0 1 2)),((1 1 2,0 1 2,1 1 4,1 1 2)),((-1 2 2,1 1 2,2 2 2,-1 2 2)),((-1 -1 2,-1 2 2,-1 0 0,-1 -1 2)),((-1 -1 2,-1 0 0,-1 -1 0,-1 -1 2)),((0 0 2,-1 -1 2,1 0 2,0 0 2)),((0 0 4,0 0 2,1 0 2,0 0 4)),((0 1 4,0 0 4,1 0 4,0 1 4)),((1 1 4,0 1 4,1 0 4,1 1 4)),((1 1 2,1 1 4,1 0 4,1 1 2)),((2 2 2,1 1 2,2 -1 2,2 2 2)),((-1 2 2,2 2 2,0 2 0,-1 2 2)),((-1 2 2,0 2 0,-1 2 0,-1 2 2)),((-1 0 0,-1 2 2,-1 2 0,-1 0 0)),((-1 -1 2,-1 -1 0,1 -1 0,-1 -1 2)),((1 0 2,-1 -1 2,2 -1 2,1 0 2)),((0 0 4,1 0 2,1 0 4,0 0 4)),((1 1 2,1 0 4,1 0 2,1 1 2)),((2 -1 2,1 1 2,1 0 2,2 -1 2)),((2 2 2,2 -1 2,2 1 0,2 2 2)),((2 2 2,2 1 0,2 2 0,2 2 2)),((0 2 0,2 2 2,2 2 0,0 2 0)),((-1 -1 2,1 -1 0,2 -1 0,-1 -1 2)),((-1 -1 2,2 -1 0,2 -1 2,-1 -1 2)),((2 1 0,2 -1 2,2 -1 0,2 1 0)))");
+	    "TIN Z (((0 0 2,0 1 2,-1 2 2,0 0 2)),((0 1 2,0 0 2,0 1 4,0 1 2)),((-1 2 2,0 1 2,1 1 2,-1 2 2)),((0 0 2,-1 2 2,-1 -1 2,0 0 2)),((0 1 4,0 0 2,0 0 4,0 1 4)),((0 1 2,0 1 4,1 1 4,0 1 2)),((1 1 2,0 1 2,1 1 4,1 1 2)),((-1 2 2,1 1 2,2 2 2,-1 2 2)),((-1 -1 2,-1 2 2,-1 0 0,-1 -1 2)),((-1 -1 2,-1 0 0,-1 -1 0,-1 -1 2)),((0 0 2,-1 -1 2,1 0 2,0 0 2)),((0 0 4,0 0 2,1 0 2,0 0 4)),((0 1 4,0 0 4,1 0 4,0 1 4)),((1 1 4,0 1 4,1 0 4,1 1 4)),((1 1 2,1 1 4,1 0 4,1 1 2)),((2 2 2,1 1 2,2 -1 2,2 2 2)),((-1 2 2,2 2 2,0 2 0,-1 2 2)),((-1 2 2,0 2 0,-1 2 0,-1 2 2)),((-1 0 0,-1 2 2,-1 2 0,-1 0 0)),((-1 -1 2,-1 -1 0,1 -1 0,-1 -1 2)),((1 0 2,-1 -1 2,2 -1 2,1 0 2)),((0 0 4,1 0 2,1 0 4,0 0 4)),((1 1 2,1 0 4,1 0 2,1 1 2)),((2 -1 2,1 1 2,1 0 2,2 -1 2)),((2 2 2,2 -1 2,2 1 0,2 2 2)),((2 2 2,2 1 0,2 2 0,2 2 2)),((0 2 0,2 2 2,2 2 0,0 2 0)),((-1 -1 2,1 -1 0,2 -1 0,-1 -1 2)),((-1 -1 2,2 -1 0,2 -1 2,-1 -1 2)),((2 1 0,2 -1 2,2 -1 0,2 1 0)))");
 	lwfree(ewkt);
 	lwcollection_free(c);
 	lwgeom_free(g);
@@ -952,6 +998,15 @@ static void test_geohash_precision(void)
 	//printf("precision %d\n",precision);
 	CU_ASSERT_EQUAL(precision, 7);
 
+	/* Tiny bbox near south pole: lon-halving loop hits IEEE 754 convergence
+	** before straddling the midpoint — old code hung here. */
+	bbox.xmin = -72.70493954792298;
+	bbox.xmax = -72.70493954792298;
+	bbox.ymin = -89.90561212126683;
+	bbox.ymax = -89.90561212126681;
+	precision = lwgeom_geohash_precision(bbox, &bounds);
+	CU_ASSERT(precision >= 0 && precision <= 20);
+
 }
 
 static void test_geohash_point(void)
@@ -981,7 +1036,6 @@ static void test_geohash(void)
 	LWLINE *lwline = NULL;
 	LWMLINE *lwmline = NULL;
 	lwvarlena_t *geohash = NULL;
-
 	lwpoint = (LWPOINT*)lwgeom_from_wkt("POINT(23.0 25.2)", LW_PARSER_CHECK_NONE);
 	geohash = lwgeom_geohash((LWGEOM*)lwpoint,0);
 	//printf("\ngeohash %s\n",geohash);
@@ -1700,6 +1754,7 @@ static void test_lwpoly_construct_circle(void)
 
 	ASSERT_INT_EQUAL(lwgeom_count_vertices(lwpoly_as_lwgeom(p)), segments_per_quad * 4 + 1);
 	ASSERT_INT_EQUAL(lwgeom_get_srid(lwpoly_as_lwgeom(p)), srid)
+	CU_ASSERT_TRUE(ptarray_is_closed_2d(p->rings[0]));
 
 	g = lwgeom_get_bbox(lwpoly_as_lwgeom(p));
 	CU_ASSERT_DOUBLE_EQUAL(g->xmin, x-r, 0.1);
@@ -1825,7 +1880,6 @@ static void test_ptarray_simplify(void)
 	lwgeom_free(geom2);
 }
 
-
 /*
 ** Used by test harness to register the tests in this file.
 */
@@ -1844,6 +1898,7 @@ void algorithms_suite_setup(void)
 	PG_ADD_TEST(suite,test_point_interpolate);
 	PG_ADD_TEST(suite,test_lwline_interpolate_points);
 	PG_ADD_TEST(suite, test_lwline_interpolate_point_3d);
+	PG_ADD_TEST(suite, test_lwgeom_interpolate_point_3d);
 	PG_ADD_TEST(suite,test_lwline_clip);
 	PG_ADD_TEST(suite, test_lwpoly_clip);
 	PG_ADD_TEST(suite, test_lwtriangle_clip);

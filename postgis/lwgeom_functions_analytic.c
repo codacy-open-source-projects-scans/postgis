@@ -163,6 +163,38 @@ Datum LWGEOM_ChaikinSmoothing(PG_FUNCTION_ARGS)
 }
 
 
+PG_FUNCTION_INFO_V1(LWGEOM_CatmullRomSmoothing);
+Datum LWGEOM_CatmullRomSmoothing(PG_FUNCTION_ARGS)
+{
+	GSERIALIZED *geom = PG_GETARG_GSERIALIZED_P(0);
+	GSERIALIZED *result;
+	int type = gserialized_get_type(geom);
+	LWGEOM *in, *out;
+	int n_segments = 5;
+
+	if (type == POINTTYPE || type == MULTIPOINTTYPE)
+		PG_RETURN_POINTER(geom);
+
+	if ((PG_NARGS() > 1) && (!PG_ARGISNULL(1)))
+		n_segments = PG_GETARG_INT32(1);
+
+	if (n_segments < 2 || n_segments > 100)
+		elog(ERROR, "nSegments must be between 2 and 100: %s", __func__);
+
+	in = lwgeom_from_gserialized(geom);
+	out = lwgeom_catmull_rom(in, n_segments);
+	if (!out) PG_RETURN_NULL();
+
+	/* COMPUTE_BBOX TAINTING */
+	if (in->bbox) lwgeom_add_bbox(out);
+
+	result = geometry_serialize(out);
+	lwgeom_free(out);
+	PG_FREE_IF_COPY(geom, 0);
+	PG_RETURN_POINTER(result);
+}
+
+
 /***********************************************************************
  * --strk@kbt.io;
  ***********************************************************************/
@@ -869,12 +901,18 @@ PG_FUNCTION_INFO_V1(ST_IsPolygonCW);
 Datum ST_IsPolygonCW(PG_FUNCTION_ARGS)
 {
 	GSERIALIZED* geom;
+	LWGEOM *lwgeom;
+	bool is_cw;
 
 	if (PG_ARGISNULL(0))
 		PG_RETURN_NULL();
 
 	geom = PG_GETARG_GSERIALIZED_P(0);
-	PG_RETURN_BOOL(lwgeom_has_orientation(lwgeom_from_gserialized(geom), LW_CLOCKWISE));
+	lwgeom = lwgeom_from_gserialized(geom);
+	is_cw = lwgeom_has_orientation(lwgeom, LW_CLOCKWISE);
+	lwgeom_free(lwgeom);
+	PG_FREE_IF_COPY(geom, 0);
+	PG_RETURN_BOOL(is_cw);
 }
 
 /**********************************************************************
@@ -887,12 +925,16 @@ PG_FUNCTION_INFO_V1(ST_IsPolygonCCW);
 Datum ST_IsPolygonCCW(PG_FUNCTION_ARGS)
 {
 	GSERIALIZED* geom;
+	LWGEOM *lwgeom;
+	bool is_ccw;
 
 	if (PG_ARGISNULL(0))
 		PG_RETURN_NULL();
 
 	geom = PG_GETARG_GSERIALIZED_P(0);
-	geom = PG_GETARG_GSERIALIZED_P(0);
-	PG_RETURN_BOOL(lwgeom_has_orientation(lwgeom_from_gserialized(geom), LW_COUNTERCLOCKWISE));
+	lwgeom = lwgeom_from_gserialized(geom);
+	is_ccw = lwgeom_has_orientation(lwgeom, LW_COUNTERCLOCKWISE);
+	lwgeom_free(lwgeom);
+	PG_FREE_IF_COPY(geom, 0);
+	PG_RETURN_BOOL(is_ccw);
 }
-

@@ -1,0 +1,69 @@
+# Dedicated Woodpecker garden workflow.
+# Garden currently exceeds the five-hour Woodpecker deadline before generating
+# its SQL, so keep it out of push fan-out and run it only by cron or manually.
+
+labels:
+  platform: linux/amd64
+when:
+  - event: pull_request
+    path:
+      include:
+        - .woodpecker/garden.yml
+        - .woodpecker/qa-expensive.yml
+  - event: manual
+  - event: cron
+variables:
+  test-image: &test-image repo.osgeo.org/postgis/build-test:debian13
+  steps-env: &steps-env
+    - export PGVER=18
+    - export PATH=/usr/lib/postgresql/$${PGVER}/bin:$${PATH}
+    - export POSTGIS_REGRESS_DB_OWNER=postgis_reg_unprivileged_user
+    - export SRCDIR=$${CI_WORKSPACE}
+    - export BUILDDIR=$${SRCDIR}/build/garden-pg$${PGVER}
+    - export QA_REGRESS_HOOKS="--after-create-db-script $${CI_WORKSPACE}/regress/hooks/configure-pgextwlist.sql"
+    - pg_config --version
+  steps-start-postgresql: &steps-start-postgresql
+    - . ci/start-postgresql.sh
+    - psql -c 'select version()' template1
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      depth: 50
+      partial: false
+
+steps:
+  garden:
+    image: *test-image
+    pull: true
+    commands:
+      - <<: *steps-env
+      - <<: *steps-start-postgresql
+      # configure is generated, not committed.  qa-expensive.yml runs autogen.sh
+      # as its own step and every build step depends_on it; this workflow is a
+      # single step, so it has to generate configure itself before using it.
+      - ./autogen.sh
+      - mkdir -p "$${BUILDDIR}"
+      - cd "$${BUILDDIR}"
+      - xsltproc --version
+      - 'dpkg --compare-versions "$$(dpkg-query -W -f=''$${Version}'' libsfcgal-dev)" ge 2.3.0'
+      - projsync --system-directory --file au_icsm_GDA94_GDA2020_conformal_and_distortion.tif
+      - $${SRCDIR}/configure
+        CFLAGS="-g -O2 -mtune=generic -fno-omit-frame-pointer"
+        LDFLAGS="-Wl,-Bsymbolic-functions -Wl,-z,relro"
+      - mkdir -p
+        extensions/postgis/sql
+        extensions/postgis_raster/sql
+        extensions/postgis_topology/sql
+        extensions/postgis_sfcgal/sql
+      - make -C postgis
+        postgis.sql
+        uninstall_postgis.sql
+        postgis_upgrade.sql
+        legacy.sql
+        uninstall_legacy.sql
+        legacy_minimal.sql
+        legacy_gist.sql
+      - make -j1
+      - timeout 270m make garden

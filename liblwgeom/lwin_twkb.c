@@ -2,6 +2,7 @@
  *
  * PostGIS - Spatial Types for PostgreSQL
  * http://postgis.net
+ * Copyright (C) 2026 Darafei Praliaskouski <me@komzpa.net>
  *
  * PostGIS is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,13 +23,16 @@
  *
  **********************************************************************/
 
-
 #include <math.h>
+#include <limits.h>
+#include <string.h>
 #include "liblwgeom_internal.h"
 #include "lwgeom_log.h"
 #include "varint.h"
 
 #define TWKB_IN_MAXCOORDS 4
+/** Max depth in a geometry. Matches the WKB parser recursion limit. */
+#define LW_PARSER_MAX_DEPTH 200
 
 /**
 * Used for passing the parse state between the parsing functions.
@@ -42,6 +46,7 @@ typedef struct
 
 	uint32_t check; /* Simple validity checks on geometries */
 	uint32_t lwtype; /* Current type we are handling */
+	uint8_t depth;   /* Current recursion level, to prevent stack overflows */
 
 	uint8_t has_bbox;
 	uint8_t has_size;
@@ -49,6 +54,7 @@ typedef struct
 	uint8_t has_z;
 	uint8_t has_m;
 	uint8_t is_empty;
+	uint8_t error;
 
 	/* Precision factors to convert ints to double */
 	double factor;
@@ -81,10 +87,14 @@ LWGEOM* lwgeom_from_twkb_state(twkb_parse_state *s);
 */
 static inline void twkb_parse_state_advance(twkb_parse_state *s, size_t next)
 {
-	if( (s->pos + next) > s->twkb_end)
+	size_t remaining = (s->pos <= s->twkb_end) ? (size_t)(s->twkb_end - s->pos) : 0;
+
+	if (next > remaining)
 	{
+		s->error = LW_TRUE;
 		lwerror("%s: TWKB structure does not match expected size!", __func__);
-		// lwnotice("TWKB structure does not match expected size!");
+		s->pos = s->twkb_end;
+		return;
 	}
 
 	s->pos += next;
@@ -94,6 +104,8 @@ static inline int64_t twkb_parse_state_varint(twkb_parse_state *s)
 {
 	size_t size;
 	int64_t val = varint_s64_decode(s->pos, s->twkb_end, &size);
+	if (size == 0)
+		s->error = LW_TRUE;
 	twkb_parse_state_advance(s, size);
 	return val;
 }
@@ -102,6 +114,8 @@ static inline uint64_t twkb_parse_state_uvarint(twkb_parse_state *s)
 {
 	size_t size;
 	uint64_t val = varint_u64_decode(s->pos, s->twkb_end, &size);
+	if (size == 0)
+		s->error = LW_TRUE;
 	twkb_parse_state_advance(s, size);
 	return val;
 }
@@ -110,6 +124,8 @@ static inline double twkb_parse_state_double(twkb_parse_state *s, double factor)
 {
 	size_t size;
 	int64_t val = varint_s64_decode(s->pos, s->twkb_end, &size);
+	if (size == 0)
+		s->error = LW_TRUE;
 	twkb_parse_state_advance(s, size);
 	return val / factor;
 }
@@ -119,13 +135,67 @@ static inline void twkb_parse_state_varint_skip(twkb_parse_state *s)
 	size_t size = varint_size(s->pos, s->twkb_end);
 
 	if ( ! size )
+	{
+		s->error = LW_TRUE;
 		lwerror("%s: no varint to skip", __func__);
+	}
 
 	twkb_parse_state_advance(s, size);
 	return;
 }
 
+static inline uint32_t
+twkb_parse_state_uvarint32(twkb_parse_state *s)
+{
+	uint64_t val = twkb_parse_state_uvarint(s);
 
+	if (val > UINT32_MAX)
+	{
+		s->error = LW_TRUE;
+		lwerror("%s: TWKB count exceeds uint32_t", __func__);
+		return 0;
+	}
+
+	return (uint32_t)val;
+}
+
+static inline int
+twkb_parse_state_has_min_bytes(twkb_parse_state *s, uint32_t count, size_t min_bytes)
+{
+	const size_t remaining = (size_t)(s->twkb_end - s->pos);
+
+	/* TWKB counts are trusted only after proving that the remaining buffer can
+	 * hold the smallest possible payload for that many elements. This rejects
+	 * impossible allocation requests before constructors size their arrays.
+	 */
+	if (min_bytes != 0 && count > remaining / min_bytes)
+	{
+		s->error = LW_TRUE;
+		lwerror("%s: TWKB element count exceeds remaining payload", __func__);
+		return LW_FALSE;
+	}
+
+	return LW_TRUE;
+}
+
+/** Implements *pa += b using explicit wraparound semantics. */
+#if defined(__clang__) && __clang_major__ >= 4
+__attribute__((no_sanitize("unsigned-integer-overflow")))
+#endif
+static inline void
+safe_add_int64(int64_t *pa, int64_t b)
+{
+	uint64_t u_a = (uint64_t)*pa;
+	uint64_t u_b = (uint64_t)b;
+	u_a += u_b;
+	memcpy(pa, &u_a, sizeof(int64_t));
+}
+
+static inline void
+twkb_parse_state_accum_coord(twkb_parse_state *s, int coord_index)
+{
+	safe_add_int64(&s->coords[coord_index], twkb_parse_state_varint(s));
+}
 
 static uint32_t lwtype_from_twkb_type(uint8_t twkb_type)
 {
@@ -159,7 +229,14 @@ static uint32_t lwtype_from_twkb_type(uint8_t twkb_type)
 */
 static uint8_t byte_from_twkb_state(twkb_parse_state *s)
 {
-	uint8_t val = *(s->pos);
+	uint8_t val = 0;
+
+	/* CUnit records lwerror and continues, while PostgreSQL and the fuzzers
+	 * abort through their error handlers. Keep the bounds check local so this
+	 * byte helper is safe under both execution models.
+	 */
+	if ((s->twkb_end - s->pos) >= WKB_BYTE_SIZE)
+		val = *(s->pos);
 	twkb_parse_state_advance(s, WKB_BYTE_SIZE);
 	return val;
 }
@@ -174,7 +251,9 @@ static POINTARRAY* ptarray_from_twkb_state(twkb_parse_state *s, uint32_t npoints
 	POINTARRAY *pa = NULL;
 	uint32_t ndims = s->ndims;
 	uint32_t i;
+	uint32_t j;
 	double *dlist;
+	double factors[TWKB_IN_MAXCOORDS];
 
 	LWDEBUG(2,"Entering ptarray_from_twkb_state");
 	LWDEBUGF(4,"Pointarray has %d points", npoints);
@@ -183,32 +262,25 @@ static POINTARRAY* ptarray_from_twkb_state(twkb_parse_state *s, uint32_t npoints
 	if( npoints == 0 )
 		return ptarray_construct_empty(s->has_z, s->has_m, 0);
 
+	if (!twkb_parse_state_has_min_bytes(s, npoints, s->ndims))
+		return NULL;
+
+	factors[0] = s->factor;
+	factors[1] = s->factor;
+	j = 2;
+	if (s->has_z)
+		factors[j++] = s->factor_z;
+	if (s->has_m)
+		factors[j++] = s->factor_m;
+
 	pa = ptarray_construct(s->has_z, s->has_m, npoints);
 	dlist = (double*)(pa->serialized_pointlist);
 	for( i = 0; i < npoints; i++ )
 	{
-		int j = 0;
-		/* X */
-		s->coords[j] += twkb_parse_state_varint(s);
-		dlist[ndims*i + j] = s->coords[j] / s->factor;
-		j++;
-		/* Y */
-		s->coords[j] += twkb_parse_state_varint(s);
-		dlist[ndims*i + j] = s->coords[j] / s->factor;
-		j++;
-		/* Z */
-		if ( s->has_z )
+		for (j = 0; j < ndims; j++)
 		{
-			s->coords[j] += twkb_parse_state_varint(s);
-			dlist[ndims*i + j] = s->coords[j] / s->factor_z;
-			j++;
-		}
-		/* M */
-		if ( s->has_m )
-		{
-			s->coords[j] += twkb_parse_state_varint(s);
-			dlist[ndims*i + j] = s->coords[j] / s->factor_m;
-			j++;
+			twkb_parse_state_accum_coord(s, j);
+			dlist[ndims * i + j] = s->coords[j] / factors[j];
 		}
 	}
 
@@ -246,7 +318,7 @@ static LWLINE* lwline_from_twkb_state(twkb_parse_state *s)
 		return lwline_construct_empty(SRID_UNKNOWN, s->has_z, s->has_m);
 
 	/* Read number of points */
-	npoints = twkb_parse_state_uvarint(s);
+	npoints = twkb_parse_state_uvarint32(s);
 
 	if ( npoints == 0 )
 		return lwline_construct_empty(SRID_UNKNOWN, s->has_z, s->has_m);
@@ -254,7 +326,7 @@ static LWLINE* lwline_from_twkb_state(twkb_parse_state *s)
 	/* Read coordinates */
 	pa = ptarray_from_twkb_state(s, npoints);
 
-	if( pa == NULL )
+	if (pa == NULL)
 		return lwline_construct_empty(SRID_UNKNOWN, s->has_z, s->has_m);
 
 	if( s->check & LW_PARSER_CHECK_MINPOINTS && pa->npoints < 2 )
@@ -281,7 +353,7 @@ static LWPOLY* lwpoly_from_twkb_state(twkb_parse_state *s)
 		return lwpoly_construct_empty(SRID_UNKNOWN, s->has_z, s->has_m);
 
 	/* Read number of rings */
-	nrings = twkb_parse_state_uvarint(s);
+	nrings = twkb_parse_state_uvarint32(s);
 
 	/* Start w/ empty polygon */
 	poly = lwpoly_construct_empty(SRID_UNKNOWN, s->has_z, s->has_m);
@@ -292,14 +364,17 @@ static LWPOLY* lwpoly_from_twkb_state(twkb_parse_state *s)
 	if( nrings == 0 )
 		return poly;
 
+	if (!twkb_parse_state_has_min_bytes(s, nrings, 1))
+		return poly;
+
 	for( i = 0; i < nrings; i++ )
 	{
 		/* Ret number of points */
-		uint32_t npoints = twkb_parse_state_uvarint(s);
+		uint32_t npoints = twkb_parse_state_uvarint32(s);
 		POINTARRAY *pa = ptarray_from_twkb_state(s, npoints);
 
 		/* Skip empty rings */
-		if( pa == NULL )
+		if (pa == NULL)
 			continue;
 
 		/* Force first and last points to be the same. */
@@ -335,7 +410,7 @@ static LWPOLY* lwpoly_from_twkb_state(twkb_parse_state *s)
 */
 static LWCOLLECTION* lwmultipoint_from_twkb_state(twkb_parse_state *s)
 {
-	int ngeoms, i;
+	uint32_t ngeoms, i;
 	LWGEOM *geom = NULL;
 	LWCOLLECTION *col = lwcollection_construct_empty(s->lwtype, SRID_UNKNOWN, s->has_z, s->has_m);
 
@@ -345,8 +420,11 @@ static LWCOLLECTION* lwmultipoint_from_twkb_state(twkb_parse_state *s)
 		return col;
 
 	/* Read number of geometries */
-	ngeoms = twkb_parse_state_uvarint(s);
+	ngeoms = twkb_parse_state_uvarint32(s);
 	LWDEBUGF(4,"Number of geometries %d", ngeoms);
+
+	if (s->has_idlist && !twkb_parse_state_has_min_bytes(s, ngeoms, 1))
+		return col;
 
 	/* It has an idlist, we need to skip that */
 	if ( s->has_idlist )
@@ -354,6 +432,9 @@ static LWCOLLECTION* lwmultipoint_from_twkb_state(twkb_parse_state *s)
 		for ( i = 0; i < ngeoms; i++ )
 			twkb_parse_state_varint_skip(s);
 	}
+
+	if (!twkb_parse_state_has_min_bytes(s, ngeoms, s->ndims))
+		return col;
 
 	for ( i = 0; i < ngeoms; i++ )
 	{
@@ -373,7 +454,7 @@ static LWCOLLECTION* lwmultipoint_from_twkb_state(twkb_parse_state *s)
 */
 static LWCOLLECTION* lwmultiline_from_twkb_state(twkb_parse_state *s)
 {
-	int ngeoms, i;
+	uint32_t ngeoms, i;
 	LWGEOM *geom = NULL;
 	LWCOLLECTION *col = lwcollection_construct_empty(s->lwtype, SRID_UNKNOWN, s->has_z, s->has_m);
 
@@ -383,9 +464,12 @@ static LWCOLLECTION* lwmultiline_from_twkb_state(twkb_parse_state *s)
 		return col;
 
 	/* Read number of geometries */
-	ngeoms = twkb_parse_state_uvarint(s);
+	ngeoms = twkb_parse_state_uvarint32(s);
 
 	LWDEBUGF(4,"Number of geometries %d",ngeoms);
+
+	if (s->has_idlist && !twkb_parse_state_has_min_bytes(s, ngeoms, 1))
+		return col;
 
 	/* It has an idlist, we need to skip that */
 	if ( s->has_idlist )
@@ -393,6 +477,9 @@ static LWCOLLECTION* lwmultiline_from_twkb_state(twkb_parse_state *s)
 		for ( i = 0; i < ngeoms; i++ )
 			twkb_parse_state_varint_skip(s);
 	}
+
+	if (!twkb_parse_state_has_min_bytes(s, ngeoms, 1))
+		return col;
 
 	for ( i = 0; i < ngeoms; i++ )
 	{
@@ -412,7 +499,7 @@ static LWCOLLECTION* lwmultiline_from_twkb_state(twkb_parse_state *s)
 */
 static LWCOLLECTION* lwmultipoly_from_twkb_state(twkb_parse_state *s)
 {
-	int ngeoms, i;
+	uint32_t ngeoms, i;
 	LWGEOM *geom = NULL;
 	LWCOLLECTION *col = lwcollection_construct_empty(s->lwtype, SRID_UNKNOWN, s->has_z, s->has_m);
 
@@ -422,8 +509,11 @@ static LWCOLLECTION* lwmultipoly_from_twkb_state(twkb_parse_state *s)
 		return col;
 
 	/* Read number of geometries */
-	ngeoms = twkb_parse_state_uvarint(s);
+	ngeoms = twkb_parse_state_uvarint32(s);
 	LWDEBUGF(4,"Number of geometries %d",ngeoms);
+
+	if (s->has_idlist && !twkb_parse_state_has_min_bytes(s, ngeoms, 1))
+		return col;
 
 	/* It has an idlist, we need to skip that */
 	if ( s->has_idlist )
@@ -431,6 +521,9 @@ static LWCOLLECTION* lwmultipoly_from_twkb_state(twkb_parse_state *s)
 		for ( i = 0; i < ngeoms; i++ )
 			twkb_parse_state_varint_skip(s);
 	}
+
+	if (!twkb_parse_state_has_min_bytes(s, ngeoms, 1))
+		return col;
 
 	for ( i = 0; i < ngeoms; i++ )
 	{
@@ -451,9 +544,10 @@ static LWCOLLECTION* lwmultipoly_from_twkb_state(twkb_parse_state *s)
 **/
 static LWCOLLECTION* lwcollection_from_twkb_state(twkb_parse_state *s)
 {
-	int ngeoms, i;
+	uint32_t ngeoms, i;
 	LWGEOM *geom = NULL;
 	LWCOLLECTION *col = lwcollection_construct_empty(s->lwtype, SRID_UNKNOWN, s->has_z, s->has_m);
+	uint8_t start_depth = s->depth;
 
 	LWDEBUG(2,"Entering lwcollection_from_twkb_state");
 
@@ -461,9 +555,12 @@ static LWCOLLECTION* lwcollection_from_twkb_state(twkb_parse_state *s)
 		return col;
 
 	/* Read number of geometries */
-	ngeoms = twkb_parse_state_uvarint(s);
+	ngeoms = twkb_parse_state_uvarint32(s);
 
 	LWDEBUGF(4,"Number of geometries %d",ngeoms);
+
+	if (s->has_idlist && !twkb_parse_state_has_min_bytes(s, ngeoms, 1))
+		return col;
 
 	/* It has an idlist, we need to skip that */
 	if ( s->has_idlist )
@@ -472,16 +569,31 @@ static LWCOLLECTION* lwcollection_from_twkb_state(twkb_parse_state *s)
 			twkb_parse_state_varint_skip(s);
 	}
 
+	if (!twkb_parse_state_has_min_bytes(s, ngeoms, 2))
+		return col;
+
+	s->depth++;
+	if (s->depth >= LW_PARSER_MAX_DEPTH)
+	{
+		lwcollection_free(col);
+		lwerror("Geometry has too many chained collections");
+		s->depth = start_depth;
+		return NULL;
+	}
+
 	for ( i = 0; i < ngeoms; i++ )
 	{
 		geom = lwgeom_from_twkb_state(s);
-		if ( lwcollection_add_lwgeom(col, geom) == NULL )
+		if (!geom || lwcollection_add_lwgeom(col, geom) == NULL)
 		{
-			lwerror("Unable to add geometry (%p) to collection (%p)", (void *) geom, (void *) col);
+			lwgeom_free(geom);
+			lwcollection_free(col);
+			s->depth = start_depth;
 			return NULL;
 		}
 	}
 
+	s->depth--;
 
 	return col;
 }
@@ -631,11 +743,18 @@ LWGEOM* lwgeom_from_twkb_state(twkb_parse_state *s)
 			break;
 		/* Unknown type! */
 		default:
+			s->error = LW_TRUE;
 			lwerror("%s: Unsupported geometry type: %s", __func__, lwtype_name(s->lwtype));
 			break;
 	}
 
-	if ( has_bbox )
+	if (s->error)
+	{
+		lwgeom_free(geom);
+		return NULL;
+	}
+
+	if (has_bbox && geom)
 		geom->bbox = gbox_clone(&bbox);
 
 	return geom;

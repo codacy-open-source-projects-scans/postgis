@@ -16,6 +16,8 @@
 #include "../postgis_config.h"
 
 #include <math.h> /* for isnan */
+#include <stdint.h>
+#include <strings.h>
 
 #include "shp2pgsql-core.h"
 #include "../liblwgeom/liblwgeom.h"
@@ -55,7 +57,25 @@ int PIP(Point P, Point *V, int n);
 int FindPolygons(SHPObject *obj, Ring ***Out);
 void ReleasePolygons(Ring **polys, int npolys);
 int GeneratePolygonGeometry(SHPLOADERSTATE *state, SHPObject *obj, char **geometry);
+static int shp_loader_is_zip_archive(const char *filename);
 
+static int
+shp_loader_is_zip_archive(const char *filename)
+{
+	const char *basename;
+	const char *ext;
+
+	if (!filename)
+		return 0;
+
+	basename = strrchr(filename, '/');
+	if (!basename)
+		basename = strrchr(filename, '\\');
+	basename = basename ? basename + 1 : filename;
+
+	ext = strrchr(basename, '.');
+	return ext && strcasecmp(ext, ".zip") == 0;
+}
 
 /* Return allocated string containing UTF8 string converted from encoding fromcode */
 static int
@@ -151,6 +171,8 @@ escape_copy_string(char *str)
 
 	size = ptr - str + toescape + 1;
 	result = calloc(1, size);
+	if (!result)
+		return NULL;
 	optr = result;
 	ptr = str;
 
@@ -204,6 +226,8 @@ escape_insert_string(char *str)
 
 	size = ptr - str + toescape + 1;
 	result = calloc(1, size);
+	if (!result)
+		return NULL;
 	optr = result;
 	ptr = str;
 
@@ -252,6 +276,11 @@ GeneratePointGeometry(SHPLOADERSTATE *state, SHPObject *obj, char **geometry, in
 	{
 		/* Allocate memory for our array of LWPOINTs and our dynptarrays */
 		lwmultipoints = malloc(sizeof(LWPOINT *) * obj->nVertices);
+		if (!lwmultipoints)
+		{
+			snprintf(state->message, SHPLOADERMSGLEN, "unable to allocate memory for point geometry");
+			return SHPLOADERERR;
+		}
 
 		/* We need an array of pointers to each of our sub-geometries */
 		for (u = 0; u < obj->nVertices; u++)
@@ -342,6 +371,11 @@ GenerateLineStringGeometry(SHPLOADERSTATE *state, SHPObject *obj, char **geometr
 
 	/* Allocate memory for our array of LWLINEs and our dynptarrays */
 	lwmultilinestrings = malloc(sizeof(LWPOINT *) * obj->nParts);
+	if (!lwmultilinestrings)
+	{
+		snprintf(state->message, SHPLOADERMSGLEN, "unable to allocate memory for linestring geometry");
+		return SHPLOADERERR;
+	}
 
 	/* We need an array of pointers to each of our sub-geometries */
 	for (u = 0; u < obj->nParts; u++)
@@ -435,6 +469,39 @@ PIP(Point P, Point *V, int n)
 	return (cn&1);    /* 0 if even (out), and 1 if odd (in) */
 }
 
+static void
+ShpLoaderFreeFieldMetadata(SHPLOADERSTATE *state)
+{
+	for (int j = 0; j < state->num_fields; j++)
+	{
+		if (state->field_names)
+			free(state->field_names[j]);
+		if (state->pgfieldtypes)
+			free(state->pgfieldtypes[j]);
+	}
+
+	free(state->field_names);
+	state->field_names = NULL;
+	free(state->types);
+	state->types = NULL;
+	free(state->widths);
+	state->widths = NULL;
+	free(state->precisions);
+	state->precisions = NULL;
+	free(state->pgfieldtypes);
+	state->pgfieldtypes = NULL;
+	free(state->col_names);
+	state->col_names = NULL;
+	state->num_fields = 0;
+}
+
+static int
+ShpLoaderOpenShapeFieldAllocFailure(SHPLOADERSTATE *state)
+{
+	ShpLoaderFreeFieldMetadata(state);
+	snprintf(state->message, SHPLOADERMSGLEN, "unable to allocate memory for field information");
+	return SHPLOADERERR;
+}
 
 int
 FindPolygons(SHPObject *obj, Ring ***Out)
@@ -455,6 +522,12 @@ FindPolygons(SHPObject *obj, Ring ***Out)
 	/* Allocate initial memory */
 	Outer = (Ring **)malloc(sizeof(Ring *) * obj->nParts);
 	Inner = (Ring **)malloc(sizeof(Ring *) * obj->nParts);
+	if (!Outer || !Inner)
+	{
+		free(Outer);
+		free(Inner);
+		return -1;
+	}
 
 	/* Iterate over rings dividing in Outers and Inners */
 	for (pi=0; pi < obj->nParts; pi++)
@@ -476,10 +549,62 @@ FindPolygons(SHPObject *obj, Ring ***Out)
 
 		/* Compute number of vertices */
 		nv = ve - vs;
+		if (nv <= 0 || (size_t)nv > SIZE_MAX / sizeof(*ring->list))
+		{
+			for (pi = 0; pi < out_index; pi++)
+			{
+				free(Outer[pi]->list);
+				free(Outer[pi]);
+			}
+			for (pi = 0; pi < in_index; pi++)
+			{
+				free(Inner[pi]->list);
+				free(Inner[pi]);
+			}
+			free(Outer);
+			free(Inner);
+			return -1;
+		}
+		size_t ring_list_size = sizeof(*ring->list) * (size_t)nv;
 
 		/* Allocate memory for a ring */
 		ring = (Ring *)malloc(sizeof(Ring));
-		ring->list = (Point *)malloc(sizeof(Point) * nv);
+		if (!ring)
+		{
+			/* Free rings allocated so far (stored in Outer/Inner) */
+			for (pi = 0; pi < out_index; pi++)
+			{
+				free(Outer[pi]->list);
+				free(Outer[pi]);
+			}
+			for (pi = 0; pi < in_index; pi++)
+			{
+				free(Inner[pi]->list);
+				free(Inner[pi]);
+			}
+			free(Outer);
+			free(Inner);
+			return -1;
+		}
+		ring->list = (Point *)malloc(ring_list_size);
+		if (!ring->list)
+		{
+			free(ring);
+			/* Free rings allocated so far (stored in Outer/Inner) */
+			for (pi = 0; pi < out_index; pi++)
+			{
+				free(Outer[pi]->list);
+				free(Outer[pi]);
+			}
+			for (pi = 0; pi < in_index; pi++)
+			{
+				free(Inner[pi]->list);
+				free(Inner[pi]);
+			}
+			free(Outer);
+			free(Inner);
+			return -1;
+		}
 		ring->n = nv;
 		ring->next = NULL;
 		ring->linked = 0;
@@ -641,6 +766,12 @@ GeneratePolygonGeometry(SHPLOADERSTATE *state, SHPObject *obj, char **geometry)
 
 	polygon_total = FindPolygons(obj, &Outer);
 
+	if (polygon_total < 0)
+	{
+		snprintf(state->message, SHPLOADERMSGLEN, "unable to allocate memory for polygon rings");
+		return SHPLOADERERR;
+	}
+
 	if (state->config->simple_geometries == 1 && polygon_total != 1) /* We write Non-MULTI geometries, but have several parts: */
 	{
 		snprintf(state->message, SHPLOADERMSGLEN, _("We have a Multipolygon with %d parts, can't use -S switch!"), polygon_total);
@@ -650,6 +781,12 @@ GeneratePolygonGeometry(SHPLOADERSTATE *state, SHPObject *obj, char **geometry)
 
 	/* Allocate memory for our array of LWPOLYs */
 	lwpolygons = malloc(sizeof(LWPOLY *) * polygon_total);
+	if (!lwpolygons)
+	{
+		ReleasePolygons(Outer, polygon_total);
+		snprintf(state->message, SHPLOADERMSGLEN, "unable to allocate memory for polygon geometry");
+		return SHPLOADERERR;
+	}
 
 	/* Cycle through each individual polygon */
 	for (pi = 0; pi < polygon_total; pi++)
@@ -754,6 +891,130 @@ strtolower(char *s)
 		s[j] = tolower(s[j]);
 }
 
+static const char *
+ShpLoaderFIDColumn(const SHPLOADERSTATE *state)
+{
+	return state->config->fid_col ? state->config->fid_col : FID_DEFAULT;
+}
+
+static int
+ShpLoaderNameMatchesAny(const char *name, const char *const *names, size_t num_names, int case_sensitive)
+{
+	size_t i;
+
+	for (i = 0; i < num_names; i++)
+	{
+		if (case_sensitive ? !strcmp(name, names[i]) : !strcasecmp(name, names[i]))
+			return LW_TRUE;
+	}
+
+	return LW_FALSE;
+}
+
+static int
+ShpLoaderFIDColumnIsSystemColumn(const char *name)
+{
+	static const char *const names[] = {"tableoid", "cmin", "cmax", "xmin", "xmax", "oid", "ctid"};
+
+	return ShpLoaderNameMatchesAny(name, names, sizeof(names) / sizeof(names[0]), LW_FALSE);
+}
+
+static int
+ShpLoaderFIDColumnIsValid(const char *name)
+{
+	size_t i;
+
+	if (!name || !name[0] || ShpLoaderFIDColumnIsSystemColumn(name))
+		return LW_FALSE;
+
+	if (!isalpha((unsigned char)name[0]) && name[0] != '_')
+		return LW_FALSE;
+
+	for (i = 1; name[i]; i++)
+	{
+		if (!isalnum((unsigned char)name[i]) && name[i] != '_')
+			return LW_FALSE;
+	}
+
+	return LW_TRUE;
+}
+
+static int
+ShpLoaderValidateFIDColumn(SHPLOADERSTATE *state)
+{
+	const char *fid_col = ShpLoaderFIDColumn(state);
+
+	if (ShpLoaderFIDColumnIsValid(fid_col))
+		return SHPLOADEROK;
+
+	snprintf(state->message, SHPLOADERMSGLEN, _("Invalid feature id column name \"%s\""), fid_col ? fid_col : "");
+	return SHPLOADERERR;
+}
+
+static int
+ShpLoaderFieldNameNeedsEscape(const SHPLOADERSTATE *state, const char *name)
+{
+	static const char *const reserved_names[] = {
+	    FID_DEFAULT, "tableoid", "cmin", "cmax", "xmin", "xmax", "primary", "oid", "ctid"};
+	const char *fid_col = ShpLoaderFIDColumn(state);
+
+	return name[0] == '_' || !strcmp(name, fid_col) ||
+	       ShpLoaderNameMatchesAny(
+		   name, reserved_names, sizeof(reserved_names) / sizeof(reserved_names[0]), LW_TRUE);
+}
+
+static void
+pgtype_typmod_name(const SHPLOADERSTATE *state, char *buf, size_t len)
+{
+	const char *suffix = "";
+	size_t base_len = strlen(state->pgtype);
+
+	if (state->pgdims == 4 && state->has_z && state->has_m)
+		suffix = "ZM";
+	else if (state->pgdims == 3 && state->has_z)
+		suffix = "Z";
+	else if (state->pgdims == 3 && state->has_m)
+		suffix = "M";
+
+	if (base_len > 0 && state->pgtype[base_len - 1] == 'M')
+		base_len--;
+
+	snprintf(buf, len, "%.*s%s", (int)base_len, state->pgtype, suffix);
+}
+
+static void
+append_qualified_table(stringbuffer_t *sb, const char *schema, const char *table)
+{
+	if (schema)
+		stringbuffer_aprintf(sb, "\"%s\".", schema);
+	stringbuffer_aprintf(sb, "\"%s\"", table);
+}
+
+static void
+append_primary_key_ddl(const SHPLOADERSTATE *state, stringbuffer_t *sb)
+{
+	const char *fid_col = ShpLoaderFIDColumn(state);
+
+	stringbuffer_aprintf(sb, "ALTER TABLE ");
+	append_qualified_table(sb, state->config->schema, state->config->table);
+	stringbuffer_aprintf(sb, " ADD PRIMARY KEY (\"%s\");\n", fid_col);
+
+	if (state->config->idxtablespace != NULL)
+	{
+		stringbuffer_aprintf(sb, "ALTER INDEX ");
+		if (state->config->schema)
+			stringbuffer_aprintf(sb, "\"%s\".", state->config->schema);
+		stringbuffer_aprintf(
+		    sb, "\"%s_pkey\" SET TABLESPACE \"%s\";\n", state->config->table, state->config->idxtablespace);
+	}
+}
+
+static int
+plan_has_transactional_work(const LoaderPlan *plan)
+{
+	return plan->create_table != LOADER_CREATE_NONE || plan->load_data ||
+	       plan->create_index != LOADER_CREATE_NONE;
+}
 
 /* Default configuration settings */
 void
@@ -763,13 +1024,20 @@ set_loader_config_defaults(SHPLOADERCONFIG *config)
 	config->table = NULL;
 	config->schema = NULL;
 	config->geo_col = NULL;
+	config->fid_col = NULL;
 	config->shp_file = NULL;
 	config->dump_format = 0;
 	config->simple_geometries = 0;
 	config->geography = 0;
 	config->quoteidentifiers = 0;
 	config->forceint4 = 0;
-	config->createindex = 0;
+	config->createindex = LOADER_CREATE_NONE;
+	config->unlogged = 0;
+	memset(&config->actions, 0, sizeof(config->actions));
+	config->actions.mode = 'c';
+	config->actions.create_table = LOADER_CREATE_ALWAYS;
+	config->actions.load_data = 1;
+	memset(&config->plan, 0, sizeof(config->plan));
 	config->analyze = 1;
 	config->readshape = 1;
 	config->force_output = FORCE_OUTPUT_DISABLE;
@@ -784,14 +1052,74 @@ set_loader_config_defaults(SHPLOADERCONFIG *config)
 	config->column_map_filename = NULL;
 }
 
+static void
+set_loader_config_actions(SHPLOADERCONFIG *config)
+{
+	LoaderActionOptions *actions = &config->actions;
+
+	memset(&config->plan, 0, sizeof(config->plan));
+	config->plan.transaction = config->usetransaction ? LOADER_TRANSACTION_ON : LOADER_TRANSACTION_OFF;
+
+	switch (actions->mode)
+	{
+	case 'd':
+		config->plan.drop_table = 1;
+		config->plan.create_table = LOADER_CREATE_ALWAYS;
+		config->plan.load_data = 1;
+		break;
+	case 'a':
+		config->plan.load_data = 1;
+		break;
+	case 'p':
+		config->plan.create_table = LOADER_CREATE_ALWAYS;
+		break;
+	case 'c':
+	default:
+		config->plan.create_table = LOADER_CREATE_ALWAYS;
+		config->plan.load_data = 1;
+		break;
+	}
+
+	if (actions->drop_table)
+		config->plan.drop_table = 1;
+	if (actions->create_table_set)
+		config->plan.create_table = actions->create_table;
+	if (actions->load_data_set)
+		config->plan.load_data = actions->load_data;
+
+	config->plan.create_index = config->createindex;
+	if (actions->create_index_set)
+		config->plan.create_index = actions->create_index;
+
+	if (actions->if_not_exists)
+	{
+		if (config->plan.create_table == LOADER_CREATE_ALWAYS)
+			config->plan.create_table = LOADER_CREATE_IF_NOT_EXISTS;
+		if (config->plan.create_index == LOADER_CREATE_ALWAYS)
+			config->plan.create_index = LOADER_CREATE_IF_NOT_EXISTS;
+	}
+
+	if (actions->analyze)
+		config->plan.analyze = 1;
+	else if (config->analyze && (config->plan.create_table != LOADER_CREATE_NONE || config->plan.load_data ||
+				     config->plan.create_index != LOADER_CREATE_NONE))
+	{
+		config->plan.analyze = 1;
+	}
+}
+
 /* Create a new shapefile state object */
 SHPLOADERSTATE *
 ShpLoaderCreate(SHPLOADERCONFIG *config)
 {
 	SHPLOADERSTATE *state;
 
+	set_loader_config_actions(config);
+
 	/* Create a new state object and assign the config to it */
 	state = malloc(sizeof(SHPLOADERSTATE));
+	if (!state)
+		return NULL;
 	state->config = config;
 
 	/* Set any state defaults */
@@ -851,6 +1179,18 @@ ShpLoaderOpenShape(SHPLOADERSTATE *state)
 	char name[MAXFIELDNAMELEN];
 	DBFFieldType type = FTInvalid;
 	char *utf8str;
+
+	if (ShpLoaderValidateFIDColumn(state) != SHPLOADEROK)
+		return SHPLOADERERR;
+
+	if (shp_loader_is_zip_archive(state->config->shp_file))
+	{
+		snprintf(state->message,
+			 SHPLOADERMSGLEN,
+			 _("%s: shp2pgsql does not read .zip archives; unpack the .shp, .shx, and .dbf files first."),
+			 state->config->shp_file);
+		return SHPLOADERERR;
+	}
 
 	/* If we are reading the entire shapefile, open it */
 	if (state->config->readshape == 1)
@@ -1096,15 +1436,27 @@ ShpLoaderOpenShape(SHPLOADERSTATE *state)
 
 	state->num_records = DBFGetRecordCount(state->hDBFHandle);
 
-	/* Allocate storage for field information */
-	state->field_names = malloc(state->num_fields * sizeof(char*));
+	/* Allocate storage for field information.
+	 * field_names and pgfieldtypes hold per-field strings that are freed
+	 * individually; use calloc so any slot never assigned stays NULL and
+	 * free(NULL) is safe on the allocation-failure cleanup path. */
+	state->field_names = calloc(state->num_fields, sizeof(char *));
 	state->types = (DBFFieldType *)malloc(state->num_fields * sizeof(int));
 	state->widths = malloc(state->num_fields * sizeof(int));
 	state->precisions = malloc(state->num_fields * sizeof(int));
-	state->pgfieldtypes = malloc(state->num_fields * sizeof(char *));
-	state->col_names = malloc((state->num_fields + 2) * sizeof(char) * MAXFIELDNAMELEN);
+	state->pgfieldtypes = calloc(state->num_fields, sizeof(char *));
+	state->col_names = calloc(
+		(size_t)state->num_fields * (MAXFIELDNAMELEN + 2) +
+			(state->config->readshape ? strlen(state->geo_col) : 0) + 1,
+		sizeof(char)
+	);
+	int fields_allocated = !state->num_fields || (state->field_names && state->types && state->widths &&
+						      state->precisions && state->pgfieldtypes);
+	if (!state->col_names || !fields_allocated)
+	{
+		return ShpLoaderOpenShapeFieldAllocFailure(state);
+	}
 
-	strcpy(state->col_names, "" );
 	/* Generate a string of comma separated column names of the form "col1, col2 ... colN" for the SQL
 	   insertion string */
 
@@ -1163,20 +1515,12 @@ ShpLoaderOpenShape(SHPLOADERSTATE *state)
 			strtolower(name);
 
 		/*
-		 * Escape names starting with the
-		 * escape char (_), those named 'gid'
-		 * or after pgsql reserved attribute names
+		 * Keep generated loader columns and PostgreSQL system columns out of
+		 * the DBF attribute namespace.  Always escape source "gid" columns too:
+		 * pgsql2shp treats gid as a loader id by default, so preserving the old
+		 * "__gid" mapping keeps default round trips lossless even with -f.
 		 */
-		if (name[0] == '_' ||
-		    ! strcmp(name, "gid") ||
-		    ! strcmp(name, "tableoid") ||
-		    ! strcmp(name, "cmin") ||
-		    ! strcmp(name, "cmax") ||
-		    ! strcmp(name, "xmin") ||
-		    ! strcmp(name, "xmax") ||
-		    ! strcmp(name, "primary") ||
-		    ! strcmp(name, "oid") ||
-		    ! strcmp(name, "ctid"))
+		if (ShpLoaderFieldNameNeedsEscape(state, name))
 		{
 			char tmp[MAXFIELDNAMELEN] = "__";
 			memcpy(tmp+2, name, MAXFIELDNAMELEN-2);
@@ -1199,6 +1543,8 @@ ShpLoaderOpenShape(SHPLOADERSTATE *state)
 		}
 
 		state->field_names[j] = strdup(name);
+		if (!state->field_names[j])
+			return ShpLoaderOpenShapeFieldAllocFailure(state);
 
 		/* Now generate the PostgreSQL type name string and width based upon the shapefile type */
 		switch (state->types[j])
@@ -1254,6 +1600,9 @@ ShpLoaderOpenShape(SHPLOADERSTATE *state)
 			return SHPLOADERERR;
 		}
 
+		if (!state->pgfieldtypes[j])
+			return ShpLoaderOpenShapeFieldAllocFailure(state);
+
 		strcat(state->col_names, "\"");
 		strcat(state->col_names, name);
 
@@ -1283,6 +1632,14 @@ ShpLoaderGetSQLHeader(SHPLOADERSTATE *state, char **strheader)
 	stringbuffer_t *sb;
 	char *ret;
 	int j;
+	const char *fid_col;
+	const int use_transaction =
+	    state->config->plan.transaction == LOADER_TRANSACTION_ON && plan_has_transactional_work(&state->config->plan);
+
+	if (ShpLoaderValidateFIDColumn(state) != SHPLOADEROK)
+		return SHPLOADERERR;
+
+	fid_col = ShpLoaderFIDColumn(state);
 
 	/* Create the stringbuffer containing the header; we use this API as it's easier
 	   for handling string resizing during append */
@@ -1299,63 +1656,44 @@ ShpLoaderGetSQLHeader(SHPLOADERSTATE *state, char **strheader)
 	stringbuffer_aprintf(sb, "SET STANDARD_CONFORMING_STRINGS TO ON;\n");
 
 	/* Drop table if requested */
-	if (state->config->opt == 'd')
+	if (state->config->plan.drop_table)
 	{
-		/**
-		 * TODO: if the table has more then one geometry column
-		 * 	the DROP TABLE call will leave spurious records in
-		 * 	geometry_columns.
-		 *
-		 * If the geometry column in the table being dropped
-		 * does not match 'the_geom' or the name specified with
-		 * -g an error is returned by DropGeometryColumn.
-		 *
-		 * The table to be dropped might not exist.
-		 */
 		if (state->config->schema)
 		{
-			if (state->config->readshape == 1 && (! state->config->geography) )
-			{
-				stringbuffer_aprintf(sb, "SELECT DropGeometryColumn('%s','%s','%s');\n",
-				                     state->config->schema, state->config->table, state->geo_col);
-			}
-
 			stringbuffer_aprintf(sb, "DROP TABLE IF EXISTS \"%s\".\"%s\";\n", state->config->schema,
 			                     state->config->table);
 		}
 		else
 		{
-			if (state->config->readshape == 1  && (! state->config->geography) )
-			{
-				stringbuffer_aprintf(sb, "SELECT DropGeometryColumn('','%s','%s');\n",
-				                     state->config->table, state->geo_col);
-			}
-
 			stringbuffer_aprintf(sb, "DROP TABLE IF EXISTS \"%s\";\n", state->config->table);
 		}
 	}
 
 	/* Start of transaction if we are using one */
-	if (state->config->usetransaction)
+	if (use_transaction)
 	{
 		stringbuffer_aprintf(sb, "BEGIN;\n");
 	}
 
-	/* If not in 'append' mode create the spatial table */
-	if (state->config->opt != 'a')
+	/* Create the spatial table when requested by the selected actions. */
+	if (state->config->plan.create_table != LOADER_CREATE_NONE)
 	{
+		const int if_not_exists = state->config->plan.create_table == LOADER_CREATE_IF_NOT_EXISTS;
+
 		/*
-		* Create a table for inserting the shapes into with appropriate
-		* columns and types
-		*/
-		if (state->config->schema)
+		 * Create a table for inserting the shapes into with appropriate
+		 * columns and types
+		 */
+		stringbuffer_aprintf(sb,
+				     "CREATE %sTABLE %s",
+				     state->config->unlogged ? "UNLOGGED " : "",
+				     if_not_exists ? "IF NOT EXISTS " : "");
+		append_qualified_table(sb, state->config->schema, state->config->table);
+		stringbuffer_aprintf(sb, " (\"%s\" serial%s", fid_col, if_not_exists ? " PRIMARY KEY" : "");
+
+		if (if_not_exists && state->config->idxtablespace != NULL)
 		{
-			stringbuffer_aprintf(sb, "CREATE TABLE \"%s\".\"%s\" (gid serial",
-			                     state->config->schema, state->config->table);
-		}
-		else
-		{
-			stringbuffer_aprintf(sb, "CREATE TABLE \"%s\" (gid serial", state->config->table);
+			stringbuffer_aprintf(sb, " USING INDEX TABLESPACE \"%s\"", state->config->idxtablespace);
 		}
 
 		/* Generate the field types based upon the shapefile information */
@@ -1379,22 +1717,22 @@ ShpLoaderGetSQLHeader(SHPLOADERSTATE *state, char **strheader)
 			}
 		}
 
-		/* Add the geography column directly to the table definition, we don't
-		   need to do an AddGeometryColumn() call. */
-		if (state->config->readshape == 1 && state->config->geography)
+		/*
+		 * geometry_columns is a view in current PostGIS, so typmod column
+		 * DDL is equivalent to the default AddGeometryColumn path.
+		 */
+		if (state->config->readshape == 1)
 		{
-			char *dimschar;
-
-			if (state->pgdims == 4)
-				dimschar = "ZM";
-			else
-				dimschar = "";
-
-			if (state->to_srid == SRID_UNKNOWN ){
+			const char *coltype = state->config->geography ? "geography" : "geometry";
+			char typmod_type[64];
+			if (state->config->geography && state->to_srid == SRID_UNKNOWN)
+			{
 				state->to_srid = 4326;
 			}
 
-			stringbuffer_aprintf(sb, ",\n\"%s\" geography(%s%s,%d)", state->geo_col, state->pgtype, dimschar, state->to_srid);
+			pgtype_typmod_name(state, typmod_type, sizeof(typmod_type));
+			stringbuffer_aprintf(
+			    sb, ",\n\"%s\" %s(%s,%d)", state->geo_col, coltype, typmod_type, state->to_srid);
 		}
 		stringbuffer_aprintf(sb, ")");
 
@@ -1405,61 +1743,8 @@ ShpLoaderGetSQLHeader(SHPLOADERSTATE *state, char **strheader)
 		}
 		stringbuffer_aprintf(sb, ";\n");
 
-		/* Create the primary key.  This is done separately because the index for the PK needs
-                 * to be in the correct tablespace. */
-
-		/* TODO: Currently PostgreSQL does not allow specifying an index to use for a PK (so you get
-                 *       a default one called table_pkey) and it does not provide a way to create a PK index
-                 *       in a specific tablespace.  So as a hacky solution we create the PK, then move the
-                 *       index to the correct tablespace.  Eventually this should be:
-		 *           CREATE INDEX table_pkey on table(gid) TABLESPACE tblspc;
-                 *           ALTER TABLE table ADD PRIMARY KEY (gid) USING INDEX table_pkey;
-		 *       A patch has apparently been submitted to PostgreSQL to enable this syntax, see this thread:
-		 *           http://archives.postgresql.org/pgsql-hackers/2011-01/msg01405.php */
-		stringbuffer_aprintf(sb, "ALTER TABLE ");
-
-		/* Schema is optional, include if present. */
-		if (state->config->schema)
-		{
-			stringbuffer_aprintf(sb, "\"%s\".",state->config->schema);
-		}
-		stringbuffer_aprintf(sb, "\"%s\" ADD PRIMARY KEY (gid);\n", state->config->table);
-
-		/* Tablespace is optional for the index. */
-		if (state->config->idxtablespace != NULL)
-		{
-			stringbuffer_aprintf(sb, "ALTER INDEX ");
-			if (state->config->schema)
-			{
-				stringbuffer_aprintf(sb, "\"%s\".",state->config->schema);
-			}
-
-			/* WARNING: We're assuming the default "table_pkey" name for the primary
-			 *          key index.  PostgreSQL may use "table_pkey1" or similar in the
-			 *          case of a name conflict, so you may need to edit the produced
-			 *          SQL in this rare case. */
-			stringbuffer_aprintf(sb, "\"%s_pkey\" SET TABLESPACE \"%s\";\n",
-						state->config->table, state->config->idxtablespace);
-		}
-
-		/* Create the geometry column with an addgeometry call */
-		if (state->config->readshape == 1 && (!state->config->geography))
-		{
-			/* If they didn't specify a target SRID, see if they specified a source SRID. */
-			int32_t srid = state->to_srid;
-			if (state->config->schema)
-			{
-				stringbuffer_aprintf(sb, "SELECT AddGeometryColumn('%s','%s','%s','%d',",
-				                     state->config->schema, state->config->table, state->geo_col, srid);
-			}
-			else
-			{
-				stringbuffer_aprintf(sb, "SELECT AddGeometryColumn('','%s','%s','%d',",
-				                     state->config->table, state->geo_col, srid);
-			}
-
-			stringbuffer_aprintf(sb, "'%s',%d);\n", state->pgtype, state->pgdims);
-		}
+		if (!if_not_exists)
+			append_primary_key_ddl(state, sb);
 	}
 
 	/**If we are in dump mode and a transform was asked for need to create a temp table to store original data
@@ -1713,13 +1998,27 @@ ShpLoaderGenerateSQLRowStatement(SHPLOADERSTATE *state, int item, char **strreco
 			if (state->config->dump_format)
 			{
 				escval = escape_copy_string(val);
-				stringbuffer_aprintf(sb, "%s", escval);
 			}
 			else
 			{
 				escval = escape_insert_string(val);
-				stringbuffer_aprintf(sb, "'%s'", escval);
 			}
+
+			if (!escval)
+			{
+				snprintf(state->message,
+					 SHPLOADERMSGLEN,
+					 "unable to allocate memory for escaped attribute value");
+				SHPDestroyObject(obj);
+				stringbuffer_destroy(sbwarn);
+				stringbuffer_destroy(sb);
+				return SHPLOADERERR;
+			}
+
+			if (state->config->dump_format)
+				stringbuffer_aprintf(sb, "%s", escval);
+			else
+				stringbuffer_aprintf(sb, "'%s'", escval);
 
 			/* Free the escaped version if required */
 			if (val != escval)
@@ -1878,6 +2177,8 @@ ShpLoaderGetSQLFooter(SHPLOADERSTATE *state, char **strfooter)
 {
 	stringbuffer_t *sb;
 	char *ret;
+	const int use_transaction =
+	    state->config->plan.transaction == LOADER_TRANSACTION_ON && plan_has_transactional_work(&state->config->plan);
 
 	/* Create the stringbuffer containing the header; we use this API as it's easier
 	   for handling string resizing during append */
@@ -1904,9 +2205,14 @@ ShpLoaderGetSQLFooter(SHPLOADERSTATE *state, char **strfooter)
 	}
 
 	/* Create gist index if specified and not in "prepare" mode */
-	if (state->config->readshape && state->config->createindex)
+	if (state->config->readshape && state->config->plan.create_index != LOADER_CREATE_NONE)
 	{
-		stringbuffer_aprintf(sb, "CREATE INDEX ON ");
+		stringbuffer_aprintf(sb, "CREATE INDEX ");
+		if (state->config->plan.create_index == LOADER_CREATE_IF_NOT_EXISTS)
+		{
+			stringbuffer_aprintf(sb, "IF NOT EXISTS \"%s_%s_gist\" ", state->config->table, state->geo_col);
+		}
+		stringbuffer_aprintf(sb, "ON ");
 		/* Schema is optional, include if present. */
 		if (state->config->schema)
 		{
@@ -1922,13 +2228,12 @@ ShpLoaderGetSQLFooter(SHPLOADERSTATE *state, char **strfooter)
 	}
 
 	/* End the transaction if there is one. */
-	if (state->config->usetransaction)
+	if (use_transaction)
 	{
 		stringbuffer_aprintf(sb, "COMMIT;\n");
 	}
 
-
-	if(state->config->analyze)
+	if (state->config->plan.analyze)
 	{
 		/* Always ANALYZE the resulting table, for better stats */
 		stringbuffer_aprintf(sb, "ANALYZE ");
@@ -1953,35 +2258,13 @@ void
 ShpLoaderDestroy(SHPLOADERSTATE *state)
 {
 	/* Destroy a state object created with ShpLoaderOpenShape */
-	int i;
 	if (state != NULL)
 	{
 		if (state->hSHPHandle)
 			SHPClose(state->hSHPHandle);
 		if (state->hDBFHandle)
 			DBFClose(state->hDBFHandle);
-		if (state->field_names)
-		{
-			for (i = 0; i < state->num_fields; i++)
-				free(state->field_names[i]);
-
-			free(state->field_names);
-		}
-		if (state->pgfieldtypes)
-		{
-			for (i = 0; i < state->num_fields; i++)
-				free(state->pgfieldtypes[i]);
-
-			free(state->pgfieldtypes);
-		}
-		if (state->types)
-			free(state->types);
-		if (state->widths)
-			free(state->widths);
-		if (state->precisions)
-			free(state->precisions);
-		if (state->col_names)
-			free(state->col_names);
+		ShpLoaderFreeFieldMetadata(state);
 
 		/* Free any column map fieldnames if specified */
 		colmap_clean(&state->column_map);

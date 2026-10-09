@@ -122,6 +122,7 @@ SA_OBJS = \
 	lwgeom_geos_cluster.o \
 	lwgeom_geos_node.o \
 	lwgeom_geos_split.o \
+	lwnurbscurve.o \
 	topo/lwgeom_topo.o \
 	topo/lwgeom_topo_polygonizer.o \
 	topo/lwt_edgeend.o \
@@ -131,7 +132,7 @@ SA_OBJS = \
 	lwgeom_wrapx.o \
 	lwunionfind.o \
 	effectivearea.o \
-	lwchaikins.o \
+	lwsmoothing.o \
 	lwmval.o \
 	lwkmeans.o \
 	varint.o \

@@ -449,9 +449,12 @@ static void test_gserialized2_peek_gbox_p_fails_for_unsupported_cases(void)
 		GSERIALIZED* gser = lwalloc(expected_size);
 		uint8_t* ptr = (uint8_t*) gser;
 
-		ptr += 8; // Skip header
-		gserialized2_from_lwgeom_any(geom, ptr);
+		LWSIZE_SET(gser->size, expected_size);
+		gserialized2_set_srid(gser, geom->srid);
 		gser->gflags = lwflags_get_g2flags(geom->flags);
+
+		ptr += 8; /* Skip header */
+		gserialized2_from_lwgeom_any(geom, ptr);
 
 		CU_ASSERT_FALSE(gserialized2_has_bbox(gser));
 		CU_ASSERT_EQUAL(LW_FAILURE, gserialized2_peek_gbox_p(gser, &box));
@@ -509,6 +512,288 @@ test_gserialized2_peek_first_point(void)
 	CU_ASSERT(peek2_point_helper("POLYGON((0 0, 1 1, 1 0, 0 0))", &p) == LW_FAILURE);
 }
 
+static GSERIALIZED *
+gserialized2_from_hexbytes(const char *hex)
+{
+	uint8_t *bytes;
+	size_t size;
+	GSERIALIZED *g;
+
+	size = strlen(hex) / 2;
+	bytes = bytes_from_hexbytes(hex, strlen(hex));
+	g = lwalloc(size);
+	memcpy(g, bytes, size);
+	lwfree(bytes);
+	return g;
+}
+
+static void assert_gserialized2_malformed_rejected(GSERIALIZED *g);
+
+#if defined(__GNUC__) || defined(__clang__)
+#define CUNIT_NOINLINE __attribute__((noinline))
+#else
+#define CUNIT_NOINLINE
+#endif
+
+static CUNIT_NOINLINE uint8_t *
+gserialized2_test_payload_p(GSERIALIZED *g)
+{
+	return (uint8_t *)(void *)gserialized2_get_geometry_p(g);
+}
+
+#undef CUNIT_NOINLINE
+
+static void
+test_gserialized2_malformed_collection_count(void)
+{
+	const char *hex =
+	    "8001000000000044000000000000803f0000000000000040"
+	    "070000000200000001000000f03f000000000000f03f";
+	GSERIALIZED *g = gserialized2_from_hexbytes(hex);
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+	geom = lwgeom_from_gserialized2(g);
+
+	CU_ASSERT_PTR_NULL(geom);
+	CU_ASSERT_NOT_EQUAL(strlen(cu_error_msg), 0);
+
+	lwfree(g);
+}
+
+static void
+test_gserialized2_malformed_nurbs_degree(void)
+{
+	LWGEOM *lwgeom = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	GSERIALIZED *g;
+	uint8_t *payload;
+	uint32_t type;
+	uint32_t npoints;
+	uint32_t degree = 3;
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+	g = gserialized2_from_lwgeom(lwgeom, NULL);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+
+	payload = gserialized2_test_payload_p(g);
+	memcpy(&type, payload, sizeof(type));
+	memcpy(&npoints, payload + sizeof(uint32_t), sizeof(npoints));
+	CU_ASSERT_EQUAL(type, NURBSCURVETYPE);
+	CU_ASSERT_EQUAL(npoints, 3);
+	/* Three control points cannot support a degree-3 curve. */
+	memcpy(payload + 2 * sizeof(uint32_t), &degree, sizeof(degree));
+
+	assert_gserialized2_malformed_rejected(g);
+
+	lwgeom_free(lwgeom);
+	lwfree(g);
+}
+
+/*
+ * A ring point count that claims far more points than the serialized
+ * buffer actually holds implies a read past the end of the payload; that
+ * is the memory-safety hazard OSSFuzz 544800490 found, and it must stay
+ * rejected regardless of whether the claimed count is itself a
+ * geometrically plausible ring size.
+ */
+static void
+test_gserialized2_malformed_polygon_ring_count(void)
+{
+	LWGEOM *lwgeom = lwgeom_from_wkt("POLYGON((0 0, 1 0, 1 1, 0 0))", LW_PARSER_CHECK_NONE);
+	LWGEOM *malformed_lwgeom;
+	GSERIALIZED *g;
+	uint8_t *payload;
+	uint32_t type;
+	uint32_t nrings;
+	uint32_t npoints = 0x10000000; /* claims ~4GB of ring ordinates */
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+	g = gserialized2_from_lwgeom(lwgeom, NULL);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+
+	payload = gserialized2_test_payload_p(g);
+	memcpy(&type, payload, sizeof(type));
+	memcpy(&nrings, payload + sizeof(uint32_t), sizeof(nrings));
+	CU_ASSERT_EQUAL(type, POLYGONTYPE);
+	CU_ASSERT_EQUAL(nrings, 1);
+	memcpy(payload + 2 * sizeof(uint32_t), &npoints, sizeof(npoints));
+
+	cu_error_msg_reset();
+	malformed_lwgeom = lwgeom_from_gserialized2(g);
+	CU_ASSERT_PTR_NULL(malformed_lwgeom);
+	CU_ASSERT_NOT_EQUAL(strlen(cu_error_msg), 0);
+
+	lwgeom_free(lwgeom);
+	lwfree(g);
+}
+
+/*
+ * Rings with 1-3 points are geometrically invalid (not simple closed
+ * rings) but memory-safe: their declared point count still fits the
+ * serialized buffer. PostGIS intentionally stores and round-trips such
+ * polygons; ST_IsValid, not deserialization, is where that gets flagged.
+ * See Trac #408 and #4470, and ST_GeomFromGeoJSON's degenerate-ring
+ * handling.
+ */
+static void
+test_gserialized2_short_polygon_ring_roundtrip(void)
+{
+	const char *short_ring_wkt[] = {
+	    "POLYGON((0 0))",
+	    "POLYGON((0 0, 1 0, 1 1))",
+	};
+	const uint32_t expected_npoints[] = {1, 3};
+	size_t i;
+
+	for (i = 0; i < sizeof(short_ring_wkt) / sizeof(short_ring_wkt[0]); i++)
+	{
+		LWGEOM *lwgeom = lwgeom_from_wkt(short_ring_wkt[i], LW_PARSER_CHECK_NONE);
+		GSERIALIZED *g;
+		LWGEOM *roundtrip;
+		LWPOLY *poly;
+
+		CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+		g = gserialized2_from_lwgeom(lwgeom, NULL);
+		CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+
+		cu_error_msg_reset();
+		roundtrip = lwgeom_from_gserialized2(g);
+		CU_ASSERT_PTR_NOT_NULL_FATAL(roundtrip);
+		CU_ASSERT_EQUAL(strlen(cu_error_msg), 0);
+
+		CU_ASSERT_EQUAL(roundtrip->type, POLYGONTYPE);
+		poly = (LWPOLY *)roundtrip;
+		CU_ASSERT_EQUAL(poly->nrings, 1);
+		CU_ASSERT_EQUAL(poly->rings[0]->npoints, expected_npoints[i]);
+
+		lwgeom_free(lwgeom);
+		lwgeom_free(roundtrip);
+		lwfree(g);
+	}
+}
+
+static void
+test_gserialized2_malformed_nurbs_short_vectors(void)
+{
+#if defined(POSTGIS_ASAN_ALLOCATOR_SIZE)
+	LWGEOM *lwgeom = lwgeom_from_wkt("NURBSCURVE(2, (0 0, 1 1, 2 0))", LW_PARSER_CHECK_NONE);
+	GSERIALIZED *full;
+	GSERIALIZED *short_g;
+	size_t short_size;
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(lwgeom);
+	full = gserialized2_from_lwgeom(lwgeom, NULL);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(full);
+
+	short_size = (size_t)(gserialized2_test_payload_p(full) - (uint8_t *)(void *)full) + 6 * sizeof(uint32_t);
+	short_g = malloc(short_size);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(short_g);
+	memcpy(short_g, full, short_size);
+
+	assert_gserialized2_malformed_rejected(short_g);
+
+	free(short_g);
+	lwfree(full);
+	lwgeom_free(lwgeom);
+#else
+	CU_PASS("short NURBS vector validation requires AddressSanitizer allocation metadata");
+#endif
+}
+
+static void
+assert_gserialized2_malformed_rejected(GSERIALIZED *g)
+{
+	LWGEOM *geom;
+	GBOX box;
+	POINT4D point;
+
+	memset(&box, 0, sizeof(box));
+	memset(&point, 0, sizeof(point));
+
+	cu_error_msg_reset();
+	geom = lwgeom_from_gserialized2(g);
+	CU_ASSERT_PTR_NULL(geom);
+	CU_ASSERT_NOT_EQUAL(strlen(cu_error_msg), 0);
+
+	CU_ASSERT_TRUE(gserialized2_is_empty(g));
+	CU_ASSERT_EQUAL(gserialized2_peek_gbox_p(g, &box), LW_FAILURE);
+	CU_ASSERT_EQUAL(gserialized2_peek_first_point(g, &point), LW_FAILURE);
+}
+
+static void
+test_gserialized2_malformed_declared_size(void)
+{
+	const char *declared_size_0 =
+	    "0000000000000044000000000000803f0000000000000040"
+	    "070000000200000001000000f03f000000000000f03f";
+	const char *declared_size_23 =
+	    "5c00000000000044000000000000803f0000000000000040"
+	    "070000000200000001000000f03f000000000000f03f";
+	GSERIALIZED *g;
+
+	g = gserialized2_from_hexbytes(declared_size_0);
+	assert_gserialized2_malformed_rejected(g);
+	lwfree(g);
+
+	g = gserialized2_from_hexbytes(declared_size_23);
+	assert_gserialized2_malformed_rejected(g);
+	lwfree(g);
+}
+
+static void
+test_gserialized2_malformed_short_allocation(void)
+{
+#if defined(POSTGIS_ASAN_ALLOCATOR_SIZE)
+	const char *hex = "8001000000000044";
+	uint8_t *bytes = bytes_from_hexbytes(hex, strlen(hex));
+	GSERIALIZED *g = malloc(strlen(hex) / 2);
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(g);
+	memcpy(g, bytes, strlen(hex) / 2);
+	assert_gserialized2_malformed_rejected(g);
+
+	free(g);
+	lwfree(bytes);
+#else
+	CU_PASS("shorter-than-declared allocation validation requires AddressSanitizer allocation metadata");
+#endif
+}
+
+static void
+test_gserialized2_wkb_roundtrip_float_rounded_box(void)
+{
+	const char *hex =
+	    "0102000000030000000000000000000000000000f03f0000000000000040"
+	    "0101000000000000000f03f0000000000000040000000000000f03f";
+	size_t wkb_size = strlen(hex) / 2;
+	uint8_t *wkb = bytes_from_hexbytes(hex, strlen(hex));
+	LWGEOM *input = lwgeom_from_wkb(wkb, wkb_size, LW_PARSER_CHECK_NONE);
+	GSERIALIZED *serialized;
+	LWGEOM *roundtrip;
+	size_t serialized_size = 0;
+	GBOX input_box;
+	GBOX roundtrip_box;
+
+	CU_ASSERT_PTR_NOT_NULL_FATAL(input);
+	serialized = gserialized2_from_lwgeom(input, &serialized_size);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(serialized);
+	roundtrip = lwgeom_from_gserialized2(serialized);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(roundtrip);
+
+	CU_ASSERT_EQUAL(serialized_size, LWSIZE_GET(serialized->size));
+	CU_ASSERT_PTR_NOT_NULL(input->bbox);
+	CU_ASSERT_PTR_NOT_NULL(roundtrip->bbox);
+	CU_ASSERT_FALSE(gbox_same(input->bbox, roundtrip->bbox));
+	CU_ASSERT_EQUAL(lwgeom_calculate_gbox_cartesian(input, &input_box), LW_SUCCESS);
+	CU_ASSERT_EQUAL(lwgeom_calculate_gbox_cartesian(roundtrip, &roundtrip_box), LW_SUCCESS);
+	CU_ASSERT_TRUE(gbox_same(&input_box, &roundtrip_box));
+
+	lwgeom_free(input);
+	lwgeom_free(roundtrip);
+	lwfree(serialized);
+	lwfree(wkb);
+}
+
 /*
 ** Used by test harness to register the tests in this file.
 */
@@ -527,4 +812,12 @@ void gserialized2_suite_setup(void)
 	PG_ADD_TEST(suite, test_gserialized2_peek_gbox_p_fails_for_unsupported_cases);
 	PG_ADD_TEST(suite, test_gserialized2_extended_flags);
 	PG_ADD_TEST(suite, test_gserialized2_peek_first_point);
+	PG_ADD_TEST(suite, test_gserialized2_malformed_collection_count);
+	PG_ADD_TEST(suite, test_gserialized2_malformed_nurbs_degree);
+	PG_ADD_TEST(suite, test_gserialized2_malformed_polygon_ring_count);
+	PG_ADD_TEST(suite, test_gserialized2_short_polygon_ring_roundtrip);
+	PG_ADD_TEST(suite, test_gserialized2_malformed_nurbs_short_vectors);
+	PG_ADD_TEST(suite, test_gserialized2_malformed_declared_size);
+	PG_ADD_TEST(suite, test_gserialized2_malformed_short_allocation);
+	PG_ADD_TEST(suite, test_gserialized2_wkb_roundtrip_float_rounded_box);
 }

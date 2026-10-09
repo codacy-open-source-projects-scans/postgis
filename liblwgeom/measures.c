@@ -880,7 +880,7 @@ lw_dist2d_tri_poly(LWTRIANGLE *tri, LWPOLY *poly, DISTPTS *dl)
 	return LW_TRUE;
 }
 static const POINT2D *
-lw_curvering_getfirstpoint2d_cp(LWGEOM *geom)
+lw_curvering_getfirstpoint2d_cp(LWGEOM *geom, POINT2D *scratch)
 {
 	switch (geom->type)
 	{
@@ -891,8 +891,18 @@ lw_curvering_getfirstpoint2d_cp(LWGEOM *geom)
 	case COMPOUNDTYPE:
 	{
 		LWCOMPOUND *comp = (LWCOMPOUND *)geom;
-		LWLINE *line = (LWLINE *)(comp->geoms[0]);
-		return getPoint2d_cp(line->points, 0);
+		return lw_curvering_getfirstpoint2d_cp(comp->geoms[0], scratch);
+	}
+	case NURBSCURVETYPE:
+	{
+		LWPOINT *pt = lwnurbscurve_evaluate((LWNURBSCURVE *)geom, 0.0);
+		if (!scratch || !pt || !lwpoint_getPoint2d_p(pt, scratch))
+		{
+			lwpoint_free(pt);
+			lwerror("lw_curvering_getfirstpoint2d_cp: invalid NURBSCURVE ring");
+		}
+		lwpoint_free(pt);
+		return scratch;
 	}
 	default:
 		lwerror("lw_curvering_getfirstpoint2d_cp: unknown type");
@@ -904,6 +914,7 @@ int
 lw_dist2d_tri_curvepoly(LWTRIANGLE *tri, LWCURVEPOLY *poly, DISTPTS *dl)
 {
 	const POINT2D *pt = getPoint2d_cp(tri->points, 0);
+	POINT2D ringpt;
 
 	/* If we are looking for maxdistance, just check the outer rings.*/
 	if (dl->mode == DIST_MAX)
@@ -915,7 +926,7 @@ lw_dist2d_tri_curvepoly(LWTRIANGLE *tri, LWCURVEPOLY *poly, DISTPTS *dl)
 		if (lw_dist2d_recursive((LWGEOM *)tri, poly->rings[0], dl))
 			return LW_TRUE;
 		/* Maybe poly is inside triangle? */
-		if (lwgeom_contains_point((LWGEOM *)tri, lw_curvering_getfirstpoint2d_cp(poly->rings[0])) != LW_OUTSIDE)
+		if (lwgeom_contains_point((LWGEOM *)tri, lw_curvering_getfirstpoint2d_cp(poly->rings[0], &ringpt)) != LW_OUTSIDE)
 		{
 			lw_dist2d_distpts_set(dl, 0.0, pt, pt);
 			return LW_TRUE;
@@ -945,7 +956,8 @@ lw_dist2d_tri_curvepoly(LWTRIANGLE *tri, LWCURVEPOLY *poly, DISTPTS *dl)
 int
 lw_dist2d_tri_circstring(LWTRIANGLE *tri, LWCIRCSTRING *line, DISTPTS *dl)
 {
-	const POINT2D *pt = lw_curvering_getfirstpoint2d_cp((LWGEOM *)line);
+	POINT2D scratch;
+	const POINT2D *pt = lw_curvering_getfirstpoint2d_cp((LWGEOM *)line, &scratch);
 	if (ptarray_contains_point(tri->points, pt) != LW_OUTSIDE && dl->mode == DIST_MIN)
 	{
 		lw_dist2d_distpts_set(dl, 0.0, pt, pt);
@@ -1054,6 +1066,7 @@ int
 lw_dist2d_curvepoly_curvepoly(LWCURVEPOLY *poly1, LWCURVEPOLY *poly2, DISTPTS *dl)
 {
 	const POINT2D *pt;
+	POINT2D scratch1, scratch2;
 
 	/*1	if we are looking for maxdistance, just check the outer rings.*/
 	if (dl->mode == DIST_MAX)
@@ -1062,38 +1075,38 @@ lw_dist2d_curvepoly_curvepoly(LWCURVEPOLY *poly1, LWCURVEPOLY *poly2, DISTPTS *d
 	/* 2	check if poly1 has first point outside poly2 and vice versa, if so, just check outer rings
 	here it would be possible to handle the information about which one is inside which one and only search for the
 	smaller ones in the bigger ones holes.*/
-	pt = lw_curvering_getfirstpoint2d_cp(poly1->rings[0]);
+	pt = lw_curvering_getfirstpoint2d_cp(poly1->rings[0], &scratch1);
 	if (lwgeom_contains_point(poly2->rings[0], pt) == LW_OUTSIDE)
 	{
-		pt = lw_curvering_getfirstpoint2d_cp(poly2->rings[0]);
+		pt = lw_curvering_getfirstpoint2d_cp(poly2->rings[0], &scratch2);
 		if (lwgeom_contains_point(poly1->rings[0], pt) == LW_OUTSIDE)
 			return lw_dist2d_recursive(poly1->rings[0], poly2->rings[0], dl);
 	}
 
 	/*3	check if first point of poly2 is in a hole of poly1. If so check outer ring of poly2 against that hole
 	 * of poly1*/
-	pt = lw_curvering_getfirstpoint2d_cp(poly2->rings[0]);
+	pt = lw_curvering_getfirstpoint2d_cp(poly2->rings[0], &scratch2);
 	for (uint32_t i = 1; i < poly1->nrings; i++)
 		if (lwgeom_contains_point(poly1->rings[i], pt) != LW_OUTSIDE)
 			return lw_dist2d_recursive(poly1->rings[i], poly2->rings[0], dl);
 
 	/*4	check if first point of poly1 is in a hole of poly2. If so check outer ring of poly1 against that hole
 	 * of poly2*/
-	pt = lw_curvering_getfirstpoint2d_cp(poly1->rings[0]);
+	pt = lw_curvering_getfirstpoint2d_cp(poly1->rings[0], &scratch1);
 	for (uint32_t i = 1; i < poly2->nrings; i++)
 		if (lwgeom_contains_point(poly2->rings[i], pt) != LW_OUTSIDE)
 			return lw_dist2d_recursive(poly1->rings[0], poly2->rings[i], dl);
 
 	/*5	If we have come all the way here we know that the first point of one of them is inside the other ones
 	 * outer ring and not in holes so we check which one is inside.*/
-	pt = lw_curvering_getfirstpoint2d_cp(poly1->rings[0]);
+	pt = lw_curvering_getfirstpoint2d_cp(poly1->rings[0], &scratch1);
 	if (lwgeom_contains_point(poly2->rings[0], pt) != LW_OUTSIDE)
 	{
 		lw_dist2d_distpts_set(dl, 0.0, pt, pt);
 		return LW_TRUE;
 	}
 
-	pt = lw_curvering_getfirstpoint2d_cp(poly2->rings[0]);
+	pt = lw_curvering_getfirstpoint2d_cp(poly2->rings[0], &scratch2);
 	if (lwgeom_contains_point(poly1->rings[0], pt) != LW_OUTSIDE)
 	{
 		lw_dist2d_distpts_set(dl, 0.0, pt, pt);
@@ -1392,17 +1405,33 @@ lw_dist2d_seg_arc(const POINT2D *A1,
 	{
 		double length_A;  /* length of the segment A */
 		POINT2D E, F;     /* points of intersection of edge A and circle(B) */
-		double dist_D_EF; /* distance from D to E or F (same distance both ways) */
+		double dist_D_EF; /* distance from D_line to E or F (same distance both ways) */
+		POINT2D D_line;   /* foot of perpendicular from C to the infinite line through A1-A2 */
+		double dist_C_D_line; /* distance from C to the infinite line */
+		double t;
 
-		dist_D_EF = sqrt(radius_C * radius_C - dist_C_D * dist_C_D);
 		length_A = sqrt((A2->x - A1->x) * (A2->x - A1->x) + (A2->y - A1->y) * (A2->y - A1->y));
 
+		/*
+		 * D (from lw_dist2d_pt_seg) is clamped to the segment, but we need the
+		 * foot of the perpendicular on the *infinite* line to correctly compute
+		 * circle-line intersections E and F. Using the clamped endpoint gives wrong
+		 * intersection points when the perpendicular falls outside the segment.
+		 */
+		t = ((C.x - A1->x) * (A2->x - A1->x) + (C.y - A1->y) * (A2->y - A1->y))
+		    / (length_A * length_A);
+		D_line.x = A1->x + t * (A2->x - A1->x);
+		D_line.y = A1->y + t * (A2->y - A1->y);
+		dist_C_D_line = sqrt((C.x - D_line.x) * (C.x - D_line.x) + (C.y - D_line.y) * (C.y - D_line.y));
+
+		dist_D_EF = sqrt(radius_C * radius_C - dist_C_D_line * dist_C_D_line);
+
 		/* Point of intersection E */
-		E.x = D.x - (A2->x - A1->x) * dist_D_EF / length_A;
-		E.y = D.y - (A2->y - A1->y) * dist_D_EF / length_A;
+		E.x = D_line.x - (A2->x - A1->x) * dist_D_EF / length_A;
+		E.y = D_line.y - (A2->y - A1->y) * dist_D_EF / length_A;
 		/* Point of intersection F */
-		F.x = D.x + (A2->x - A1->x) * dist_D_EF / length_A;
-		F.y = D.y + (A2->y - A1->y) * dist_D_EF / length_A;
+		F.x = D_line.x + (A2->x - A1->x) * dist_D_EF / length_A;
+		F.y = D_line.y + (A2->y - A1->y) * dist_D_EF / length_A;
 
 		/* If E is within A and within B then it's an intersection point */
 		pt_in_arc = lw_pt_in_arc(&E, B1, B2, B3);
@@ -2521,4 +2550,3 @@ project_pt_pt(const POINT4D *A, const POINT4D *B, double distance, POINT4D *R)
 	if (isfinite(dm)) R->m = B->m + dm;
 	return LW_TRUE;
 }
-

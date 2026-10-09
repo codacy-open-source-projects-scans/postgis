@@ -113,6 +113,7 @@ static GtkWidget *checkbutton_loader_options_forceint = NULL;
 static GtkWidget *checkbutton_loader_options_autoindex = NULL;
 static GtkWidget *checkbutton_loader_options_dbfonly = NULL;
 static GtkWidget *checkbutton_loader_options_dumpformat = NULL;
+static GtkWidget *checkbutton_loader_options_unlogged = NULL;
 static GtkWidget *checkbutton_loader_options_geography = NULL;
 static GtkWidget *checkbutton_loader_options_simplegeoms = NULL;
 
@@ -540,6 +541,7 @@ update_loader_config_globals_from_options_ui(SHPLOADERCONFIG *config)
 	gboolean createindex = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_autoindex));
 	gboolean dbfonly = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_dbfonly));
 	gboolean dumpformat = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_dumpformat));
+	gboolean unlogged = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_unlogged));
 	gboolean geography = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_geography));
 	gboolean simplegeoms = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_simplegeoms));
 
@@ -585,9 +587,9 @@ update_loader_config_globals_from_options_ui(SHPLOADERCONFIG *config)
 
 	/* Create spatial index after load */
 	if (createindex)
-		config->createindex = 1;
+		config->createindex = LOADER_CREATE_ALWAYS;
 	else
-		config->createindex = 0;
+		config->createindex = LOADER_CREATE_NONE;
 
 	/* Read the .shp file, don't ignore it */
 	if (dbfonly)
@@ -595,7 +597,7 @@ update_loader_config_globals_from_options_ui(SHPLOADERCONFIG *config)
 		config->readshape = 0;
 
 		/* There will be no spatial column so don't create a spatial index */
-		config->createindex = 0;
+		config->createindex = LOADER_CREATE_NONE;
 	}
 	else
 		config->readshape = 1;
@@ -605,6 +607,12 @@ update_loader_config_globals_from_options_ui(SHPLOADERCONFIG *config)
 		config->dump_format = 1;
 	else
 		config->dump_format = 0;
+
+	/* Create an unlogged table */
+	if (unlogged)
+		config->unlogged = 1;
+	else
+		config->unlogged = 0;
 
 	/* Simple geometries only */
 	if (simplegeoms)
@@ -625,6 +633,7 @@ update_options_ui_from_loader_config_globals(void)
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_autoindex), global_loader_config->createindex ? TRUE : FALSE);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_dbfonly), global_loader_config->readshape ? FALSE : TRUE);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_dumpformat), global_loader_config->dump_format ? TRUE : FALSE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_unlogged), global_loader_config->unlogged ? TRUE : FALSE);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_geography), global_loader_config->geography ? TRUE : FALSE);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_loader_options_simplegeoms), global_loader_config->simple_geometries ? TRUE : FALSE);
 
@@ -1179,7 +1188,7 @@ validate_remote_loader_columns(SHPLOADERCONFIG *config, PGresult *result)
 	{
 		ntuples = PQntuples(result);
 
-		switch (config->opt)
+		switch (config->actions.mode)
 		{
 			case 'c':
 				/* If we have a row matching the table given in the config, then it already exists */
@@ -1210,6 +1219,11 @@ validate_remote_loader_columns(SHPLOADERCONFIG *config, PGresult *result)
 				{
 					/* If we have a row then lets do some simple column validation... */
 					state = ShpLoaderCreate(config);
+					if (!state)
+					{
+						pgui_logf(_("Warning: Could not load shapefile %s"), config->shp_file);
+						return SHPLOADERERR;
+					}
 					ret = ShpLoaderOpenShape(state);
 					if (ret != SHPLOADEROK)
 					{
@@ -1531,7 +1545,19 @@ pgui_action_import(GtkWidget *widget, gpointer data)
 		loader_file_config = (SHPLOADERCONFIG *)gptr;
 
 		pgui_logf("\n==============================");
-		pgui_logf("Importing with configuration: %s, %s, %s, %s, mode=%c, dump=%d, simple=%d, geography=%d, index=%d, shape=%d, srid=%d", loader_file_config->table, loader_file_config->schema, loader_file_config->geo_col, loader_file_config->shp_file, loader_file_config->opt, loader_file_config->dump_format, loader_file_config->simple_geometries, loader_file_config->geography, loader_file_config->createindex, loader_file_config->readshape, loader_file_config->sr_id);
+		pgui_logf(
+		    "Importing with configuration: %s, %s, %s, %s, mode=%c, dump=%d, simple=%d, geography=%d, index=%d, shape=%d, srid=%d",
+		    loader_file_config->table,
+		    loader_file_config->schema,
+		    loader_file_config->geo_col,
+		    loader_file_config->shp_file,
+		    loader_file_config->actions.mode,
+		    loader_file_config->dump_format,
+		    loader_file_config->simple_geometries,
+		    loader_file_config->geography,
+		    loader_file_config->createindex,
+		    loader_file_config->readshape,
+		    loader_file_config->sr_id);
 
 		/*
 		 * Loop through the items in the shapefile
@@ -1550,6 +1576,19 @@ pgui_action_import(GtkWidget *widget, gpointer data)
 
 		/* Create the shapefile state object */
 		state = ShpLoaderCreate(loader_file_config);
+		if (!state)
+		{
+			pgui_logf(_("Warning: Could not load shapefile %s"), loader_file_config->shp_file);
+			ret = SHPLOADERERR;
+			is_running = FALSE;
+			PQfinish(pg_connection);
+			pg_connection = NULL;
+			pgui_logf(_("Shapefile import failed."));
+			free(progress_shapefile);
+			progress_shapefile = NULL;
+			is_valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(import_file_list_store), &iter);
+			continue;
+		}
 
 		/* Open the shapefile */
 		ret = ShpLoaderOpenShape(state);
@@ -1600,8 +1639,8 @@ pgui_action_import(GtkWidget *widget, gpointer data)
 		if (!ret)
 			goto import_cleanup;
 
-		/* If we are in prepare mode, we need to skip the actual load. */
-		if (state->config->opt != 'p')
+		/* Load rows when requested by the selected actions. */
+		if (state->config->plan.load_data)
 		{
             int numrecords = ShpLoaderGetRecordCount(state);
             int records_per_tick = (numrecords / 200) - 1;
@@ -1705,7 +1744,7 @@ pgui_action_import(GtkWidget *widget, gpointer data)
 					goto import_cleanup;
 				}
 			}
-		} /* if (state->config->opt != 'p') */
+		} /* if (state->config->plan.load_data) */
 
 		/* Only continue if we didn't abort part way through */
 		if (is_running)
@@ -1721,7 +1760,7 @@ pgui_action_import(GtkWidget *widget, gpointer data)
 			}
 
 			/* Just in case index creation takes a long time, update the progress text */
-			if (state->config->createindex)
+			if (state->config->plan.create_index != LOADER_CREATE_NONE)
 			{
 				gtk_label_set_text(GTK_LABEL(label_progress), _("Creating spatial index..."));
 
@@ -1747,7 +1786,9 @@ import_cleanup:
 		pg_connection = NULL;
 
 		/* If we didn't finish inserting all of the items (and we expected to), an error occurred */
-		if ((state->config->opt != 'p' && i != ShpLoaderGetRecordCount(state)) || !ret)
+		if (state && ((state->config->plan.load_data && i != ShpLoaderGetRecordCount(state)) || !ret))
+			pgui_logf(_("Shapefile import failed."));
+		else if (!state)
 			pgui_logf(_("Shapefile import failed."));
 		else
 			pgui_logf(_("Shapefile import completed."));
@@ -1843,6 +1884,9 @@ pgui_action_export(GtkWidget *widget, gpointer data)
 		/* Grab the SHPDUMPERCONFIG for this row */
 		gtk_tree_model_get(GTK_TREE_MODEL(export_table_list_store), &iter, EXPORT_POINTER_COLUMN, &gptr, -1);
 		dumper_table_config = (SHPDUMPERCONFIG *)gptr;
+		state = NULL;
+		output_shapefile = NULL;
+		orig_shapefile = dumper_table_config->shp_file;
 
 		pgui_logf("\n==============================");
 		pgui_logf("Exporting with configuration: %s, %s, %s", dumper_table_config->table, dumper_table_config->schema, dumper_table_config->shp_file);
@@ -1860,11 +1904,25 @@ pgui_action_export(GtkWidget *widget, gpointer data)
 
 		/* Create the state for each configuration */
 		state = ShpDumperCreate(dumper_table_config);
+		if (!state)
+		{
+			pgui_seterr(_("Out of memory allocating dumper state"));
+			pgui_raise_error_dialogue();
+
+			break;
+		}
 		state->config->conn = conn;
 
 		/* Save the original shapefile name, then create a temporary version containing the full path */
-		orig_shapefile = dumper_table_config->shp_file;
 		output_shapefile = malloc(strlen(folder_path) + strlen(dumper_table_config->shp_file) + 2);
+		if (!output_shapefile)
+		{
+			pgui_seterr(_("Out of memory allocating output shapefile path"));
+			pgui_raise_error_dialogue();
+
+			ShpDumperDestroy(state);
+			break;
+		}
 		strcpy(output_shapefile, folder_path);
 		strcat(output_shapefile, G_DIR_SEPARATOR_S);
 		strcat(output_shapefile, dumper_table_config->shp_file);
@@ -1966,6 +2024,7 @@ export_cleanup:
 
 		/* Reset shapefile back to original form (without full path) */
 		dumper_table_config->shp_file = orig_shapefile;
+		free(output_shapefile);
 
 		/* Get next entry */
 		is_valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(export_table_list_store), &iter);
@@ -2164,23 +2223,23 @@ pgui_action_handle_tree_combo(GtkCellRendererCombo *combo,
 	switch (opt)
 	{
 		case 'a':
-			loader_file_config->opt = 'a';
+			loader_file_config->actions.mode = 'a';
 
 			/* Other half of index creation hack */
-			loader_file_config->createindex = 0;
+			loader_file_config->createindex = LOADER_CREATE_NONE;
 
 			break;
 
 		case 'd':
-			loader_file_config->opt = 'd';
+			loader_file_config->actions.mode = 'd';
 			break;
 
 		case 'p':
-			loader_file_config->opt = 'p';
+			loader_file_config->actions.mode = 'p';
 			break;
 
 		case 'c':
-			loader_file_config->opt = 'c';
+			loader_file_config->actions.mode = 'c';
 			break;
 	}
 
@@ -2712,7 +2771,7 @@ pgui_create_loader_options_dialog()
 	gtk_window_set_keep_above (GTK_WINDOW(dialog_loader_options), TRUE);
 	gtk_window_set_default_size (GTK_WINDOW(dialog_loader_options), 180, -1);
 
-	table_options = gtk_table_new(7, 3, TRUE);
+	table_options = gtk_table_new(9, 3, TRUE);
 	gtk_container_set_border_width (GTK_CONTAINER (table_options), 12);
 	gtk_table_set_row_spacings(GTK_TABLE(table_options), 5);
 	gtk_table_set_col_spacings(GTK_TABLE(table_options), 10);
@@ -2752,16 +2811,22 @@ pgui_create_loader_options_dialog()
 	gtk_table_attach_defaults(GTK_TABLE(table_options), align_options_center, 0, 1, 5, 6 );
 	gtk_container_add (GTK_CONTAINER (align_options_center), checkbutton_loader_options_dumpformat);
 
-	pgui_create_options_dialog_add_label(table_options, _("Load into GEOGRAPHY column"), 0.0, 6);
-	checkbutton_loader_options_geography = gtk_check_button_new();
+	pgui_create_options_dialog_add_label(table_options, _("Create as UNLOGGED table"), 0.0, 6);
+	checkbutton_loader_options_unlogged = gtk_check_button_new();
 	align_options_center = gtk_alignment_new( 0.5, 0.5, 0.0, 1.0 );
 	gtk_table_attach_defaults(GTK_TABLE(table_options), align_options_center, 0, 1, 6, 7 );
-	gtk_container_add (GTK_CONTAINER (align_options_center), checkbutton_loader_options_geography);
+	gtk_container_add (GTK_CONTAINER (align_options_center), checkbutton_loader_options_unlogged);
 
-	pgui_create_options_dialog_add_label(table_options, _("Generate simple geometries instead of MULTI geometries"), 0.0, 7);
-	checkbutton_loader_options_simplegeoms = gtk_check_button_new();
+	pgui_create_options_dialog_add_label(table_options, _("Load into GEOGRAPHY column"), 0.0, 7);
+	checkbutton_loader_options_geography = gtk_check_button_new();
 	align_options_center = gtk_alignment_new( 0.5, 0.5, 0.0, 1.0 );
 	gtk_table_attach_defaults(GTK_TABLE(table_options), align_options_center, 0, 1, 7, 8 );
+	gtk_container_add (GTK_CONTAINER (align_options_center), checkbutton_loader_options_geography);
+
+	pgui_create_options_dialog_add_label(table_options, _("Generate simple geometries instead of MULTI geometries"), 0.0, 8);
+	checkbutton_loader_options_simplegeoms = gtk_check_button_new();
+	align_options_center = gtk_alignment_new( 0.5, 0.5, 0.0, 1.0 );
+	gtk_table_attach_defaults(GTK_TABLE(table_options), align_options_center, 0, 1, 8, 9 );
 	gtk_container_add (GTK_CONTAINER (align_options_center), checkbutton_loader_options_simplegeoms);
 
 	/* Catch the response from the dialog */
@@ -3503,7 +3568,7 @@ main(int argc, char *argv[])
 	set_dumper_config_defaults(global_dumper_config);
 
 	/* Here we override any defaults for the GUI */
-	global_loader_config->createindex = 1;
+	global_loader_config->createindex = LOADER_CREATE_ALWAYS;
 	global_loader_config->geo_col = strdup(GEOMETRY_DEFAULT);
 	global_loader_config->dump_format = 1;
 

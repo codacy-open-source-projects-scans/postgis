@@ -198,6 +198,25 @@ while(<INPUT>)
     }
 
     #
+    # Preserve explicitly marked top-level statements that must run in both
+    # install and upgrade scripts.
+    #
+    if ( $comment =~ /^\-\- Upgrade pass-through\s*$/m )
+    {
+        print $comment;
+        print;
+        while ( !/;\s*$/ )
+        {
+            $_ = <INPUT>;
+            die "ERROR: unterminated upgrade pass-through statement\n"
+              if !defined;
+            print;
+        }
+        $comment = '';
+        next;
+    }
+
+    #
     # Allow through deprecations from postgis_drop.sql
     #
     print if (/^drop function /i);
@@ -477,7 +496,7 @@ EOF
             {
                 print <<"EOF";
         -- Check if the deprecated function has the expected $numnamedargs argument names
-        IF argnames[1:$numnamedargs] != ARRAY[$argnames]::text[]
+        IF argnames[1:$numnamedargs] OPERATOR(pg_catalog.<>) ARRAY[$argnames]::text[]
         THEN
             RAISE DEBUG
                 'Function $name($argtypes) exist but has argnames % (not %)',
@@ -505,6 +524,12 @@ EOF
     EXCEPTION
     WHEN undefined_function THEN
         RAISE DEBUG 'Replaced function $name($args) does not exist';
+    WHEN duplicate_function THEN
+        -- The target name is left behind when an earlier upgrade could not drop
+        -- a deprecated function still referenced by user objects.
+        RAISE EXCEPTION 'PostGIS upgrade cannot rename replaced function $name($args): leftover deprecated function ${replacement} already exists'
+            USING DETAIL = 'A previous upgrade likely left ${replacement} because a user object still depends on it.',
+                  HINT = 'Run SELECT postgis_full_version(); and inspect objects depending on functions named *_deprecated_by_postgis_*. Drop or update those objects, then retry SELECT postgis_extensions_upgrade().';
     WHEN OTHERS THEN
         GET STACKED DIAGNOSTICS detail := PG_EXCEPTION_DETAIL;
         RAISE EXCEPTION 'Attempting to rename replaced function $name($args) got % (%)', SQLERRM, SQLSTATE
@@ -524,12 +549,15 @@ EOF
     if (/^create type ([\w.]+)/i)
     {
         my $newtype = $1;
-        my $def .= $_;
+        my $def = $_;
         my @replaced_array = parse_replaces($comment);
 
         my @attributes;
         my $attr_comment = '';
         while(<INPUT>) {
+
+            $def .= $_;
+
             # End of type definition
             last if /^\s*\)\s*;?\s*$/;
 
@@ -996,7 +1024,7 @@ BEGIN
     END;
 
     -- Guard against downgrade
-    IF new_ver_int < old_ver_int
+    IF new_ver_int OPERATOR(pg_catalog.<) old_ver_int
     THEN
         RAISE EXCEPTION 'Downgrade of MODULE from version % to version % is forbidden', old_scripts, new_scripts;
     END IF;
@@ -1022,11 +1050,11 @@ BEGIN
     ) SELECT
       upgraded as scripts_upgraded,
       installed as scripts_installed,
-      pg_catalog.substring(upgraded, '([0-9]+)\.')::int * 100 +
-      pg_catalog.substring(upgraded, '[0-9]+\.([0-9]+)(\.|$)')::int
+      pg_catalog.substring(upgraded, E'([0-9]+)\\.')::int * 100 +
+      pg_catalog.substring(upgraded, E'[0-9]+\\.([0-9]+)(\\.|$)')::int
         as version_to_num,
-      pg_catalog.substring(installed, '([0-9]+)\.')::int * 100 +
-      pg_catalog.substring(installed, '[0-9]+\.([0-9]+)(\.|$)')::int
+      pg_catalog.substring(installed, E'([0-9]+)\\.')::int * 100 +
+      pg_catalog.substring(installed, E'[0-9]+\\.([0-9]+)(\\.|$)')::int
         as version_from_num,
       installed ~ 'dev|alpha|beta'
         as version_from_isdev
@@ -1061,5 +1089,3 @@ BEGIN
 END
 $$
 LANGUAGE 'plpgsql';
-
-

@@ -53,6 +53,7 @@ extern void lwstroke_suite_setup(void);
 extern void measures_suite_setup(void);
 extern void effectivearea_suite_setup(void);
 extern void chaikin_suite_setup(void);
+extern void catmullrom_suite_setup(void);
 extern void filterm_suite_setup(void);
 extern void minimum_bounding_circle_suite_setup(void);
 extern void misc_suite_setup(void);
@@ -71,6 +72,7 @@ extern void sfcgal_suite_setup(void);
 extern void split_suite_setup(void);
 extern void stringbuffer_suite_setup(void);
 extern void tree_suite_setup(void);
+extern void topo_suite_setup(void);
 extern void triangulate_suite_setup(void);
 extern void varint_suite_setup(void);
 extern void wkt_out_suite_setup(void);
@@ -107,6 +109,7 @@ PG_SuiteSetup setupfuncs[] = {algorithms_suite_setup,
 			      measures_suite_setup,
 			      effectivearea_suite_setup,
 			      chaikin_suite_setup,
+			      catmullrom_suite_setup,
 			      filterm_suite_setup,
 			      minimum_bounding_circle_suite_setup,
 			      misc_suite_setup,
@@ -126,6 +129,7 @@ PG_SuiteSetup setupfuncs[] = {algorithms_suite_setup,
 			      stringbuffer_suite_setup,
 			      surface_suite_setup,
 			      tree_suite_setup,
+			      topo_suite_setup,
 			      triangulate_suite_setup,
 			      twkb_out_suite_setup,
 			      varint_suite_setup,

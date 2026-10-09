@@ -1,9 +1,18 @@
 
+WITH input(geom) AS (
+  VALUES ('Polygon((0 0, 100 0, 99 98, 0 100, 0 0))'::geometry)
+), mic AS (
+  SELECT geom, result.*
+  FROM input
+  CROSS JOIN LATERAL ST_MaximumInscribedCircle(geom) AS result
+)
 SELECT 'mic-box' AS name,
        st_astext(center, 1) AS center,
-       st_astext(nearest, 1) AS nearest,
+       ST_DWithin(nearest, ST_Boundary(geom), 1e-9) AS nearest_on_boundary,
+       round(ST_Distance(center, nearest)::numeric, 1) =
+         round(radius::numeric, 1) AS nearest_at_radius,
        round(radius::numeric,1) AS radius
-FROM ST_MaximumInscribedCircle('Polygon((0 0, 100 0, 99 98, 0 100, 0 0))'::geometry);
+FROM mic;
 
 SELECT 'mic-empty' AS name,
        st_astext(center, 4) AS center,
@@ -52,3 +61,9 @@ SELECT 'lec-1', round(radius::numeric,3),
   ST_AsText(nearest,3) AS nearest
 FROM ST_LargestEmptyCircle(
   'MULTIPOINT ((4 3), (7 6), (4 6))');
+
+SELECT 'lec-invalid-boundary', radius
+FROM ST_LargestEmptyCircle(
+  'POINT(0 0)'::geometry,
+  20.1,
+  'POLYGON((1 2,1 2,1 2,1 2,3 2,1 2))'::geometry);

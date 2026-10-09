@@ -61,6 +61,81 @@ BEGIN
 END
 $$ LANGUAGE 'plpgsql';
 
+CREATE OR REPLACE FUNCTION _postgis_scripts_version_cmp_key(ver text)
+	RETURNS int[]
+	AS $$
+	DECLARE
+		ver_match text[];
+	BEGIN
+		ver_match := pg_catalog.regexp_match(
+			pg_catalog.lower(ver),
+			E'^([0-9]+)\\.([0-9]+)\\.([0-9]+)(dev|alpha|beta|rc)?([0-9]*)([^0-9a-z].*)?$'
+		);
+		IF ver_match IS NULL THEN
+			RETURN NULL;
+		END IF;
+
+		RETURN ARRAY[
+			ver_match[1]::int,
+			ver_match[2]::int,
+			ver_match[3]::int,
+			CASE coalesce(ver_match[4], '')
+				WHEN 'dev' THEN 0
+				WHEN 'alpha' THEN 1
+				WHEN 'beta' THEN 2
+				WHEN 'rc' THEN 3
+				ELSE 4
+			END,
+			CASE coalesce(ver_match[5], '')
+				WHEN '' THEN 0
+				ELSE ver_match[5]::int
+			END
+		];
+	EXCEPTION WHEN OTHERS THEN
+		RETURN NULL;
+	END
+	$$
+	LANGUAGE 'plpgsql' IMMUTABLE STRICT;
+
+CREATE OR REPLACE FUNCTION postgis_lib_version() RETURNS text
+	AS 'MODULE_PATHNAME'
+	LANGUAGE 'c' IMMUTABLE; -- a new lib will require a new session
+
+CREATE OR REPLACE FUNCTION _postgis_check_library_version(
+	scripts_version text,
+	library_version text
+)
+	RETURNS boolean
+	AS $$
+	DECLARE
+		scripts_key int[];
+		library_key int[];
+	BEGIN
+		scripts_key := @extschema@._postgis_scripts_version_cmp_key(scripts_version);
+		library_key := @extschema@._postgis_scripts_version_cmp_key(library_version);
+
+		-- Shared-library compatibility follows the major.minor release line.
+		-- Micro versions and postfixes do not establish C-symbol availability.
+		IF library_key[1:2] < scripts_key[1:2]
+		THEN
+			RAISE EXCEPTION
+				'PostGIS extension scripts version % cannot use older library version %',
+				scripts_version,
+				library_version
+			USING HINT =
+				'Install matching PostGIS shared-library and extension-script packages, reconnect, and retry.';
+		END IF;
+
+		RETURN true;
+	END
+	$$
+	LANGUAGE 'plpgsql' IMMUTABLE STRICT;
+
+-- Upgrade pass-through
+SELECT @extschema@._postgis_check_library_version(
+	POSTGIS_LIB_VERSION,
+	@extschema@.postgis_lib_version()
+);
 
 -- Let the user know about a deprecated signature and its new name, if any
 CREATE OR REPLACE FUNCTION _postgis_deprecate(oldname text, newname text, version text)
@@ -246,6 +321,38 @@ CREATE OR REPLACE FUNCTION ST_M(geometry)
 	LANGUAGE 'c' IMMUTABLE STRICT
 	PARALLEL SAFE _COST_DEFAULT;
 
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_StartM(geometry)
+	RETURNS float8
+	AS 'MODULE_PATHNAME','LWGEOM_startm_curve'
+	LANGUAGE 'c' IMMUTABLE STRICT
+	PARALLEL SAFE
+	COST 10;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_EndM(geometry)
+	RETURNS float8
+	AS 'MODULE_PATHNAME','LWGEOM_endm_curve'
+	LANGUAGE 'c' IMMUTABLE STRICT
+	PARALLEL SAFE
+	COST 10;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_SetStartM(geometry, float8)
+	RETURNS geometry
+	AS 'MODULE_PATHNAME','LWGEOM_setstartm_curve'
+	LANGUAGE 'c' IMMUTABLE STRICT
+	PARALLEL SAFE
+	COST 50;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_SetEndM(geometry, float8)
+	RETURNS geometry
+	AS 'MODULE_PATHNAME','LWGEOM_setendm_curve'
+	LANGUAGE 'c' IMMUTABLE STRICT
+	PARALLEL SAFE
+	COST 50;
+
 -------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION box3d_in(cstring)
@@ -351,43 +458,43 @@ CREATE TYPE gidx (
 CREATE OR REPLACE FUNCTION geometry_lt(geom1 geometry, geom2 geometry)
 	RETURNS bool
 	AS 'MODULE_PATHNAME', 'lwgeom_lt'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION geometry_le(geom1 geometry, geom2 geometry)
 	RETURNS bool
 	AS 'MODULE_PATHNAME', 'lwgeom_le'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION geometry_gt(geom1 geometry, geom2 geometry)
 	RETURNS bool
 	AS 'MODULE_PATHNAME', 'lwgeom_gt'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION geometry_ge(geom1 geometry, geom2 geometry)
 	RETURNS bool
 	AS 'MODULE_PATHNAME', 'lwgeom_ge'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION geometry_eq(geom1 geometry, geom2 geometry)
 	RETURNS bool
 	AS 'MODULE_PATHNAME', 'lwgeom_eq'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION geometry_neq(geom1 geometry, geom2 geometry)
 	RETURNS bool
 	AS 'MODULE_PATHNAME', 'lwgeom_neq'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 CREATE OR REPLACE FUNCTION geometry_cmp(geom1 geometry, geom2 geometry)
 	RETURNS integer
 	AS 'MODULE_PATHNAME', 'lwgeom_cmp'
-	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE LEAKPROOF
 	_COST_DEFAULT;
 
 -- Availability: 3.0.0
@@ -462,7 +569,7 @@ CREATE OPERATOR CLASS btree_geometry_ops
 CREATE OR REPLACE FUNCTION geometry_hash(geometry)
 	RETURNS integer
 	AS 'MODULE_PATHNAME','lwgeom_hash'
-	LANGUAGE 'c' STRICT IMMUTABLE PARALLEL SAFE;
+	LANGUAGE 'c' STRICT IMMUTABLE PARALLEL SAFE LEAKPROOF;
 
 -- Availability: 2.5.0
 CREATE OPERATOR CLASS hash_geometry_ops
@@ -1099,6 +1206,27 @@ CREATE OR REPLACE FUNCTION ST_ZMax(box3d)
 	_COST_DEFAULT;
 
 -- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_XSize(box3d)
+	RETURNS FLOAT8
+	AS 'SELECT @extschema@.ST_XMax($1) - @extschema@.ST_XMin($1)'
+	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_DEFAULT;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_YSize(box3d)
+	RETURNS FLOAT8
+	AS 'SELECT @extschema@.ST_YMax($1) - @extschema@.ST_YMin($1)'
+	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_DEFAULT;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_ZSize(box3d)
+	RETURNS FLOAT8
+	AS 'SELECT @extschema@.ST_ZMax($1) - @extschema@.ST_ZMin($1)'
+	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_DEFAULT;
+
+-- Availability: 3.7.0
 CREATE OR REPLACE FUNCTION ST_MMin(geometry)
 	RETURNS FLOAT8
 	AS 'MODULE_PATHNAME','ST_MMin'
@@ -1110,6 +1238,13 @@ CREATE OR REPLACE FUNCTION ST_MMax(geometry)
 	RETURNS FLOAT8
 	AS 'MODULE_PATHNAME','ST_MMax'
 	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_DEFAULT;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_MSize(geometry)
+	RETURNS FLOAT8
+	AS 'SELECT @extschema@.ST_MMax($1) - @extschema@.ST_MMin($1)'
+	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_DEFAULT;
 
 -----------------------------------------------------------------------------
@@ -2411,7 +2546,8 @@ BEGIN
 	POLYGONM, MULTIPOLYGONM,
 	CIRCULARSTRINGM, COMPOUNDCURVEM, MULTICURVEM
 	CURVEPOLYGONM, MULTISURFACEM, TRIANGLE, TRIANGLEM,
-	POLYHEDRALSURFACE, POLYHEDRALSURFACEM, TIN, TINM
+	POLYHEDRALSURFACE, POLYHEDRALSURFACEM, TIN, TINM,
+	NURBSCURVE, NURBSCURVEM
 	or GEOMETRYCOLLECTIONM', new_type, new_dim;
 		RETURN 'fail';
 	END IF;
@@ -3082,10 +3218,6 @@ CREATE OR REPLACE FUNCTION postgis_scripts_installed() RETURNS text
 	AS _POSTGIS_SQL_SELECT_POSTGIS_SCRIPTS_VERSION
 	LANGUAGE 'sql' IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION postgis_lib_version() RETURNS text
-	AS 'MODULE_PATHNAME'
-	LANGUAGE 'c' IMMUTABLE; -- a new lib will require a new session
-
 -- NOTE: from 1.1.0 to 1.5.x this was the same of postgis_lib_version()
 -- NOTE: from 2.0.0 up it includes postgis revision
 CREATE OR REPLACE FUNCTION postgis_scripts_released() RETURNS text
@@ -3265,6 +3397,8 @@ DECLARE
 	rast_lib_ver text := NULL;
 	rast_scr_ver text := NULL;
 	topo_scr_ver text := NULL;
+	relproc_int int[];
+	scr_ver_int int[];
 	json_lib_ver text;
 	protobuf_lib_ver text;
 	wagyu_lib_ver text;
@@ -3307,6 +3441,7 @@ BEGIN
 	SELECT @extschema@.postgis_scripts_installed() INTO dbproc;
 	SELECT @extschema@.postgis_scripts_released() INTO relproc;
 	SELECT @extschema@.postgis_lib_revision() INTO librev;
+	SELECT @extschema@._postgis_scripts_version_cmp_key(relproc) INTO relproc_int;
 	BEGIN
 		SELECT topology.postgis_topology_scripts_installed() INTO topo_scr_ver;
 	EXCEPTION
@@ -3410,7 +3545,18 @@ BEGIN
 	IF topo_scr_ver IS NOT NULL THEN
 		fullver = fullver || ' TOPOLOGY';
 		IF topo_scr_ver != relproc THEN
-			fullver = fullver || ' (topology procs from "' || topo_scr_ver || '" need upgrade)';
+			SELECT @extschema@._postgis_scripts_version_cmp_key(topo_scr_ver) INTO scr_ver_int;
+
+			IF scr_ver_int IS NOT NULL AND relproc_int IS NOT NULL AND scr_ver_int > relproc_int THEN
+				fullver = pg_catalog.format(
+					'%s (topology procs from "%s" are newer than core procs from "%s")',
+					fullver,
+					topo_scr_ver,
+					relproc
+				);
+			ELSE
+				fullver = fullver || ' (topology procs from "' || topo_scr_ver || '" need upgrade)';
+			END IF;
 		END IF;
 		IF core_is_extension AND NOT EXISTS (
 			SELECT * FROM pg_catalog.pg_extension
@@ -3434,11 +3580,33 @@ BEGIN
 	END IF;
 
 	IF rast_scr_ver IS NOT NULL AND rast_scr_ver != relproc THEN
-		fullver = fullver || ' (raster procs from "' || rast_scr_ver || '" need upgrade)';
+		SELECT @extschema@._postgis_scripts_version_cmp_key(rast_scr_ver) INTO scr_ver_int;
+
+		IF scr_ver_int IS NOT NULL AND relproc_int IS NOT NULL AND scr_ver_int > relproc_int THEN
+			fullver = pg_catalog.format(
+				'%s (raster procs from "%s" are newer than core procs from "%s")',
+				fullver,
+				rast_scr_ver,
+				relproc
+			);
+		ELSE
+			fullver = fullver || ' (raster procs from "' || rast_scr_ver || '" need upgrade)';
+		END IF;
 	END IF;
 
 	IF sfcgal_scr_ver IS NOT NULL AND sfcgal_scr_ver != relproc THEN
-		fullver = fullver || ' (sfcgal procs from "' || sfcgal_scr_ver || '" need upgrade)';
+		SELECT @extschema@._postgis_scripts_version_cmp_key(sfcgal_scr_ver) INTO scr_ver_int;
+
+		IF scr_ver_int IS NOT NULL AND relproc_int IS NOT NULL AND scr_ver_int > relproc_int THEN
+			fullver = pg_catalog.format(
+				'%s (sfcgal procs from "%s" are newer than core procs from "%s")',
+				fullver,
+				sfcgal_scr_ver,
+				relproc
+			);
+		ELSE
+			fullver = fullver || ' (sfcgal procs from "' || sfcgal_scr_ver || '" need upgrade)';
+		END IF;
 	END IF;
 
 	-- Check for the presence of deprecated functions
@@ -3597,6 +3765,13 @@ CREATE OR REPLACE FUNCTION ST_FilterByM(geometry, double precision, double preci
 CREATE OR REPLACE FUNCTION ST_ChaikinSmoothing(geometry, integer default 1, boolean default false)
 	RETURNS geometry
 	AS 'MODULE_PATHNAME', 'LWGEOM_ChaikinSmoothing'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_MEDIUM;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_CatmullRomSmoothing(geometry, integer default 5)
+	RETURNS geometry
+	AS 'MODULE_PATHNAME', 'LWGEOM_CatmullRomSmoothing'
 	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_MEDIUM;
 
@@ -4232,16 +4407,6 @@ CREATE OR REPLACE FUNCTION ST_Collect(geom1 geometry, geom2 geometry)
 	_COST_LOW;
 
 -- Availability: 1.2.2
--- Changed: 2.3.0 to support PostgreSQL 9.6
--- Changed: 2.3.1 to support PostgreSQL 9.6 parallel safe
-CREATE AGGREGATE ST_MemCollect(geometry)(
-	sfunc = ST_collect,
-	combinefunc = ST_collect,
-	parallel = safe,
-	stype = geometry
-	);
-
--- Availability: 1.2.2
 CREATE OR REPLACE FUNCTION ST_Collect(geometry[])
 	RETURNS geometry
 	AS 'MODULE_PATHNAME', 'LWGEOM_collect_garray'
@@ -4875,6 +5040,18 @@ CREATE OR REPLACE FUNCTION ST_PointOnSurface(geometry)
 CREATE OR REPLACE FUNCTION ST_IsSimple(geometry)
 	RETURNS boolean
 	AS 'MODULE_PATHNAME', 'issimple'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_MEDIUM;
+
+-- Availability: 3.7.0
+CREATE TYPE simple_detail AS (
+	simple bool,
+	location geometry
+);
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_IsSimpleDetail(geom geometry, findAllLocations integer DEFAULT 0, boundaryNodeRule integer DEFAULT 1, OUT simple boolean, OUT location geometry)
+	AS 'MODULE_PATHNAME', 'issimpledetail'
 	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_MEDIUM;
 
@@ -6128,6 +6305,12 @@ CREATE OR REPLACE FUNCTION ST_MaxDistance(geom1 geometry, geom2 geometry)
 	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_HIGH;
 
+CREATE OR REPLACE FUNCTION ST_MaxDistance(geom geometry)
+	RETURNS float8
+	AS 'SELECT @extschema@.ST_MaxDistance($1, $1)'
+	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_HIGH;
+
 CREATE OR REPLACE FUNCTION ST_ClosestPoint(geom1 geometry, geom2 geometry)
 	RETURNS geometry
 	AS 'MODULE_PATHNAME', 'LWGEOM_closestpoint'
@@ -6149,6 +6332,12 @@ CREATE OR REPLACE FUNCTION _ST_LongestLine(geom1 geometry, geom2 geometry)
 CREATE OR REPLACE FUNCTION ST_LongestLine(geom1 geometry, geom2 geometry)
 	RETURNS geometry
 	AS 'SELECT @extschema@._ST_LongestLine(@extschema@.ST_ConvexHull($1), @extschema@.ST_ConvexHull($2))'
+	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_HIGH;
+
+CREATE OR REPLACE FUNCTION ST_LongestLine(geom geometry)
+	RETURNS geometry
+	AS 'SELECT @extschema@.ST_LongestLine($1, $1)'
 	LANGUAGE 'sql' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_HIGH;
 
@@ -6356,7 +6545,12 @@ $$
 			('TIN', 'Tin', 2),
 			('TIN', 'TinZ', 3),
 			('TINM', 'TinM', 3),
-			('TIN', 'TinZM', 4) )
+			('TIN', 'TinZM', 4),
+
+			('NURBSCURVE',  'NurbsCurve', 2),
+			('NURBSCURVE',  'NurbsCurveZ', 3),
+			('NURBSCURVEM', 'NurbsCurveM', 3),
+			('NURBSCURVE',  'NurbsCurveZM', 4) )
 			 As g(old_name, new_name, coord_dimension)
 	WHERE (upper(old_name) = upper($1) OR upper(new_name) = upper($1))
 		AND coord_dimension = $2;
@@ -6429,52 +6623,92 @@ LANGUAGE 'sql' STABLE STRICT PARALLEL SAFE _COST_MEDIUM;
 -- Changed: 2.5.2 replace use of pg_constraint.consrc with pg_get_constraintdef, consrc removed pg12
 
 CREATE OR REPLACE VIEW geometry_columns AS
-WITH constraint_defs AS (
+WITH s AS NOT MATERIALIZED (
     -- Trim trailing NOT VALID so metadata inference works before constraint validation (#4828).
     SELECT connamespace,
            conrelid,
            conkey,
-           regexp_replace(pg_get_constraintdef(oid), $$\s+NOT\s+VALID$$, '', 'i') AS consrc
-      FROM pg_constraint
+           pg_catalog.regexp_replace(pg_catalog.pg_get_constraintdef(oid), $$\s+NOT\s+VALID$$, '', 'i') AS consrc
+      FROM pg_catalog.pg_constraint
+			WHERE contype OPERATOR(pg_catalog.=) 'c'::pg_catalog."char"
 )
-SELECT current_database()::character varying(256) AS f_table_catalog,
+SELECT pg_catalog.current_database()::pg_catalog.varchar(256) AS f_table_catalog,
     n.nspname AS f_table_schema,
     c.relname AS f_table_name,
     a.attname AS f_geometry_column,
-    COALESCE(postgis_typmod_dims(a.atttypmod), sn.ndims, 2) AS coord_dimension,
-    COALESCE(NULLIF(postgis_typmod_srid(a.atttypmod), 0), sr.srid, 0) AS srid,
-    replace(replace(COALESCE(NULLIF(upper(postgis_typmod_type(a.atttypmod)), 'GEOMETRY'::text), st.type, 'GEOMETRY'::text), 'ZM'::text, ''::text), 'Z'::text, ''::text)::character varying(30) AS type
-   FROM pg_class c
-     JOIN pg_attribute a ON a.attrelid = c.oid AND NOT a.attisdropped
-     JOIN pg_namespace n ON c.relnamespace = n.oid
-     JOIN pg_type t ON a.atttypid = t.oid
+    COALESCE(@extschema@.postgis_typmod_dims(a.atttypmod), sn.ndims, 2) AS coord_dimension,
+    COALESCE(NULLIF(@extschema@.postgis_typmod_srid(a.atttypmod), 0), sr.srid, 0) AS srid,
+    pg_catalog.replace(pg_catalog.replace(COALESCE(NULLIF(pg_catalog.upper(@extschema@.postgis_typmod_type(a.atttypmod)), 'GEOMETRY'::pg_catalog.text), st.type, 'GEOMETRY'::pg_catalog.text), 'ZM'::pg_catalog.text, ''::pg_catalog.text), 'Z'::pg_catalog.text, ''::pg_catalog.text)::pg_catalog.varchar(30) AS type
+   FROM pg_catalog.pg_class c
+     JOIN pg_catalog.pg_attribute a ON a.attrelid OPERATOR(pg_catalog.=) c.oid AND NOT a.attisdropped
+     JOIN pg_catalog.pg_namespace n ON c.relnamespace OPERATOR(pg_catalog.=) n.oid
+     JOIN pg_catalog.pg_type t ON a.atttypid OPERATOR(pg_catalog.=) t.oid
      LEFT JOIN (
            SELECT s.connamespace,
                   s.conrelid,
                   s.conkey,
-                  (regexp_match(s.consrc, $$geometrytype\(\w+\)\s*=\s*'(\w+)'$$, 'i'))[1]::text AS type
-             FROM constraint_defs AS s
-            WHERE s.consrc ~* $$geometrytype\(\w+\)\s*=\s*'\w+'$$::text
-     ) st ON st.connamespace = n.oid AND st.conrelid = c.oid AND (a.attnum = ANY (st.conkey))
+                  (pg_catalog.regexp_match(s.consrc, $$geometrytype\(\w+\)\s*=\s*'(\w+)'$$, 'i'))[1]::pg_catalog.text AS type
+             FROM s
+            WHERE s.consrc OPERATOR(pg_catalog.~*) $$geometrytype\(\w+\)\s*=\s*'\w+'$$::pg_catalog.text
+     ) st ON st.conrelid OPERATOR(pg_catalog.=) c.oid AND (a.attnum OPERATOR(pg_catalog.=) ANY (st.conkey))
      LEFT JOIN (
            SELECT s.connamespace,
                   s.conrelid,
                   s.conkey,
-                  (regexp_match(s.consrc, $$ndims\(\w+\)\s*=\s*(\d+)$$, 'i'))[1]::integer AS ndims
-             FROM constraint_defs AS s
-            WHERE s.consrc ~* $$ndims\(\w+\)\s*=\s*\d+$$::text
-     ) sn ON sn.connamespace = n.oid AND sn.conrelid = c.oid AND (a.attnum = ANY (sn.conkey))
+                  (pg_catalog.regexp_match(s.consrc, $$ndims\(\w+\)\s*=\s*(\d+)$$, 'i'))[1]::integer AS ndims
+             FROM s
+            WHERE s.consrc OPERATOR(pg_catalog.~*) $$ndims\(\w+\)\s*=\s*\d+$$::pg_catalog.text
+     ) sn ON sn.conrelid OPERATOR(pg_catalog.=) c.oid AND (a.attnum OPERATOR(pg_catalog.=) ANY (sn.conkey))
      LEFT JOIN (
            SELECT s.connamespace,
                   s.conrelid,
                   s.conkey,
-                  (regexp_match(s.consrc, $$srid\(\w+\)\s*=\s*(\d+)$$, 'i'))[1]::integer As srid
-             FROM constraint_defs AS s
-            WHERE s.consrc ~* $$srid\(\w+\)\s*=\s*\d+$$::text
-     ) sr ON sr.connamespace = n.oid AND sr.conrelid = c.oid AND (a.attnum = ANY (sr.conkey))
-  WHERE (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", 'm'::"char", 'f'::"char", 'p'::"char"]))
-  AND NOT c.relname = 'raster_columns'::name AND t.typname = 'geometry'::name
-  AND NOT pg_is_other_temp_schema(c.relnamespace) AND has_table_privilege(c.oid, 'SELECT'::text);
+                  (pg_catalog.regexp_match(s.consrc, $$srid\(\w+\)\s*=\s*(\d+)$$, 'i'))[1]::integer As srid
+             FROM s
+            WHERE s.consrc OPERATOR(pg_catalog.~*) $$srid\(\w+\)\s*=\s*\d+$$::pg_catalog.text
+     ) sr ON sr.conrelid OPERATOR(pg_catalog.=) c.oid AND (a.attnum OPERATOR(pg_catalog.=) ANY (sr.conkey))
+  WHERE (c.relkind OPERATOR(pg_catalog.=) ANY (ARRAY['r'::pg_catalog."char", 'v'::pg_catalog."char", 'm'::pg_catalog."char", 'f'::pg_catalog."char", 'p'::pg_catalog."char"]))
+  AND NOT c.relname OPERATOR(pg_catalog.=) 'raster_columns'::pg_catalog.name AND t.typname OPERATOR(pg_catalog.=) 'geometry'::pg_catalog.name
+  AND NOT pg_catalog.pg_is_other_temp_schema(c.relnamespace)
+  -- A stale MVCC snapshot can still see a dropped pg_class row (#6038).
+  -- Re-resolve the qualified relation name only when the schema is visible,
+  -- because to_regclass reports permission errors for inaccessible schemas.
+  -- Without schema visibility, keep the old OID-based privilege semantics.
+  -- Keep the visible-schema SELECT check in the same CASE branch as the
+  -- re-resolution guard so PostgreSQL cannot evaluate it for a stale OID.
+  AND CASE WHEN pg_catalog.has_schema_privilege(c.relnamespace, 'USAGE'::pg_catalog.text)
+           THEN CASE WHEN pg_catalog.to_regclass(pg_catalog.format('%I.%I', n.nspname, c.relname)) OPERATOR(pg_catalog.=) c.oid
+                     THEN pg_catalog.has_column_privilege(c.oid, a.attname, 'SELECT'::pg_catalog.text)
+                     ELSE false
+                END
+           ELSE pg_catalog.has_column_privilege(c.oid, a.attname, 'SELECT'::pg_catalog.text)
+      END
+  AND (
+    EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname OPERATOR(pg_catalog.=) current_user
+        AND rolsuper
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname OPERATOR(pg_catalog.=) 'pg_read_all_data'
+        AND pg_catalog.pg_has_role(current_user, oid, 'USAGE')
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.aclexplode(COALESCE(c.relacl, pg_catalog.acldefault('r', c.relowner))) AS acl
+      WHERE acl.privilege_type OPERATOR(pg_catalog.=) 'SELECT'
+        AND (acl.grantee OPERATOR(pg_catalog.=) 0 OR pg_catalog.pg_has_role(acl.grantee, 'USAGE'))
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.aclexplode(a.attacl) AS acl
+      WHERE acl.privilege_type OPERATOR(pg_catalog.=) 'SELECT'
+        AND (acl.grantee OPERATOR(pg_catalog.=) 0 OR pg_catalog.pg_has_role(acl.grantee, 'USAGE'))
+    )
+  );
 
 -- TODO: support RETURNING and raise a WARNING
 CREATE OR REPLACE RULE geometry_columns_insert AS
@@ -6672,6 +6906,13 @@ CREATE OR REPLACE FUNCTION ST_LocateBetweenElevations(Geometry geometry, FromEle
 CREATE OR REPLACE FUNCTION ST_InterpolatePoint(Line geometry, Point geometry)
 	RETURNS float8
 	AS 'MODULE_PATHNAME', 'ST_InterpolatePoint'
+	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+	_COST_MEDIUM;
+
+-- Availability: 3.7.0
+CREATE OR REPLACE FUNCTION ST_3DInterpolatePoint(Line geometry, Point geometry)
+	RETURNS float8
+	AS 'MODULE_PATHNAME', 'ST_3DInterpolatePoint'
 	LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_MEDIUM;
 
@@ -7049,5 +7290,8 @@ RETURNS geometry
 AS 'MODULE_PATHNAME','ST_RemoveSmallParts'
 LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 	_COST_MEDIUM;
+
+
+#include "postgis_nurbs.sql.in"
 
 COMMIT;

@@ -22,8 +22,10 @@ HAVE_PROTOBUF=@HAVE_PROTOBUF@
 current_dir := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 RUNTESTFLAGS_INTERNAL += \
+  --after-create-db-script $(top_srcdir)/regress/hooks/hook-after-create-db.sql \
   --before-upgrade-script $(top_srcdir)/regress/hooks/hook-before-upgrade.sql \
-  --after-upgrade-script  $(top_srcdir)/regress/hooks/hook-after-upgrade.sql \
+  --after-upgrade-script $(top_srcdir)/regress/hooks/hook-after-upgrade-check-sql-object-resolution.sql \
+  --after-upgrade-script $(top_srcdir)/regress/hooks/hook-after-upgrade.sql \
   --after-create-script   $(top_srcdir)/regress/hooks/hook-after-create.sql \
   --before-uninstall-script $(top_srcdir)/regress/hooks/hook-before-uninstall.sql
 
@@ -33,6 +35,8 @@ TESTS += \
 	$(top_srcdir)/regress/core/bestsrid \
 	$(top_srcdir)/regress/core/binary \
 	$(top_srcdir)/regress/core/boundary \
+	$(top_srcdir)/regress/core/box2d \
+	$(top_srcdir)/regress/core/catmullrom \
 	$(top_srcdir)/regress/core/chaikin \
 	$(top_srcdir)/regress/core/clean \
 	$(top_srcdir)/regress/core/clipbybox2d \
@@ -90,6 +94,7 @@ TESTS += \
 	$(top_srcdir)/regress/core/point_coordinates \
 	$(top_srcdir)/regress/core/polygonize \
 	$(top_srcdir)/regress/core/polyhedralsurface \
+	$(top_srcdir)/regress/core/postgis_full_version \
 	$(top_srcdir)/regress/core/postgis_type_name \
 	$(top_srcdir)/regress/core/quantize_coordinates \
 	$(top_srcdir)/regress/core/regress \
@@ -150,7 +155,11 @@ TESTS += \
 	$(top_srcdir)/regress/core/wkb \
 	$(top_srcdir)/regress/core/wkt \
 	$(top_srcdir)/regress/core/wmsservers \
-  $(top_srcdir)/regress/core/wrapx
+  $(top_srcdir)/regress/core/wrapx \
+	$(top_srcdir)/regress/core/nurbs_eval \
+	$(top_srcdir)/regress/core/nurbs_wkt \
+	$(top_srcdir)/regress/core/nurbs_wkb \
+	$(top_srcdir)/regress/core/nurbs_bbox
 
 # Slow slow tests
 TESTS_SLOW = \
@@ -167,6 +176,11 @@ else
 		$(top_srcdir)/regress/core/concave_hull
 endif
 
+ifeq ($(shell expr "$(POSTGIS_GEOS_VERSION)" ">=" 31300),1)
+	TESTS += \
+		$(top_srcdir)/regress/core/cluster_geos313
+endif
+
 ifeq ($(shell expr "$(POSTGIS_GEOS_VERSION)" ">=" 31500),1)
 	TESTS += \
 		$(top_srcdir)/regress/core/geos315
@@ -180,6 +194,11 @@ endif
 ifeq ($(shell expr "$(POSTGIS_GEOS_VERSION)" "<=" 31200),1)
 	TESTS += \
 		$(top_srcdir)/regress/core/relate_bnr
+endif
+
+ifeq ($(shell expr "$(POSTGIS_GEOS_VERSION)" ">=" 31600),1)
+	TESTS += \
+    $(top_srcdir)/regress/core/issimpledetail
 endif
 
 ifeq ($(INTERRUPTTESTS),yes)

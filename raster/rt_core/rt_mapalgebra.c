@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2011-2013 Regents of the University of California
  *   <bkpark@ucdavis.edu>
@@ -1505,10 +1504,12 @@ _rti_colormap_arg_destroy(_rti_colormap_arg arg) {
 		rt_raster_destroy(arg->raster);
 	}
 
-	if (arg->nexpr) {
+	if (arg->expr != NULL)
+	{
 		for (i = 0; i < arg->nexpr; i++) {
-			if (arg->expr[i] != NULL)
-				rtdealloc(arg->expr[i]);
+			if (arg->expr[i] == NULL)
+				break;
+			rtdealloc(arg->expr[i]);
 		}
 		rtdealloc(arg->expr);
 	}

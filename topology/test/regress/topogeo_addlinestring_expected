@@ -38,9 +38,7 @@ cross|E|LINESTRING(47 14,47 17.6)
 cross|E|LINESTRING(47 17.6,47 22)
 cross|E|LINESTRING(47 17.6,44 17)
 cross|E|LINESTRING(49 18,47 17.6)
-snap|7
-snap|36
-snap|38
+snap|3
 snap|N||POINT(21.2 20.5)
 snap|N||POINT(22.35 22)
 snap|N||POINT(18 22.2)
@@ -48,9 +46,7 @@ snap|E|LINESTRING(22.35 22,35 22)
 snap|E|LINESTRING(22.35 22,21.2 20.5)
 snap|E|LINESTRING(21 22,22.35 22)
 snap|E|LINESTRING(18 22.2,21 22)
-snap_again|7
-snap_again|36
-snap_again|38
+snap_again|3
 crossover|4
 crossover|N||POINT(21 10)
 crossover|N||POINT(16.2 14)
@@ -188,10 +184,10 @@ t3402.end|Topology 'bug3402' dropped
 t3412.start|t
 t3412.L1|1
 t3412.L2|t
-t3371.start|t
-t3371.L1|1
-t3371.L2|2
-t3371.end|Topology 'bug3711' dropped
+t3711.start|t
+t3711.L1|1
+t3711.L2|2
+t3711.end|Topology 'bug3711' dropped
 t3838.start|t
 t3838.L1|1
 t3838.L2|t
@@ -224,6 +220,17 @@ b5081|dangling_edges|1
 b5081|faces|1
 b5234.0|1
 b5234.1|1
+gh1151.endpoint-zero.near-node|1
+gh1151.endpoint-zero.near-end|2
+gh1151.endpoint-zero.addline|1
+gh1151.endpoint-zero.start-exact|1
+gh1151.endpoint-zero.start-near|1
+gh1151.endpoint-zero.end-exact|1
+gh1151.endpoint-zero.end-near|1
+gh1151.endpoint-zero-edge.seed|1
+gh1151.endpoint-zero-edge.addline|1
+gh1151.endpoint-zero-edge.end-exact|1
+gh1151.endpoint-zero-edge.end-projected|0
 t5568|invalidities at start|
 t5568|invalidities at end|
 #5993.0|existing-data|1
@@ -236,3 +243,5 @@ t6023.2|errors|
 t6062.edges|t
 t6064.1|t
 t6064.2|t
+t6120.start|1
+t6120.works|t

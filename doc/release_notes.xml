@@ -1,59 +1,105 @@
 <!-- Converted by db4-upgrade version 1.1 -->
 <appendix xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="release_notes">
-  <title>Appendix</title>
-    <subtitle>Release Notes</subtitle>
-        <section>
-            <title>PostGIS 3.6.0rc2</title>
-            <para>2025/08/25</para>
-                        <para>This version requires PostgreSQL 12-18beta3, GEOS 3.8 or higher, and Proj 6.1+.
-            To take advantage of all features, GEOS 3.14+ is needed.
-            To take advantage of all SFCGAL features, SFCGAL 2.2+ is needed.</para>
-
-            <para>Many thanks to our translation teams, in particular:</para>
-            <para>Teramoto Ikuhiro (Japanese Team)</para>
-            <para>Daniel Nylander (Swedish Team)</para>
-            <para>Dapeng Wang, Zuo Chenwei from HighGo (Chinese Team)</para>
-            <para>Denys Kovshun (Ukrainian Team)</para>
-
-
-
-            <simplesect><title>Breaking Changes</title>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5799">#5799</link>, make ST_TileEnvelope clips envelopes to tile plane extent (Paul Ramsey)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5829">#5829</link>, remove constraint checking from geometry_columns view (Paul Ramsey)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3373">#3373</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/255">GT-255</link>, [topology] Support for upgrading domains (Ayo Adesugba, U.S. Census Bureau)</para>
-                <para><link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/252">GT-252</link>, ST_NumGeometries/ST_GeometryN treat TIN and PolyhedralSurface as unitary geometries,
-                    use ST_NumPatches/ST_PatchN for patch access (Loïc Bartoletti)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3110">#3110</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/242">GT-242</link>, [topology] Support for bigint (Ayo Adesugba, U.S. Census Bureau)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5359">#5359</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5897">#5897</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/260">GT-260</link>
-                [tiger_geocoder] Use @extschema:extension@ for PG &gt;= 16 to schema qualify dependent extensions, switch to use typmod for tiger tables (Regina Obe)</para>
-            </simplesect>
-
-            <simplesect><title>Removed / Deprecate signatures</title>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3110">#3110</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/242">GT-242</link>, [topology] Support for bigint (Ayo Adesugba, U.S. Census Bureau)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5498">#5498</link> Drop st_approxquantile(raster, double precision), wasn't usable as it triggered
-                        is not unique error when used (Regina Obe)</para>
-            </simplesect>
-
-            <simplesect><title>New Features</title>
-                <para><link xlink:href="https://github.com/postgis/postgis/pull/803">GH-803</link>, [sfcgal] ADD CG_Simplify function (Loïc Bartoletti)</para>
-                <para><link xlink:href="https://github.com/postgis/postgis/pull/805">GH-805</link>, [sfcgal] Add M support for SFCGAL &gt;= 1.5.0 (Loïc Bartoletti)</para>
-                <para><link xlink:href="https://github.com/postgis/postgis/pull/801">GH-801</link>, [sfcgal] ADD CG_3DAlphaWrapping function (Jean Felder)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5894">#5894</link>, [topology] TotalTopologySize (Sandro Santilli)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5890">#5890</link>, [topology] ValidateTopologyPrecision, MakeTopologyPrecise (Sandro Santilli)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5861">#5861</link>, [topology] Add --drop-topology switch to pgtopo_import (Sandro Santilli)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1247">#1247</link>, [raster] ST_AsRasterAgg (Sandro Santilli)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5784">#5784</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/223">GT-223</link> Export circ_tree_distance_tree_internal for mobilitydb use
-                        (Maxime Schoemans)</para>
-                <para><link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/228">GT-228</link> [sfcgal] Add new functions (Scale, Translate, Rotate, Buffer 3D and
-                        Straight Skeleton Partition) from SFCGAL 2 (Loïc Bartoletti)</para>
-                <para>[raster] New GUC postgis.gdal_cpl_debug, enables GDAL debugging messages
-                    and routes them into the PostgreSQL logging system. (Paul Ramsey)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5841">#5841</link>, Change interrupt handling to remove use of pqsignal to support PG 18 (Paul Ramsey)</para>
-                <para>Add ST_CoverageClean to edge match and gap remove polygonal
-                    coverages (Paul Ramsey) from GEOS 3.14 (Martin Davis)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3110">#3110</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/242">GT-242</link> [topology] Support for bigint (Ayo Adesugba, U.S. Census Bureau)</para>
-                <para>[raster] Add ST_ReclassExact to quickly remap values in raster (Paul Ramsey)</para>
-                <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3110">#3110</link>, <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/pulls/242">GT-242</link>, [topology] Support for bigint (Ayo Adesugba, U.S. Census Bureau)</para>
-            </simplesect>
-        </section>
+  <title>Release Notes</title>
+    <section xml:id="release_notes_3_7_0">
+    <title>PostGIS 3.7.0</title>
+    <subtitle>2026/xx/xx</subtitle>
+    <para>This version requires GEOS 3.10+, PostgreSQL 14-19beta3, Proj 6.1+, and libgmp.
+    To take advantage of all postgis extension features, GEOS 3.15+ is needed.
+    To take advantage of all postgis_sfcgal extension features SFCGAL 2.3+ is needed.
+    Python 3 is a new requirement to build the documentation.</para>
+    <simplesect>
+      <title>Breaking Changes</title>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5688">#5688</link>, [topology] topology building functions now interpret tolerance 0 (old default) to really mean 0 and want -1 (new default) to mean &quot;use topology precision&quot; (Sandro Santilli)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6024">#6024</link>, Remove support for PostgreSQL 12 and 13 (Regina Obe)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6040">#6040</link>, ST_GeoHash round trip through ST_GeomFromGeoHash (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6053">#6053</link>, [address_standardizer] Extension removed and moved to <link xlink:href="https://github.com/postgis/address_standardizer">https://github.com/postgis/address_standardizer</link> (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6052">#6052</link>, [tiger_geocoder] Extension removed and moved to <link xlink:href="https://git.osgeo.org/postgis/postgis_tiger_geocoder">https://git.osgeo.org/postgis/postgis_tiger_geocoder</link> (Regina Obe)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6079">#6079</link>, Remove support for GEOS &lt; 3.10 (Sandro Santilli)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1793">#1793</link>, Remove ST_MemCollect aggregate (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/848">GH-848</link>, CG_AlphaShape now returns a MultiPolygon (Jean Felder)</para>
+      <para>[docs] Python 3 and an SVG rasterizer (rsvg-convert preferred, GraphicsMagick or ImageMagick supported) now required for doc building (Darafei Praliaskouski)</para>
+    </simplesect>
+    <simplesect>
+      <title>New Features</title>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1124">#1124</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/2935">#2935</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/3033">#3033</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/4658">#4658</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/4659">#4659</link>, [loader] Rework loader arguments: shp2pgsql can create UNLOGGED tables and choose the feature id column name, shp2pgsql --drop-table can emit DROP TABLE before prepare output, raster2pgsql/shp2pgsql expose loader actions as long options, both loaders accept long aliases for existing options, and</para>
+      <para>-if-not-exists makes creation actions idempotent (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4208">#4208</link>, Add single-geometry variants of ST_MaxDistance and ST_LongestLine (Darafei Praliaskouski)</para>
+      <para>[topology] FindVertexSegmentPairsBelowDistance function (Sandro Santilli)</para>
+      <para>ST_CoverageEdges, returns MultiLinestring of distinct shared edges in polygonal coverage (Paul Ramsey)</para>
+      <para>ST_MinimumSpanningTree, window function to calculate MST (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5993">#5993</link>, [topology] Add max_edges parameter to TopoGeo_AddLinestring (Sandro Santilli)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6001">#6001</link>, support MultiLineString in ST_MakeLine (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2858">#2858</link>, ST_MMin and ST_MMax (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5941">#5941</link>, [raster] Support GDT_Float16 pixel type (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5992">#5992</link>, Optimize GiST index for repeated edge subdivision in topology (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5702">#5702</link>, Allow the compiler to detect the parallelism -flto=auto (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4798">#4798</link>, ST_AsGeoJSON warns about duplicate property keys (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4222">#4222</link>, [raster] ST_DumpAsPolygons honours PostgreSQL interrupts (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5889">#5889</link>, [topology] Include representative locations in topology build errors (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2614">#2614</link>, Use GEOSPreparedDistance and caching to accelerate ST_DWithin (Paul Ramsey)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/839">GH-839</link>, ST_Multi support for TIN and surfaces (Loïc Bartoletti)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4398">#4398</link>, Add ST_CatmullSmoothing smoothes but retains original vertices (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4560">#4560</link>, ST_3DInterpolatePoint for M interpolation from XYZ inputs (Paul Ramsey)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1291">#1291</link>, ST_MakePolygon support for curved rings (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://gitea.osgeo.org/postgis/postgis/pulls/270">GT-270</link>, Add NURBSCurve (Loïc Bartoletti)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2863">#2863</link>, Add ST_XSize, ST_YSize, ST_ZSize, and ST_MSize dimension helpers (Darafei Praliaskouski)</para>
+    </simplesect>
+    <simplesect>
+      <title>Enhancements</title>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2045">#2045</link>, pgsql2shp query dumps no longer require temporary table privileges (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1577">#1577</link>, [loader] Report unsupported .zip archive input before trying to open shapefile sidecar files (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3158">#3158</link>, Move geometry and geography typmod bit helpers out of the public liblwgeom header (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3776">#3776</link>, [raster] Keep distinct 32-bit integer pixel values separate in ST_DumpAsPolygons (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4678">#4678</link>, [raster] Move st_sum4ma neighborhood callback to C (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2116">#2116</link>, [raster] Add ST_Value nearest-neighbor boundary options (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2804">#2804</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/4315">#4315</link>, [raster] Support two-argument ST_MapAlgebra callbacks and pass callback call data as actual arguments (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6062">#6062</link>, [topology] Stop using recursive snapping, for improved robustness (Sandro Santilli)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6065">#6065</link>, Improved winding order computation robustness for rings having collapsed elements (Sandro Santilli)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2137">#2137</link>, [raster] Reuse matching source raster overviews in raster2pgsql -l (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4749">#4749</link>, Use point-in-polygon predicate fast paths for point-only GeometryCollections (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2807">#2807</link>, [raster] Preserve missing NODATA values in ST_MapAlgebra outputs (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2832">#2832</link>, [raster] Avoid padding single-tile raster2pgsql overviews when padding is not requested (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2623">#2623</link>, Generate a pgsql2shp GID field when exporting geometry-only shapefiles (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2850">#2850</link>, Preserve pgsql2shp numeric precision and scale in DBF metadata (Darafei Praliaskouski)</para>
+      <para>Build PostgreSQL extension modules with `-fno-semantic-interposition` when available so LTO can optimize same-DSO calls to exported PostGIS entry points directly instead of routing through the module PLT; in a local PostgreSQL 18 `pgbench` microbenchmark over 100k four-point groups this reduced `ST_Collect` aggregate latency by about 4% (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5973">#5973</link>, Install PostGIS utilities under `pg_config --bindir` by default and document `pg_config`-derived install paths more accurately (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2808">#2808</link>, Clarify postgis_full_version() output when installed component scripts are newer than core scripts (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2838">#2838</link>, Emit valid X3D Coordinate nodes for 2D polygon output (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/899">GH-899</link>, [raster] Honor PostgreSQL interrupts in long-running GDAL progress callbacks (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6073">#6073</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/6074">#6074</link>, Stabilize geography LRS endpoint interpolation and pole centroid regressions on 32-bit systems (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/2583">#2583</link>, Preserve Z/ZM dimensional qualifiers in ST_AsEWKT output for TIN (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4616">#4616</link>, Detect pgsql2shp query keywords case-insensitively (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1986">#1986</link>, ST_GeomFromGML support for GML ArcString and curved polygon rings (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4749">#4749</link>, Use point-in-polygon predicate fast paths for point-only GeometryCollections, including ST_Disjoint (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3676">#3676</link>, Mark geometry and geography btree comparison support functions as leakproof (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/875">GH-875</link>, Allow ST_OrderingEquals joins to use hash and merge join plans (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1168">#1168</link>, [raster] Support curved geometry inputs in ST_AsRaster (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1416">#1416</link>, ST_AsX3D outputs NURBSCURVE as X3D NurbsCurve and linearizes other curve geometries (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3705">#3705</link>, ST_AsX3D outputs valid coordinate nodes for 2D multi-geometries and GeometryCollections (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://gitea.osgeo.org/postgis/postgis/pulls/484">GT-484</link>, Use column-level SELECT privileges for metadata views (Arthur Bazin)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/1408">#1408</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/2386">#2386</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/2557">#2557</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/2805">#2805</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/2898">#2898</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/3743">#3743</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/4323">#4323</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/4332">#4332</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/4385">#4385</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5109">#5109</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5532">#5532</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5593">#5593</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5638">#5638</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5645">#5645</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/5950">#5950</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/6022">#6022</link>, <link xlink:href="https://trac.osgeo.org/postgis/ticket/6082">#6082</link>, <link xlink:href="https://github.com/postgis/postgis/pull/1161">GH-1161</link>, <link xlink:href="https://gitea.osgeo.org/postgis/postgis/pulls/584">GT-584</link>, Numerous doc enhancements (Darafei Praliaskouski)</para>
+    </simplesect>
+    <simplesect>
+      <title>Bug Fixes</title>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/1175">GH-1175</link>, Guard missing operands before reading node tags in spatial selectivity estimation (Maksim Korotkov)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6118">#6118</link>, Reject empty geometry type modifiers without an out-of-bounds read (Egor Ivkov)</para>
+      <para>Fix WKB and TWKB parser resource exhaustion on malformed input (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6038">#6038</link>, Avoid stale relation lookups in geometry_columns after topology objects are dropped (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5487">#5487</link>, Improve error detail for repeated upgrades after an incomplete deprecated-function cleanup (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5975">#5975</link>, Initialize skipped union-find cluster ids deterministically (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5904">#5904</link>, [topology] Avoid MinGW format warnings when logging topology ids (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/888">GH-888</link>, [sfcgal] Avoid stale detoasted geometry access in CG_Visibility empty-input handling for SFCGAL &lt; 2.2 (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/3179">#3179</link>, Mark truncated libpgcommon PostgreSQL messages instead of silently dropping the tail (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6003">#6003</link>, Avoid size_t formats in liblwgeom logging/error wrappers for MinGW builds (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/886">GH-886</link>, ST_ClusterRelateWin validates NULL relate matrices before detoasting them (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/889">GH-889</link>, ST_Relate pattern inversion avoids out-of-bounds access on short DE-9IM patterns (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/890">GH-890</link>, Avoid GIDX BRIN summary merges across mismatched dimensions (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/5959">#5959</link>, Prevent histogram target overflow when analysing massive tables (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6080">#6080</link>, Avoid out-of-bounds hex WKB lookup for high-bit input bytes (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/4828">#4828</link>, geometry_columns handles NOT VALID SRID checks without errors (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://trac.osgeo.org/postgis/ticket/6048">#6048</link>, [raster] ST_Clip no longer crashes when clipping sparse band selections (Darafei Praliaskouski)</para>
+      <para><link xlink:href="https://github.com/postgis/postgis/pull/894">GH-894</link>, [raster] Fix Float16 import, mixed nodata warping, band replacement cleanup, GDAL credential redaction, and Python GDAL compatibility (Darafei Praliaskouski)</para>
+    </simplesect>
+  </section>
 </appendix>

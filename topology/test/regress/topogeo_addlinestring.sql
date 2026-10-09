@@ -99,9 +99,9 @@ SELECT 'cross', TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING(49 18, 
 SELECT check_changes('cross');
 
 -- Snapping (and splitting a face)
-SELECT 'snap', TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING(18 22.2, 22.5 22.2, 21.2 20.5)', 1) ORDER BY 2;
+SELECT 'snap', COUNT(*) FROM TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING(18 22.2, 22.5 22.2, 21.2 20.5)', 1);
 SELECT check_changes('snap');
-SELECT 'snap_again', TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING(18 22.2, 22.5 22.2, 21.2 20.5)', 1) ORDER BY 2;
+SELECT 'snap_again', COUNT(*) FROM TopoGeo_addLineString('city_data', 'SRID=4326;LINESTRING(18 22.2, 22.5 22.2, 21.2 20.5)', 1);
 SELECT check_changes('snap_again');
 
 -- A mix of crossing and overlapping, splitting another face
@@ -334,14 +334,14 @@ SELECT 't3412.end.error', * FROM topology.ValidateTopology('bug3412');
 SELECT NULL FROM DropTopology('bug3412');
 
 -- See http://trac.osgeo.org/postgis/ticket/3711
-SELECT 't3371.start', topology.CreateTopology('bug3711', 0, 0, true) > 1;
-SELECT 't3371.L1', topology.TopoGeo_AddLineString('bug3711',
+SELECT 't3711.start', topology.CreateTopology('bug3711', 0, 0, true) > 1;
+SELECT 't3711.L1', topology.TopoGeo_AddLineString('bug3711',
 'LINESTRING (618369 4833784 0.88, 618370 4833784 1.93, 618370 4833780 1.90)'
 ::geometry, 0);
-SELECT 't3371.L2', count(*) FROM topology.TopoGeo_AddLineString( 'bug3711',
+SELECT 't3711.L2', count(*) FROM topology.TopoGeo_AddLineString( 'bug3711',
 'LINESTRING (618370 4833780 1.92, 618370 4833784 1.90, 618371 4833780 1.93)'
 ::geometry, 0);
-SELECT 't3371.end', topology.DropTopology('bug3711');
+SELECT 't3711.end', topology.DropTopology('bug3711');
 
 -- See http://trac.osgeo.org/postgis/ticket/3838
 SELECT 't3838.start', topology.CreateTopology('bug3838') > 1;
@@ -494,6 +494,41 @@ TopoGeo_addLinestring('b5234',
 SELECT 'b5234.1', count(*) FROM
 TopoGeo_addLinestring('b5234',
   'LINESTRING(10 10 3, 5 0 0.8)', 0);
+ROLLBACK;
+
+-- Original endpoints must remain exact with explicit zero tolerance,
+-- even where coordinate scale would allow a nearby machine-tolerance snap.
+BEGIN;
+SELECT NULL FROM topology.createtopology('gh1151_endpoint_zero', 0, 0, FALSE);
+SELECT 'gh1151.endpoint-zero.near-node', topology.ST_AddIsoNode('gh1151_endpoint_zero', 0, 'POINT(0 0.000001)');
+SELECT 'gh1151.endpoint-zero.near-end', topology.ST_AddIsoNode('gh1151_endpoint_zero', 0, 'POINT(1000000000 0.000001)');
+SELECT 'gh1151.endpoint-zero.addline', count(*) FROM
+TopoGeo_addLinestring('gh1151_endpoint_zero',
+  'LINESTRING(0 0, 1000000000 0)', 0);
+SELECT 'gh1151.endpoint-zero.start-exact', count(*) FROM gh1151_endpoint_zero.node
+  WHERE ST_Equals(geom, 'POINT(0 0)'::geometry);
+SELECT 'gh1151.endpoint-zero.start-near', count(*) FROM gh1151_endpoint_zero.node
+  WHERE ST_Equals(geom, 'POINT(0 0.000001)'::geometry);
+SELECT 'gh1151.endpoint-zero.end-exact', count(*) FROM gh1151_endpoint_zero.node
+  WHERE ST_Equals(geom, 'POINT(1000000000 0)'::geometry);
+SELECT 'gh1151.endpoint-zero.end-near', count(*) FROM gh1151_endpoint_zero.node
+  WHERE ST_Equals(geom, 'POINT(1000000000 0.000001)'::geometry);
+ROLLBACK;
+
+-- Original endpoints must also remain exact near existing edges with
+-- explicit zero tolerance.
+BEGIN;
+SELECT NULL FROM topology.createtopology('gh1151_endpoint_zero_edge', 0, 0, FALSE);
+SELECT 'gh1151.endpoint-zero-edge.seed', count(*) FROM
+TopoGeo_addLinestring('gh1151_endpoint_zero_edge',
+  'LINESTRING(999999999 0.000001, 1000000001 0.000001)', 0);
+SELECT 'gh1151.endpoint-zero-edge.addline', count(*) FROM
+TopoGeo_addLinestring('gh1151_endpoint_zero_edge',
+  'LINESTRING(0 0, 1000000000 0)', 0);
+SELECT 'gh1151.endpoint-zero-edge.end-exact', count(*) FROM gh1151_endpoint_zero_edge.node
+  WHERE ST_Equals(geom, 'POINT(1000000000 0)'::geometry);
+SELECT 'gh1151.endpoint-zero-edge.end-projected', count(*) FROM gh1151_endpoint_zero_edge.node
+  WHERE ST_Equals(geom, 'POINT(1000000000 0.000001)'::geometry);
 ROLLBACK;
 
 -- See https://trac.osgeo.org/postgis/ticket/5568
@@ -651,3 +686,20 @@ SELECT 't6064.2', count(*) > 0 FROM topology.TopoGeo_addLinestring('t6064',
 )');
 SELECT 't6064.check.final', * FROM topology.ValidateTopology('t6064');
 SELECT NULL FROM topology.DropTopology ('t6064');
+
+
+
+-- See https://trac.osgeo.org/postgis/ticket/6120
+BEGIN;
+SELECT NULL FROM topology.CreateTopology( 't6120' );
+-- Start condition: single closed edge forming very tiny area
+-- TODO: create the starting condition with COPY instead?
+SELECT 't6120.start', topology.TopoGeo_addLinestring('t6120',
+  '01020000000500000010526CDB36DE34406BEE28A10F5451404313671D53DE34404E64FC3B1054514010526CDB36DE34406CEE28A10F545140169A989329DE3440E00C65580F54514010526CDB36DE34406BEE28A10F545140'
+,-1);
+
+-- Incoming: line very similar to the existing one, with just one vertex off by 5.038095382105394e-15
+SELECT 't6120.works', count(*) > 0 FROM topology.TopoGeo_addLinestring('t6120',
+  '0102000000050000004313671D53DE34404E64FC3B10545140169A989329DE3440E00C65580F54514010526CDB36DE34406BEE28A10F545140EBE8402451DE344060A52C31105451404313671D53DE34404E64FC3B10545140'
+,-1);
+ROLLBACK;

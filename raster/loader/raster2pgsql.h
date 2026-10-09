@@ -1,7 +1,6 @@
 /*
  *
  * PostGIS Raster loader
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright 2001-2003 Refractions Research Inc.
  * Copyright 2009 Paul Ramsey <pramsey@cleverelephant.ca>
@@ -44,6 +43,7 @@
 
 #include "../../postgis_config.h"
 #include "../raster_config.h"
+#include "../../loader/loader_actions.h"
 
 #define CSEQUAL(a,b) (strcmp(a,b)==0)
 
@@ -118,14 +118,9 @@ typedef struct raster_loader_config {
 	/* type of operation, (d|a|c|p) */
 	char opt;
 
-	/* create index, 1 = yes, 0 = no (default) */
-	int idx;
-
-	/* maintenance statements, 1 = yes, 0 = no (default) */
-	int maintenance;
-
-	/* set constraints */
-	int constraints;
+	/* raw action options and normalized execution plan */
+	LoaderActionOptions actions;
+	LoaderPlan plan;
 
 	/* enable max extent constraint, 1 = yes (default), 0 = no */
 	int max_extent;

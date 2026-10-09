@@ -15,18 +15,21 @@ POSTGIS_GEOS_VERSION=@POSTGIS_GEOS_VERSION@
 override RUNTESTFLAGS := $(RUNTESTFLAGS) --raster
 
 override RUNTESTFLAGS_INTERNAL := \
+  --after-create-db-script $(top_srcdir)/raster/test/regress/hooks/hook-before-create-raster.sql \
   --before-upgrade-script $(top_srcdir)/raster/test/regress/hooks/hook-before-upgrade-raster.sql \
   $(RUNTESTFLAGS_INTERNAL) \
   --after-upgrade-script $(top_srcdir)/raster/test/regress/hooks/hook-after-upgrade-raster.sql
 
 RASTER_TEST_FIRST = \
 	$(top_srcdir)/raster/test/regress/check_gdal \
-	$(top_srcdir)/raster/test/regress/loader/load_outdb
+	$(top_srcdir)/raster/test/regress/loader/load_outdb \
+	$(top_srcdir)/raster/test/regress/rt_outdb_guc
 
 RASTER_TEST_LAST = \
 	$(top_srcdir)/raster/test/regress/clean
 
 RASTER_TEST_METADATA = \
+	$(top_srcdir)/raster/test/regress/security_raster_columns \
 	$(top_srcdir)/raster/test/regress/check_raster_columns \
 	$(top_srcdir)/raster/test/regress/check_raster_overviews
 
@@ -130,6 +133,11 @@ RASTER_TEST_BUGS = \
 RASTER_TEST_LOADER = \
 	$(top_srcdir)/raster/test/regress/loader/Basic \
 	$(top_srcdir)/raster/test/regress/loader/Projected \
+	$(top_srcdir)/raster/test/regress/loader/OverviewNoPadding \
+	$(top_srcdir)/raster/test/regress/loader/SourceOverview \
+	$(top_srcdir)/raster/test/regress/loader/IfNotExists \
+	$(top_srcdir)/raster/test/regress/loader/LongOptions \
+	$(top_srcdir)/raster/test/regress/loader/LongMaintenance \
 	$(top_srcdir)/raster/test/regress/loader/BasicCopy \
 	$(top_srcdir)/raster/test/regress/loader/BasicFilename \
 	$(top_srcdir)/raster/test/regress/loader/BasicOutDB \

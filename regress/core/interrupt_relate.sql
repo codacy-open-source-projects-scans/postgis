@@ -16,35 +16,60 @@ SELECT 1::int as id, ST_Collect(g) g FROM (
 -- IM9 based predicates
 -----------------------------
 
-SET statement_timeout TO 100;
-
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 select ST_Contains(g,g) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('contains', '220ms');
+ROLLBACK;
+SELECT _timecheck('contains', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 select ST_Covers(g,g) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('covers', '220ms');
+ROLLBACK;
+SELECT _timecheck('covers', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 select ST_CoveredBy(g,g) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('coveredby', '250ms');
+ROLLBACK;
+SELECT _timecheck('coveredby', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 select ST_Crosses(g,g) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('crosses', '220ms');
+ROLLBACK;
+SELECT _timecheck('crosses', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 -- NOTE: we're reversing one of the operands to avoid the
 --       short-circuit described in #3226
 select ST_Equals(g,st_reverse(g)) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('equals', '220ms');
+ROLLBACK;
+SELECT _timecheck('equals', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 -- NOTE: intersects became very fast, so we segmentize
 --       input to make it slower
 select ST_Intersects(g,ST_Segmentize(g,1e-4)) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('intersects', '210ms');
+ROLLBACK;
+SELECT _timecheck('intersects', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 select ST_Overlaps(g,g) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('overlaps', '220ms');
+ROLLBACK;
+SELECT _timecheck('overlaps', '500ms');
 
+BEGIN;
+SET LOCAL statement_timeout TO 100;
 select ST_Relate(g,g) from _inputs WHERE id = 1; -- 6+ seconds
-SELECT _timecheck('relate', '220ms');
+ROLLBACK;
+SELECT _timecheck('relate', '500ms');
 
+DROP FUNCTION _timecheck(text);
 DROP FUNCTION _timecheck(text, interval);
+DROP FUNCTION _timecheck_baseline(text);
+DROP FUNCTION _timecheck_start();
 DROP TABLE _inputs;

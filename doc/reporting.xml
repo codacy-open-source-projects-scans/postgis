@@ -1,5 +1,5 @@
 <!-- Converted by db4-upgrade version 1.1 -->
-<chapter xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" version="5.0">
+<chapter xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="reporting">
   <title>Reporting Problems</title>
 
   <section>
@@ -45,6 +45,11 @@
     preferred. This is a four step process on Unix (assuming you already have
     <link xlink:href="https://git-scm.com/">git</link>
     installed):</para>
+
+    <para>Before editing or building the manual, read the repository's
+    <link xlink:href="https://git.osgeo.org/gitea/postgis/postgis/src/branch/master/doc/development">documentation development guide</link>.
+    It covers the executable example, generated figure, validation, HTML, and
+    PDF workflows used by the manual.</para>
 
     <orderedlist>
       <listitem>

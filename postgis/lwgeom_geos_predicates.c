@@ -18,12 +18,13 @@
  *
  **********************************************************************
  *
+ * Copyright 2026 Darafei Praliaskouski <me@komzpa.net>
  * Copyright 2009-2014 Sandro Santilli <strk@kbt.io>
  * Copyright 2008 Paul Ramsey <pramsey@cleverelephant.ca>
  * Copyright 2001-2003 Refractions Research Inc.
+ * Copyright 2026 Darafei Praliaskouski <me@komzpa.net>
  *
  **********************************************************************/
-
 
 #include "../postgis_config.h"
 
@@ -73,20 +74,98 @@ is_poly(const GSERIALIZED *g)
 }
 
 /*
- * Utility to quickly check for point geometries
+ * Cheap type gate for geometries that may become point-like.
  */
 static inline uint8_t
-is_point(const GSERIALIZED *g)
+is_point_or_collection(const GSERIALIZED *g)
 {
 	int type = gserialized_get_type(g);
-	return type == POINTTYPE || type == MULTIPOINTTYPE;
+	return type == POINTTYPE || type == MULTIPOINTTYPE || type == COLLECTIONTYPE;
 }
 
+/* Avoid homogenizing mixed collections just to discover that PIP cannot use them. */
+static uint8_t
+lwgeom_is_pointlike(const LWGEOM *lwgeom)
+{
+	const LWCOLLECTION *lwcol;
+	uint32_t i;
 
+	if (lwgeom->type == POINTTYPE || lwgeom->type == MULTIPOINTTYPE)
+		return LW_TRUE;
 
+	if (lwgeom->type != COLLECTIONTYPE)
+		return LW_FALSE;
 
+	lwcol = (const LWCOLLECTION *)lwgeom;
+	if (lwcol->ngeoms == 0)
+		return LW_FALSE;
 
+	for (i = 0; i < lwcol->ngeoms; i++)
+	{
+		if (!lwgeom_is_pointlike(lwcol->geoms[i]))
+			return LW_FALSE;
+	}
 
+	return LW_TRUE;
+}
+
+/*
+ * Return an owned point/multipoint LWGEOM for direct point inputs or for
+ * GeometryCollections whose children are all points.
+ */
+static LWGEOM *
+pointlike_lwgeom_from_gserialized(const GSERIALIZED *g)
+{
+	int type = gserialized_get_type(g);
+	LWGEOM *lwgeom;
+	LWGEOM *hgeom;
+
+	if (type == POINTTYPE || type == MULTIPOINTTYPE)
+		return lwgeom_from_gserialized(g);
+
+	if (type != COLLECTIONTYPE)
+		return NULL;
+
+	lwgeom = lwgeom_from_gserialized(g);
+	if (!lwgeom_is_pointlike(lwgeom))
+	{
+		lwgeom_free(lwgeom);
+		return NULL;
+	}
+
+	hgeom = lwgeom_homogenize(lwgeom);
+	lwgeom_free(lwgeom);
+
+	if (!hgeom)
+		return NULL;
+
+	if (hgeom->type == POINTTYPE || hgeom->type == MULTIPOINTTYPE)
+		return hgeom;
+
+	lwgeom_free(hgeom);
+	return NULL;
+}
+
+typedef bool (*itree_pip_predicate)(const IntervalTree *itree, const LWGEOM *lwpoints);
+
+static bool
+try_itree_pointlike_pip(FunctionCallInfo fcinfo,
+			const GSERIALIZED *gpoints,
+			SHARED_GSERIALIZED *shared_gpoly,
+			itree_pip_predicate predicate,
+			bool *result)
+{
+	LWGEOM *lwpt = pointlike_lwgeom_from_gserialized(gpoints);
+	IntervalTree *itree;
+
+	if (!lwpt)
+		return false;
+
+	itree = GetIntervalTree(fcinfo, shared_gpoly);
+	*result = predicate(itree, lwpt);
+	lwgeom_free(lwpt);
+	return true;
+}
 
 PG_FUNCTION_INFO_V1(ST_Intersects);
 Datum ST_Intersects(PG_FUNCTION_ARGS)
@@ -98,6 +177,7 @@ Datum ST_Intersects(PG_FUNCTION_ARGS)
 	int8_t result;
 	GBOX box1, box2;
 	PrepGeomCache *prep_cache;
+	bool pip_result;
 
 	gserialized_error_if_srid_mismatch(geom1, geom2, __func__);
 
@@ -117,20 +197,18 @@ Datum ST_Intersects(PG_FUNCTION_ARGS)
 	}
 
 	/*
-	 * Short-circuit 2: if the geoms are a point and a polygon,
-	 * call the itree_pip_intersects function.
+	 * Short-circuit 2: if one geometry is polygonal and the other is a
+	 * point or point-only collection, use the IntervalTree PIP fast path.
 	 */
-	if ((is_point(geom1) && is_poly(geom2)) ||
-	    (is_point(geom2) && is_poly(geom1)))
+	if (is_point_or_collection(geom1) && is_poly(geom2) &&
+	    try_itree_pointlike_pip(fcinfo, geom1, shared_geom2, itree_pip_intersects, &pip_result))
 	{
-		SHARED_GSERIALIZED *shared_gpoly = is_poly(geom1) ? shared_geom1 : shared_geom2;
-		SHARED_GSERIALIZED *shared_gpoint = is_point(geom1) ? shared_geom1 : shared_geom2;
-		const GSERIALIZED *gpoint = shared_gserialized_get(shared_gpoint);
-		LWGEOM *lwpt = lwgeom_from_gserialized(gpoint);
-		IntervalTree *itree = GetIntervalTree(fcinfo, shared_gpoly);
-		bool result = itree_pip_intersects(itree, lwpt);
-		lwgeom_free(lwpt);
-		PG_RETURN_BOOL(result);
+		PG_RETURN_BOOL(pip_result);
+	}
+	else if (is_point_or_collection(geom2) && is_poly(geom1) &&
+		 try_itree_pointlike_pip(fcinfo, geom2, shared_geom1, itree_pip_intersects, &pip_result))
+	{
+		PG_RETURN_BOOL(pip_result);
 	}
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
@@ -300,6 +378,7 @@ Datum disjoint(PG_FUNCTION_ARGS)
 	int8_t result;
 	GBOX box1, box2;
 	PrepGeomCache *prep_cache;
+	bool pip_result;
 
 	gserialized_error_if_srid_mismatch(geom1, geom2, __func__);
 
@@ -318,6 +397,21 @@ Datum disjoint(PG_FUNCTION_ARGS)
 		{
 			PG_RETURN_BOOL(true);
 		}
+	}
+
+	/*
+	 * Short-circuit 2: if one geometry is polygonal and the other is a
+	 * point or point-only collection, use the IntervalTree PIP fast path.
+	 */
+	if (is_point_or_collection(geom1) && is_poly(geom2) &&
+	    try_itree_pointlike_pip(fcinfo, geom1, shared_geom2, itree_pip_intersects, &pip_result))
+	{
+		PG_RETURN_BOOL(!pip_result);
+	}
+	else if (is_point_or_collection(geom2) && is_poly(geom1) &&
+		 try_itree_pointlike_pip(fcinfo, geom2, shared_geom1, itree_pip_intersects, &pip_result))
+	{
+		PG_RETURN_BOOL(!pip_result);
 	}
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
@@ -504,6 +598,7 @@ Datum contains(PG_FUNCTION_ARGS)
 	GEOSGeometry *g1, *g2;
 	GBOX box1, box2;
 	PrepGeomCache *prep_cache;
+	bool pip_result;
 
 	gserialized_error_if_srid_mismatch(geom1, geom2, __func__);
 
@@ -525,17 +620,13 @@ Datum contains(PG_FUNCTION_ARGS)
 	}
 
 	/*
-	** Short-circuit 2: if geom2 is a point and geom1 is a polygon
-	** call the point-in-polygon function.
+	** Short-circuit 2: if geom1 is polygonal and geom2 is a point
+	** or point-only collection, use the IntervalTree PIP fast path.
 	*/
-	if (is_poly(geom1) && is_point(geom2))
+	if (is_poly(geom1) && is_point_or_collection(geom2) &&
+	    try_itree_pointlike_pip(fcinfo, geom2, shared_geom1, itree_pip_contains, &pip_result))
 	{
-		const GSERIALIZED *gpoint = shared_gserialized_get(shared_geom2);
-		LWGEOM *lwpt = lwgeom_from_gserialized(gpoint);
-		IntervalTree *itree = GetIntervalTree(fcinfo, shared_geom1);
-		bool result = itree_pip_contains(itree, lwpt);
-		lwgeom_free(lwpt);
-		PG_RETURN_BOOL(result);
+		PG_RETURN_BOOL(pip_result);
 	}
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
@@ -585,6 +676,7 @@ Datum within(PG_FUNCTION_ARGS)
 	GEOSGeometry *g1, *g2;
 	GBOX box1, box2;
 	PrepGeomCache *prep_cache;
+	bool pip_result;
 
 	gserialized_error_if_srid_mismatch(geom1, geom2, __func__);
 
@@ -606,17 +698,13 @@ Datum within(PG_FUNCTION_ARGS)
 	}
 
 	/*
-	** Short-circuit 2: if geom2 is a polygon and geom1 is a point
-	** call the point-in-polygon function.
+	** Short-circuit 2: if geom2 is polygonal and geom1 is a point
+	** or point-only collection, use the IntervalTree PIP fast path.
 	*/
-	if (is_poly(geom2) && is_point(geom1))
+	if (is_poly(geom2) && is_point_or_collection(geom1) &&
+	    try_itree_pointlike_pip(fcinfo, geom1, shared_geom2, itree_pip_contains, &pip_result))
 	{
-		const GSERIALIZED *gpoint = shared_gserialized_get(shared_geom1);
-		LWGEOM *lwpt = lwgeom_from_gserialized(gpoint);
-		IntervalTree *itree = GetIntervalTree(fcinfo, shared_geom2);
-		bool result = itree_pip_contains(itree, lwpt);
-		lwgeom_free(lwpt);
-		PG_RETURN_BOOL(result);
+		PG_RETURN_BOOL(pip_result);
 	}
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
@@ -729,6 +817,7 @@ Datum covers(PG_FUNCTION_ARGS)
 	int8_t result;
 	GBOX box1, box2;
 	PrepGeomCache *prep_cache;
+	bool pip_result;
 
 	POSTGIS_DEBUGF(3, "Covers: type1: %d, type2: %d", gserialized_get_type(geom1), gserialized_get_type(geom2));
 
@@ -751,17 +840,13 @@ Datum covers(PG_FUNCTION_ARGS)
 		}
 	}
 	/*
-	 * Short-circuit 2: if geom2 is a point and geom1 is a polygon
-	 * call the point-in-polygon function.
+	 * Short-circuit 2: if geom1 is polygonal and geom2 is a point
+	 * or point-only collection, use the IntervalTree PIP fast path.
 	 */
-	if (is_poly(geom1) && is_point(geom2))
+	if (is_poly(geom1) && is_point_or_collection(geom2) &&
+	    try_itree_pointlike_pip(fcinfo, geom2, shared_geom1, itree_pip_covers, &pip_result))
 	{
-		const GSERIALIZED *gpoint = shared_gserialized_get(shared_geom2);
-		LWGEOM *lwpt = lwgeom_from_gserialized(gpoint);
-		IntervalTree *itree = GetIntervalTree(fcinfo, shared_geom1);
-		bool result = itree_pip_covers(itree, lwpt);
-		lwgeom_free(lwpt);
-		PG_RETURN_BOOL(result);
+		PG_RETURN_BOOL(pip_result);
 	}
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
@@ -813,6 +898,7 @@ Datum coveredby(PG_FUNCTION_ARGS)
 	int8_t result;
 	GBOX box1, box2;
 	PrepGeomCache *prep_cache;
+	bool pip_result;
 
 	gserialized_error_if_srid_mismatch(geom1, geom2, __func__);
 
@@ -835,17 +921,13 @@ Datum coveredby(PG_FUNCTION_ARGS)
 		}
 	}
 	/*
-	 * Short-circuit 2: if geom1 is a point and geom2 is a polygon
-	 * call the point-in-polygon function.
+	 * Short-circuit 2: if geom2 is polygonal and geom1 is a point
+	 * or point-only collection, use the IntervalTree PIP fast path.
 	 */
-	if (is_point(geom1) && is_poly(geom2))
+	if (is_point_or_collection(geom1) && is_poly(geom2) &&
+	    try_itree_pointlike_pip(fcinfo, geom1, shared_geom2, itree_pip_covers, &pip_result))
 	{
-		const GSERIALIZED *gpoint = shared_gserialized_get(shared_geom1);
-		IntervalTree *itree = GetIntervalTree(fcinfo, shared_geom2);
-		LWGEOM *lwpt = lwgeom_from_gserialized(gpoint);
-		bool result = itree_pip_covers(itree, lwpt);
-		lwgeom_free(lwpt);
-		PG_RETURN_BOOL(result);
+		PG_RETURN_BOOL(pip_result);
 	}
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
@@ -886,14 +968,33 @@ Datum coveredby(PG_FUNCTION_ARGS)
  *  Flip the DE9IM matrix around the diagonal to
  *  account for flipping the order of the operands
  *  to the GEOSPreparedRelatePattern function.
+ *
+ *  Short patterns are invalid for GEOS, but they can still reach this helper
+ *  before GEOS reports the error, so every swapped position must be guarded by
+ *  the actual pattern length.
  */
 static void
-imInvert(char *im)
+imInvert(char *im, size_t len)
 {
 	char t;
-	t = im[1]; im[1] = im[3]; im[3] = t;
-	t = im[2]; im[2] = im[6]; im[6] = t;
-	t = im[5]; im[5] = im[7]; im[7] = t;
+	if (len > 3)
+	{
+		t = im[1];
+		im[1] = im[3];
+		im[3] = t;
+	}
+	if (len > 6)
+	{
+		t = im[2];
+		im[2] = im[6];
+		im[6] = t;
+	}
+	if (len > 7)
+	{
+		t = im[5];
+		im[5] = im[7];
+		im[7] = t;
+	}
 }
 #endif
 
@@ -910,7 +1011,8 @@ Datum relate_pattern(PG_FUNCTION_ARGS)
 		PG_GETARG_DATUM(2), Int32GetDatum(9)));
 	char *im = text_to_cstring(imPtr);
 	int8_t result;
-	uint32_t i;
+	size_t im_len = strlen(im);
+	size_t i;
 #if POSTGIS_GEOS_VERSION >= 31300
 	PrepGeomCache *prep_cache;
 #endif
@@ -920,8 +1022,8 @@ Datum relate_pattern(PG_FUNCTION_ARGS)
 	/*
 	** Need to make sure 't' and 'f' are upper-case before handing to GEOS
 	*/
-	for (i = 0; i < strlen(im); i++)
-		im[i] = toupper(im[i]);
+	for (i = 0; i < im_len; i++)
+		im[i] = toupper((unsigned char)im[i]);
 
 	initGEOS(lwpgnotice, lwgeom_geos_error);
 
@@ -937,7 +1039,7 @@ Datum relate_pattern(PG_FUNCTION_ARGS)
 		else
 		{
 			g = POSTGIS2GEOS(geom1);
-			imInvert(im);
+			imInvert(im, im_len);
 		}
 
 		if (!g) HANDLE_GEOS_ERROR("Geometry could not be converted to GEOS");
@@ -1098,6 +1200,8 @@ Datum LWGEOM_dwithin(PG_FUNCTION_ARGS)
 		LWGEOM *lwgeom1 = lwgeom_from_gserialized(geom1);
 		LWGEOM *lwgeom2 = lwgeom_from_gserialized(geom2);
 		mindist = lwgeom_mindistance2d_tolerance(lwgeom1, lwgeom2, tolerance);
+		lwgeom_free(lwgeom1);
+		lwgeom_free(lwgeom2);
 		is_dwithin = (tolerance >= mindist);
 	}
 

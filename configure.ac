@@ -236,11 +236,15 @@ fi
 AC_PATH_PROG([XMLLINT], [xmllint], [])
 if test "x$XMLLINT" = "x"; then
 	dnl AC_MSG_WARN([xmllint is not installed so documentation cannot be checked])
-	AC_MSG_WARN([xmlcatalog is not installed so documentation cannot be built])
+	AC_MSG_WARN([xmllint is not installed so documentation cannot be built])
 	CAN_BUILD_COMMENTS=no
 fi
 
-
+AC_PATH_PROG([PYTHON3], [python3], [])
+if test "x$PYTHON3" = "x"; then
+	AC_MSG_WARN([python3 is not installed so documentation visual examples cannot be generated])
+	AC_MSG_WARN([documentation build will fail: run 'make -C regress visual-examples' first])
+fi
 
 AC_PATH_PROG([XML2POT], [xml2pot], [])
 if test "x$XML2POT" = "x"; then
@@ -322,6 +326,7 @@ if test "x$XSLBASE" = "x"; then
 		/usr/share/sgml/docbook/stylesheet/xsl/nwalsh
 		/opt/local/share/xsl/docbook-xsl
 		/usr/local/opt/docbook-xsl/docbook-xsl
+		/usr/local/share/xsl/docbook-ns
 		/usr/local/share/xsl/docbook-xsl
 		/usr/share/xsl/docbook-xsl
 		"
@@ -395,6 +400,19 @@ else
   fi
 fi
 AC_SUBST([DOCBOOK5_RNG])
+
+dnl
+dnl Ensure DocBook XMLSchema can be found
+dnl
+DOCBOOK5_XSD=http://docbook.org/xml/5.0/xsd/docbook.xsd
+if test "x$XMLCATALOG" = "x"; then
+  DOCBOOK5_XSD=
+else
+  if $XMLCATALOG '' "${DOCBOOK5_XSD}" > /dev/null; then :
+  else DOCBOOK5_XSD=
+  fi
+fi
+AC_SUBST([DOCBOOK5_XSD])
 
 dnl
 dnl Ensure DocBook DTD can be found
@@ -963,6 +981,17 @@ if test "x$with_sfcgal" != "xno"; then
 		POSTGIS_SFCGAL_VERSION="$SFCGAL_MAJOR_VERSION$SFCGAL_NUMERIC_MINOR_VERSION$SFCGAL_NUMERIC_PATCH_VERSION"
 		AC_DEFINE_UNQUOTED([POSTGIS_SFCGAL_VERSION], [$POSTGIS_SFCGAL_VERSION], [SFCGAL library version at build time])
 
+		POSTGIS_CGAL_VERSION="0"
+		_sfcgal_inc=`echo "$SFCGAL_CPPFLAGS" | tr ' ' '\n' | grep '^-I' | head -1 | sed 's/^-I//'`
+		if test -n "$_sfcgal_inc" && test -f "${_sfcgal_inc}/SFCGAL/version.h"; then
+			_cgal_major=`grep '#define SFCGAL_CGAL_VERSION_MAJOR' "${_sfcgal_inc}/SFCGAL/version.h" | awk '{print $3}'`
+			_cgal_minor=`grep '#define SFCGAL_CGAL_VERSION_MINOR' "${_sfcgal_inc}/SFCGAL/version.h" | awk '{print $3}'`
+			if test -n "$_cgal_major" && test -n "$_cgal_minor"; then
+				_cgal_minor_pad=`printf "%02d" $_cgal_minor`
+				POSTGIS_CGAL_VERSION="${_cgal_major}${_cgal_minor_pad}"
+			fi
+		fi
+
 		SFCGAL_STATIC=`$SFCGAL_CONFIG --static`
 		if test "x$SFCGAL_STATIC" = "xON"; then
 			AC_MSG_WARN([The SFCGAL version found is not installed as a dynamic library.])
@@ -983,6 +1012,7 @@ if test "x$with_sfcgal" != "xno"; then
 fi
 
 AC_SUBST([POSTGIS_SFCGAL_VERSION])
+AC_SUBST([POSTGIS_CGAL_VERSION])
 AC_SUBST([SFCGAL_VERSION])
 AC_SUBST([SFCGAL_CPPFLAGS])
 AC_SUBST([SFCGAL_LDFLAGS])
@@ -1876,6 +1906,7 @@ AC_CONFIG_FILES([GNUmakefile
    regress/core/Makefile
    regress/core/tests.mk
    regress/dumper/Makefile
+   regress/dumper/tests.mk
    regress/loader/Makefile
    doc/Makefile
    doc/Makefile.comments
@@ -1928,6 +1959,7 @@ fi
 if test "x$SFCGAL" = "xsfcgal"; then
     AC_MSG_RESULT([  SFCGAL config:        ${SFCGAL_CONFIG}])
     AC_MSG_RESULT([  SFCGAL version:       ${SFCGAL_VERSION}])
+    AC_MSG_RESULT([  CGAL version:         ${POSTGIS_CGAL_VERSION}])
 fi
 if test "x$SUPPORT_POSTGRESQL" = "xyes"; then
   AC_MSG_RESULT([  PostgreSQL config:    ${PG_CONFIG}])
@@ -1983,6 +2015,7 @@ AC_MSG_RESULT([  xsltproc:             ${XSLTPROC}])
 AC_MSG_RESULT([  docbook xsl base:     ${XSLBASE}])
 AC_MSG_RESULT([  dblatex:              ${DBLATEX}])
 AC_MSG_RESULT([  convert:              ${CONVERT}])
+AC_MSG_RESULT([  python3:              ${PYTHON3}])
 AC_MSG_RESULT()
 
 if test "$POSTGIS_GEOS_VERSION" -lt 31200; then

@@ -13,12 +13,13 @@
 
 <!-- Change these values to update the version numbers referenced within the documentation -->
 <!ENTITY last_proj_release_version "9.2.1">
-<!ENTITY last_geos_release_version "3.14.0">
-<!ENTITY min_geos_version "3.8.0">
+<!ENTITY last_geos_release_version "3.15.0">
+<!ENTITY min_geos_version "3.10.0">
 <!ENTITY min_postgres_version "14">
-<!ENTITY max_postgres_version "18">
+<!ENTITY max_postgres_version "19">
 
 <!ENTITY introduction SYSTEM "introduction.xml">
+<!ENTITY credits SYSTEM "credits.xml">
 <!ENTITY installation SYSTEM "installation.xml">
 <!ENTITY administration SYSTEM "administration.xml">
 <!ENTITY using_postgis_dataman SYSTEM "using_postgis_dataman.xml">
@@ -43,6 +44,7 @@
 <!ENTITY reference_measure SYSTEM "reference_measure.xml">
 <!ENTITY reference_relationship SYSTEM "reference_relationship.xml">
 <!ENTITY reference_sfcgal SYSTEM "reference_sfcgal.xml">
+<!ENTITY reference_sfcgal_legacy SYSTEM "reference_sfcgal_legacy.xml">
 <!ENTITY reference_overlay SYSTEM "reference_overlay.xml">
 <!ENTITY reference_processing SYSTEM "reference_processing.xml">
 <!ENTITY reference_coverage SYSTEM "reference_coverage.xml">
@@ -140,6 +142,7 @@
   &extras;
   &postgis_special;
   &reporting;
+  &credits;
   &release_notes;
 
 </book>

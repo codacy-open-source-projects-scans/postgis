@@ -1,0 +1,228 @@
+#!/bin/sh
+
+usage() {
+  echo "Usage: $0 [-v] [--base-ref=<ref>] [--ticket-refs] [--ticket-refs-skip-commits=<file>] [<sourcedir>]"
+  echo "Sourcedir defaults to the repository containing this script"
+}
+
+
+### COMMAND LINE PARSING
+VERBOSE=no
+TICKET_REFS=no
+RD= # Root source dir
+NEWS_BASE_REF=${NEWS_CHECK_BASE_REF:-}
+TICKET_REFS_SKIP_COMMITS=/dev/null
+while [ $# -gt 0 ]; do
+  if [ "$1" = "--help" ]; then
+    usage
+    exit 0
+  elif [ "$1" = "-v" ]; then
+    VERBOSE=yes
+  elif [ "$1" = "--ticket-refs" ]; then
+    TICKET_REFS="yes"
+  elif [ "$1" = "--base-ref" ]; then
+    shift
+    if [ $# -eq 0 ]; then
+      echo "ERROR: --base-ref requires a Git ref" >&2
+      usage >&2
+      exit 1
+    fi
+    NEWS_BASE_REF=$1
+  elif [ "${1#--base-ref=}" != "$1" ]; then
+    NEWS_BASE_REF=${1#--base-ref=}
+  elif [ "$1" = "--ticket-refs-skip-commits" ]; then
+    shift
+    TICKET_REFS_SKIP_COMMITS=$( cd $( dirname $1 ) && pwd )
+  elif [ -z "${RD}" ]; then
+    RD=$1
+  else
+    echo "ERROR: unrecognized extra argument $1" >&2
+    usage >&2
+    exit 1
+  fi
+  shift
+done
+
+if [ -z "${RD}" ]; then
+  RD=`dirname $0`/../..
+fi
+
+cd ${RD}
+
+# Check that release headings are unique. Rebase mistakes can otherwise
+# turn the previous release section into a second copy of the current one.
+duplicate_release=$(grep '^PostGIS [0-9]' NEWS | sort | uniq -d | head -1)
+if test -n "${duplicate_release}"; then
+  echo "FAIL: NEWS file has duplicate release heading: ${duplicate_release}"
+  exit 1
+fi
+echo "PASS: NEWS file release headings are unique"
+
+# Extract dates from NEWS file and check they
+# are sorted correctly
+pdate=$(date '+%Y/%m/%d') # most recent timestamp
+prel=Unreleased
+grep -B1 '^[0-9]\{4\}/[0-9]\{2\}/[0-9]\{2\}' NEWS |
+  while read rel; do
+    read date
+    read sep
+    ts=$( echo "${date}" | tr -d '/' )
+    pts=$( echo "${pdate}" | tr -d '/' )
+    if test $ts -gt $pts; then
+      echo "FAIL: ${rel} (${date}) appears after ${prel} (${pdate})"
+      exit 1
+    fi
+    if test "${VERBOSE}" = yes; then
+      echo "INFO: ${rel} (${date}) before ${prel} (${pdate})"
+    fi
+    pts=${ts}
+    prel=${rel}
+  done
+test $? = 0 || exit 1
+echo "PASS: NEWS file entries are in good order"
+
+if test -n "${NEWS_BASE_REF}"; then
+  if ! git rev-parse --verify "${NEWS_BASE_REF}^{commit}" >/dev/null 2>&1; then
+    echo "FAIL: NEWS base ref does not resolve to a commit: ${NEWS_BASE_REF}"
+    exit 1
+  fi
+
+  news_target_file=$(mktemp "${TMPDIR:-/tmp}/check-news-target.XXXXXX") || {
+    exit 1
+  }
+  trap 'rm -f "${news_target_file}"' EXIT HUP INT TERM
+  if ! git show "${NEWS_BASE_REF}:NEWS" > "${news_target_file}"; then
+    echo "FAIL: NEWS is unavailable at target ref ${NEWS_BASE_REF}"
+    exit 1
+  fi
+
+  if ! awk '
+    function is_unreleased(date) {
+      return date ~ /^[0-9][0-9][0-9][0-9]\/([0-9x][0-9x])\/([0-9x][0-9x])$/ &&
+        date ~ /x/
+    }
+    function section_accepts_new_entries() {
+      target_section_is_open = release == target_first &&
+        is_unreleased(target_dates[target_first])
+      current_section_is_open = release == current_first &&
+        is_unreleased(release_date) &&
+        !(release in target_dates)
+      return target_section_is_open || current_section_is_open
+    }
+    function emit_release() {
+      if (release == "")
+        return
+
+      if (file_number == 1) {
+        target_dates[release] = release_date
+        if (target_first == "")
+          target_first = release
+      }
+    }
+    FNR == 1 {
+      if (file_number != 0)
+        emit_release()
+      file_number++
+      release = ""
+    }
+    /^PostGIS [0-9]/ {
+      emit_release()
+      release = $0
+      release_date = ""
+      if (file_number == 2 && current_first == "")
+        current_first = release
+      next
+    }
+    release != "" && release_date == "" &&
+      /^[0-9][0-9][0-9][0-9]\/([0-9][0-9]|[0-9x][0-9x])\/([0-9][0-9]|[0-9x][0-9x])$/ {
+      release_date = $0
+      next
+    }
+    release != "" && /^[[:space:]]+-[[:space:]]/ {
+      entry_key = release SUBSEP $0
+      if (file_number == 1) {
+        target_entries[entry_key]++
+      } else if (file_number == 2 &&
+          !section_accepts_new_entries() &&
+          ++current_entries[entry_key] > target_entries[entry_key]) {
+        print "FAIL: " release \
+          " has a new NEWS entry outside the current unreleased section: " $0
+        failures++
+      }
+    }
+    END {
+      emit_release()
+      exit failures != 0
+    }
+  ' "${news_target_file}" NEWS; then
+    exit 1
+  fi
+  echo "PASS: New NEWS entries are in the current unreleased section"
+fi
+
+if test "${TICKET_REFS}" = "yes"; then
+
+  last_news_release=$( grep \
+    -B1 '^[0-9]\{4\}/[0-9]\{2\}/[0-9]\{2\}' NEWS |
+    head -1 | awk '{print $2}' )
+  echo "INFO: Checking ticket refs in commits since tag '$last_news_release'"
+
+  # If git is available, check that every ticket reference in
+  # commit logs is also found in the NEWS file
+  if which git > /dev/null && test -e .git; then
+    git rev-list HEAD --not $last_news_release |
+      grep -vwFf $TICKET_REFS_SKIP_COMMITS |
+      xargs git log --no-walk --pretty='format:%B' |
+      sed -En 's|#([0-9]+)|\a\1\n|;/\n/!b;s|.*\a||;P;D' |
+      sort -nru |
+    { failures=0; while read ref; do
+      ref="#${ref}"
+      if ! grep -qw "${ref}" NEWS; then
+        # See if it is found in any stable branch older than this one
+        # and hint if found
+        foundin=
+        for b in $(
+            git branch --list stable-* |
+            sort -n | sed '/^\*/q' | tac |
+            grep -v '\*'
+            )
+        do
+          if git show $b:NEWS |
+              grep -qw "${ref}"
+          then
+            foundin=$b
+            break
+          fi
+        done
+        if test -n "$foundin"; then
+          # Check if the match is in a published version
+          if git show $foundin:NEWS |
+              sed '/^[0-9]\{4\}\/[0-9]\{2\}\/[0-9]\{2\}/q' |
+              grep -qw "${ref}"
+          then
+            # The match is in a still unpublished section, this should
+            # not be considered an error in development, but should be
+            # fixed before closing the releasing.
+            echo "WARN: Ticket ${ref} missing from NEWS (but found in dev section of branch $foundin)"
+          else
+            echo "FAIL: Ticket ${ref} missing from NEWS (and found in release from branch $foundin!)"
+          fi
+        else
+          echo "FAIL: Ticket ${ref} MISSING from NEWS (here and in older branches)"
+        fi
+        failures=$((failures+1))
+        #exit 1
+      else
+        if test "${VERBOSE}" = yes; then
+          echo "INFO: Ticket ${ref} found in NEWS"
+        fi
+      fi
+    done; exit $failures; }
+    test $? = 0 || exit $?
+    echo "PASS: All ticket references in commits log found in NEWS"
+  else
+    echo "SKIP: GIT history cannot be checked (missing git or missing ${RD}/.git)"
+  fi
+fi
+
+exit 0

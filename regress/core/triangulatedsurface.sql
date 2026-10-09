@@ -2,11 +2,11 @@
 SELECT 'dimension_01', ST_Dimension('TIN(((0 0,1 1,0 1,0 0)))'::geometry);
 SELECT 'dimension_02', ST_Dimension('GEOMETRYCOLLECTION(TIN(((0 0,1 1,0 1,0 0))))'::geometry);
 
--- ST_Dimension on 3D: closed
+-- ST_Dimension on 3D: closed surface, not solid
 SELECT 'dimension_03', ST_Dimension('TIN(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))'::geometry);
 SELECT 'dimension_04', ST_Dimension('GEOMETRYCOLLECTION(TIN(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0))))'::geometry);
 
--- ST_Dimension on 4D: closed
+-- ST_Dimension on 4D: closed surface, not solid
 SELECT 'dimension_05', ST_Dimension('TIN(((0 0 0 0,0 0 1 0,0 1 0 2,0 0 0 0)),((0 0 0 0,0 1 0 0,1 0 0 4,0 0 0 0)),((0 0 0 0,1 0 0 0,0 0 1 6,0 0 0 0)),((1 0 0 0,0 1 0 0,0 0 1 0,1 0 0 0)))'::geometry);
 SELECT 'dimension_06', ST_Dimension('GEOMETRYCOLLECTION(TIN(((0 0 0 0,0 0 1 0,0 1 0 2,0 0 0 0)),((0 0 0 0,0 1 0 0,1 0 0 4,0 0 0 0)),((0 0 0 0,1 0 0 0,0 0 1 6,0 0 0 0)),((1 0 0 0,0 1 0 0,0 0 1 0,1 0 0 0))))'::geometry);
 
@@ -38,3 +38,7 @@ SELECT 'geometryN_01', ST_AsEWKT(ST_GeometryN('TIN EMPTY'::geometry, 1));
 SELECT 'geometryN_02', ST_AsEWKT(ST_GeometryN('TIN(((0 0,0 0,0 1,0 0)))'::geometry, 1));
 SELECT 'geometryN_03', ST_AsEWKT(ST_GeometryN('TIN(((0 0,0 0,0 1,0 0)))'::geometry, 0));
 SELECT 'geometryN_04', ST_AsEWKT(ST_GeometryN('TIN(((0 0,0 0,0 1,0 0)))'::geometry, 2));
+
+-- ST_AsEWKT dimensional qualifiers
+SELECT '#2583.1', ST_AsEWKT(ST_GeomFromEWKT('TIN Z(((0 0 1,1 0 2,0 1 3,0 0 1)))'));
+SELECT '#2583.2', ST_AsEWKT(ST_GeomFromEWKT('TIN ZM(((0 0 1 2,1 0 2 3,0 1 3 4,0 0 1 2)))'));

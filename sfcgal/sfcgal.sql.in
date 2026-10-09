@@ -279,7 +279,7 @@ CREATE OR REPLACE FUNCTION CG_MinkowskiSum(geometry, geometry)
 CREATE OR REPLACE FUNCTION ST_MinkowskiSum(geometry, geometry)
 RETURNS geometry AS $$
 	SELECT @extschema@._postgis_deprecate(
-		'ST_MinkowskiSum', 'CG_MinkowsikSum', '3.5.0');
+		'ST_MinkowskiSum', 'CG_MinkowskiSum', '3.5.0');
 	SELECT @extschema@.CG_MinkowskiSum($1, $2);
 $$
 LANGUAGE 'sql' IMMUTABLE SECURITY INVOKER;
@@ -308,6 +308,14 @@ CREATE OR REPLACE FUNCTION CG_ApproximateMedialAxis(geometry)
        LANGUAGE 'c'
        IMMUTABLE STRICT PARALLEL SAFE
        COST 100;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0 when projected is true
+CREATE OR REPLACE FUNCTION CG_ApproximateMedialAxis(geom geometry, projected boolean)
+	RETURNS geometry
+	AS 'MODULE_PATHNAME','sfcgal_approximate_medial_axis'
+	LANGUAGE 'c'
+	IMMUTABLE STRICT PARALLEL SAFE
+	COST 100;
 
 -- Availability: 2.2.0
 -- Deprecation in 3.5.0
@@ -608,5 +616,71 @@ RETURNS geometry
 AS 'MODULE_PATHNAME', 'sfcgal_alphawrapping_3d'
 LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
 _COST_LOW;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0
+CREATE OR REPLACE FUNCTION CG_GenerateFlatRoof(geom geometry, height float8 DEFAULT 3.0)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_generate_flat_roof'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_DEFAULT;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0
+CREATE OR REPLACE FUNCTION CG_GenerateHippedRoof(geom geometry, height float8 DEFAULT 3.0)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_generate_hipped_roof'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_DEFAULT;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0
+CREATE OR REPLACE FUNCTION CG_GenerateGableRoof(geom geometry, height float8 DEFAULT 3.0, slope_angle float8 DEFAULT 30.0)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_generate_gable_roof'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_DEFAULT;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0
+CREATE OR REPLACE FUNCTION CG_GenerateSkillionRoof(geom geometry, height float8 DEFAULT 3.0, slope_angle float8 DEFAULT 30.0, primary_edge_index integer DEFAULT 0)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_generate_skillion_roof'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_DEFAULT;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0
+CREATE OR REPLACE FUNCTION CG_GenerateRoof(geom geometry, roof_type text DEFAULT 'HIPPED', height float8 DEFAULT 3.0, slope_angle float8 DEFAULT 30.0, primary_edge_index integer DEFAULT 0)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_generate_roof'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_DEFAULT;
+
+-- Availability: 3.7.0 - requires SFCGAL >= 2.3.0 and CGAL >= 6.0
+CREATE OR REPLACE FUNCTION CG_PolygonRepair(geom geometry, rule text DEFAULT 'EVEN_ODD')
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_polygon_repair'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_DEFAULT;
+
+-- Availability: 3.7.0
+-- Compute derivative of NURBS curve at given parameter
+CREATE OR REPLACE FUNCTION CG_NurbsCurveDerivative(nurbscurve geometry, parameter float8, derivative_order integer)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_postgis_nurbs_curve_derivative'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_MEDIUM;
+
+-- Availability: 3.7.0
+-- Create interpolating NURBS curve through data points
+CREATE OR REPLACE FUNCTION CG_NurbsCurveInterpolate(data_points geometry, degree integer)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_postgis_nurbs_curve_interpolate'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_HIGH;
+
+-- Availability: 3.7.0
+-- Create approximating NURBS curve for data points
+CREATE OR REPLACE FUNCTION CG_NurbsCurveApproximate(data_points geometry, degree integer, tolerance float8, max_control_points integer DEFAULT 100)
+RETURNS geometry
+AS 'MODULE_PATHNAME', 'sfcgal_postgis_nurbs_curve_approximate'
+LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE
+_COST_HIGH;
 
 COMMIT;

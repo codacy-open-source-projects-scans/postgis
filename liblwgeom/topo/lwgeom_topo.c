@@ -19,7 +19,7 @@
  **********************************************************************
  *
  * Copyright (C) 2015-2026 Sandro Santilli <strk@kbt.io>
- * Copyright (C) 2025 Darafei Praliaskouski <me@komzpa.net>
+ * Copyright (C) 2025-2026 Darafei Praliaskouski <me@komzpa.net>
  *
  **********************************************************************/
 
@@ -38,6 +38,7 @@
 #include <gmp.h>
 
 #include <inttypes.h>
+#include <math.h>
 
 static bool
 _lwt_describe_point(const LWPOINT *pt, char *buf, size_t bufsize)
@@ -53,56 +54,47 @@ _lwt_describe_point(const LWPOINT *pt, char *buf, size_t bufsize)
 }
 
 /*
- * Report a deterministic GEOS-derived location for topology errors.
+ * Report a deterministic location for topology errors.
  * Normalize the intersection geometry so PointOnSurface is stable
  * across operand-order and platform differences.
  */
-static bool
-_lwt_describe_intersection_point(const GEOSGeometry *g1, const GEOSGeometry *g2, char *buf, size_t bufsize)
+static int
+_lwt_describe_intersection_point(const LWGEOM *g1, const LWGEOM *g2, char *buf, size_t bufsize)
 {
-	unsigned int n = 0;
-	POINT2D p;
-	GEOSGeometry *isect;
-	GEOSGeometry *surface_pt;
-	const GEOSCoordSequence *seq;
+  const POINT2D *p;
+  LWGEOM *isect;
+  LWGEOM *normalized;
+  LWGEOM *surface_pt;
 
-	isect = GEOSIntersection(g1, g2);
-	if (!isect)
-		return false;
+  isect = lwgeom_intersection(g1, g2);
+  if (!isect) return 0;
 
-	if (GEOSNormalize(isect) != 0)
-	{
-		GEOSGeom_destroy(isect);
-		return false;
-	}
+  normalized = lwgeom_clone_deep(isect);
+  lwgeom_free(isect);
+  if ( ! normalized ) {
+    return 0;
+  }
+  lwgeom_normalize(normalized);
 
-	surface_pt = GEOSPointOnSurface(isect);
-	GEOSGeom_destroy(isect);
-	if (!surface_pt)
-		return false;
+  surface_pt = lwgeom_pointonsurface(normalized);
+  lwgeom_free(normalized);
+  if ( ! surface_pt ) {
+    return 0;
+  }
 
-	seq = GEOSGeom_getCoordSeq(surface_pt);
-	if (!seq)
-	{
-		GEOSGeom_destroy(surface_pt);
-		return false;
-	}
+  if ( ! lwgeom_as_lwpoint(surface_pt) ) {
+    return 0;
+  }
+  p = getPoint2d_cp(lwgeom_as_lwpoint(surface_pt)->point, 0);
+  if ( ! p ) {
+    lwgeom_free(surface_pt);
+    return 0;
+  }
 
-	if (!GEOSCoordSeq_getSize(seq, &n) || !n)
-	{
-		GEOSGeom_destroy(surface_pt);
-		return false;
-	}
+  snprintf(buf, bufsize, "POINT(%.15g %.15g)", p->x, p->y);
+  lwgeom_free(surface_pt);
 
-	if (!GEOSCoordSeq_getX(seq, 0, &p.x) || !GEOSCoordSeq_getY(seq, 0, &p.y))
-	{
-		GEOSGeom_destroy(surface_pt);
-		return false;
-	}
-
-	GEOSGeom_destroy(surface_pt);
-	snprintf(buf, bufsize, " at POINT(%.15g %.15g)", p.x, p.y);
-	return true;
+  return 1;
 }
 
 /*********************************************************************
@@ -633,6 +625,494 @@ lwt_AddIsoNode( LWT_TOPOLOGY* topo, LWT_ELEMID face,
   return _lwt_AddIsoNode( topo, face, pt, skipISOChecks, 1 );
 }
 
+/**
+* Exact sign of the 2D cross product (q-p1) x (p2-p1), that is the
+* orientation of q with respect to the directed segment (p1,p2).
+*
+* The computation is carried out with exact rational arithmetic using
+* the GNU Multiple Precision Library, so the sign cannot be fooled by
+* floating point cancellation when the magnitude of the coordinates is
+* much larger than the distances between the segments.
+*
+* The coordinates are expected to be finite, non-finite values are not
+* representable in the rationals.
+*
+* @return -1, 0 or 1, the sign of the exact cross product
+*/
+static int
+lwt_segment_side_exact(const POINT2D *p1, const POINT2D *p2, const POINT2D *q)
+{
+  mpq_t x1, y1, x2, y2, xq, yq;
+  mpq_t vx, vy, t1, t2, t3;
+  int side;
+
+  mpq_init(x1);
+  mpq_init(y1);
+  mpq_init(x2);
+  mpq_init(y2);
+  mpq_init(xq);
+  mpq_init(yq);
+  mpq_init(vx);
+  mpq_init(vy);
+  mpq_init(t1);
+  mpq_init(t2);
+  mpq_init(t3);
+
+  /* Exact conversion of the double coordinates to rationals */
+  mpq_set_d(x1, p1->x);
+  mpq_set_d(y1, p1->y);
+  mpq_set_d(x2, p2->x);
+  mpq_set_d(y2, p2->y);
+  mpq_set_d(xq, q->x);
+  mpq_set_d(yq, q->y);
+
+  /* v = p2 - p1 */
+  mpq_sub(vx, x2, x1);
+  mpq_sub(vy, y2, y1);
+
+  /* t3 = (qx-p1x) * (p2y-p1y) - (p2x-p1x) * (qy-p1y) */
+  mpq_sub(t1, xq, x1);
+  mpq_sub(t2, yq, y1);
+  mpq_mul(t3, t1, vy);
+  mpq_mul(t1, vx, t2);
+  mpq_sub(t3, t3, t1);
+
+  side = mpq_sgn(t3);
+
+  mpq_clear(x1);
+  mpq_clear(y1);
+  mpq_clear(x2);
+  mpq_clear(y2);
+  mpq_clear(xq);
+  mpq_clear(yq);
+  mpq_clear(vx);
+  mpq_clear(vy);
+  mpq_clear(t1);
+  mpq_clear(t2);
+  mpq_clear(t3);
+
+  return side;
+}
+
+/**
+* Is P in the extent (bounding box) of the (A1,A2) segment?
+*
+* All the comparisons are exact.
+*/
+static int
+lwt_pt_in_extent(const POINT2D *A1, const POINT2D *A2, const POINT2D *P)
+{
+  return (P->x >= FP_MIN(A1->x, A2->x) && P->x <= FP_MAX(A1->x, A2->x) &&
+          P->y >= FP_MIN(A1->y, A2->y) && P->y <= FP_MAX(A1->y, A2->y));
+}
+
+/**
+* Is P on the (A1,A2) segment, evaluated with exact arithmetic?
+*
+* A point is on the segment when its exact orientation with respect
+* to it is zero and it is within its extent.
+*/
+static int
+lwt_pt_on_segment_exact(const POINT2D *A1, const POINT2D *A2, const POINT2D *P)
+{
+  if ( lwt_segment_side_exact(A1, A2, P) != 0 )
+    return LW_FALSE;
+
+  /* The point is on the segment line, check it's within its extent */
+  return lwt_pt_in_extent(A1, A2, P);
+}
+
+/**
+* How do the segment (P1,P2) and the segment (Q1,Q2) intersect?
+*
+* All the orientation and projection tests are evaluated with exact
+* rational arithmetic, so the result is not affected by floating
+* point cancellation. Only finite coordinates are supported.
+*
+* The intersection point, when the segments intersect on a single
+* point, is never computed: any such point is a vertex of one of
+* the two segments, so it is copied verbatim from the segment
+* coordinates into ipoint. Copying an existing double does not
+* round anything, the point compares exactly against the vertex it
+* came from.
+*
+* @param P1 first point of the first segment
+* @param P2 second point of the first segment
+* @param Q1 first point of the second segment
+* @param Q2 second point of the second segment
+* @param ipoint storage for the intersection point, set when the returned
+*               value is #LWSEG_INTERSECT_POINT
+*
+* @return one of the #LWSEGMENT_INTERSECTION values
+*/
+static int
+lwt_segment_intersection_exact(const POINT2D *P1,
+                             const POINT2D *P2,
+                             const POINT2D *Q1,
+                             const POINT2D *Q2,
+                             POINT2D *ipoint)
+{
+  mpq_t x1, y1, x2, y2, q1x, q1y, q2x, q2y;
+  mpq_t vx, vy, ux, uy;
+  mpq_t t1, t2, t3, t4;
+  mpq_t len2, tQ1, tQ2, tmin, tmax;
+  mpq_t zero;
+  int s11, s12, s21, s22;
+  int zeroP, zeroQ;
+  int ret;
+
+  zeroP = P2D_SAME_STRICT(P1, P2);
+  zeroQ = P2D_SAME_STRICT(Q1, Q2);
+
+  /* Zero length segments, if they intersect, do it on their single point */
+  if ( zeroP || zeroQ )
+  {
+    if ( zeroP && zeroQ )
+    {
+      if ( ! P2D_SAME_STRICT(P1, Q1) )
+        return LWSEG_INTERSECT_NONE;
+    }
+    else if ( zeroP )
+    {
+      if ( ! lwt_pt_on_segment_exact(Q1, Q2, P1) )
+        return LWSEG_INTERSECT_NONE;
+    }
+    else
+    {
+      if ( ! lwt_pt_on_segment_exact(P1, P2, Q1) )
+        return LWSEG_INTERSECT_NONE;
+    }
+
+    *ipoint = zeroP ? *P1 : *Q1;
+    return LWSEG_INTERSECT_POINT;
+  }
+
+  mpq_init(x1);
+  mpq_init(y1);
+  mpq_init(x2);
+  mpq_init(y2);
+  mpq_init(q1x);
+  mpq_init(q1y);
+  mpq_init(q2x);
+  mpq_init(q2y);
+  mpq_init(vx);
+  mpq_init(vy);
+  mpq_init(ux);
+  mpq_init(uy);
+  mpq_init(t1);
+  mpq_init(t2);
+  mpq_init(t3);
+  mpq_init(t4);
+  mpq_init(len2);
+  mpq_init(tQ1);
+  mpq_init(tQ2);
+  mpq_init(tmin);
+  mpq_init(tmax);
+  mpq_init(zero);
+  mpq_set_ui(zero, 0, 1);
+
+  /* Exact conversion of the double coordinates to rationals */
+  mpq_set_d(x1, P1->x);
+  mpq_set_d(y1, P1->y);
+  mpq_set_d(x2, P2->x);
+  mpq_set_d(y2, P2->y);
+  mpq_set_d(q1x, Q1->x);
+  mpq_set_d(q1y, Q1->y);
+  mpq_set_d(q2x, Q2->x);
+  mpq_set_d(q2y, Q2->y);
+
+  /* v = P2 - P1 */
+  mpq_sub(vx, x2, x1);
+  mpq_sub(vy, y2, y1);
+
+  /* s11 = sign( (Q1-P1) x (P2-P1) ) */
+  mpq_sub(t1, q1x, x1);
+  mpq_sub(t2, q1y, y1);
+  mpq_mul(t3, t1, vy);
+  mpq_mul(t4, vx, t2);
+  mpq_sub(t1, t3, t4);
+  s11 = mpq_sgn(t1);
+
+  /* s12 = sign( (Q2-P1) x (P2-P1) ) */
+  mpq_sub(t1, q2x, x1);
+  mpq_sub(t2, q2y, y1);
+  mpq_mul(t3, t1, vy);
+  mpq_mul(t4, vx, t2);
+  mpq_sub(t1, t3, t4);
+  s12 = mpq_sgn(t1);
+
+  /* Are both endpoints of the second segment on the same side of the first? */
+  if ( (s11 > 0 && s12 > 0) || (s11 < 0 && s12 < 0) )
+  {
+    ret = LWSEG_INTERSECT_NONE;
+    goto cleanup;
+  }
+
+  /* u = Q2 - Q1 */
+  mpq_sub(ux, q2x, q1x);
+  mpq_sub(uy, q2y, q1y);
+
+  /* s21 = sign( (P1-Q1) x (Q2-Q1) ) */
+  mpq_sub(t1, x1, q1x);
+  mpq_sub(t2, y1, q1y);
+  mpq_mul(t3, t1, uy);
+  mpq_mul(t4, ux, t2);
+  mpq_sub(t1, t3, t4);
+  s21 = mpq_sgn(t1);
+
+  /* s22 = sign( (P2-Q1) x (Q2-Q1) ) */
+  mpq_sub(t1, x2, q1x);
+  mpq_sub(t2, y2, q1y);
+  mpq_mul(t3, t1, uy);
+  mpq_mul(t4, ux, t2);
+  mpq_sub(t1, t3, t4);
+  s22 = mpq_sgn(t1);
+
+  /* Are both endpoints of the first segment on the same side of the second? */
+  if ( (s21 > 0 && s22 > 0) || (s21 < 0 && s22 < 0) )
+  {
+    ret = LWSEG_INTERSECT_NONE;
+    goto cleanup;
+  }
+
+  /*
+  * Both endpoints of the second segment are on the line of the first,
+  * the segments are collinear and the intersection is their overlap.
+  *
+  * Use the projection on the (P1,P2) vector as the segment parameter,
+  * the overlap is the [0,len2] interval trimmed by the [tQ1,tQ2] one.
+  * All the computations are exact.
+  */
+  if ( s11 == 0 && s12 == 0 )
+  {
+    mpq_mul(len2, vx, vx);
+    mpq_mul(t1, vy, vy);
+    mpq_add(len2, len2, t1);
+
+    /* tQ1 = (Q1-P1) . (P2-P1) */
+    mpq_sub(t1, q1x, x1);
+    mpq_mul(t2, t1, vx);
+    mpq_sub(t1, q1y, y1);
+    mpq_mul(t3, t1, vy);
+    mpq_add(tQ1, t2, t3);
+
+    /* tQ2 = (Q2-P1) . (P2-P1) */
+    mpq_sub(t1, q2x, x1);
+    mpq_mul(t2, t1, vx);
+    mpq_sub(t1, q2y, y1);
+    mpq_mul(t3, t1, vy);
+    mpq_add(tQ2, t2, t3);
+
+    /* tmin = max(0, min(tQ1, tQ2)) */
+    if ( mpq_cmp(tQ1, tQ2) <= 0 )
+      mpq_set(tmin, tQ1);
+    else
+      mpq_set(tmin, tQ2);
+    if ( mpq_cmp(tmin, zero) < 0 )
+      mpq_set(tmin, zero);
+
+    /* tmax = min(len2, max(tQ1, tQ2)) */
+    if ( mpq_cmp(tQ1, tQ2) > 0 )
+      mpq_set(tmax, tQ1);
+    else
+      mpq_set(tmax, tQ2);
+    if ( mpq_cmp(tmax, len2) > 0 )
+      mpq_set(tmax, len2);
+
+    /* No overlap at all */
+    if ( mpq_cmp(tmin, tmax) > 0 )
+    {
+      ret = LWSEG_INTERSECT_NONE;
+      goto cleanup;
+    }
+
+    /* The segments are collinear and share a positive length */
+    if ( mpq_cmp(tmin, tmax) < 0 )
+    {
+      ret = LWSEG_INTERSECT_OVERLAP;
+      goto cleanup;
+    }
+
+    /*
+    ** The segments touch on a single point. With non-zero-length
+    ** segments this is always one of the four segment endpoints:
+    ** tmin == tmax implies the touching parameter is 0, len2, tQ1
+    ** or tQ2, because otherwise tQ1 == tQ2 would make the second
+    ** segment zero-length. The point is copied verbatim from the
+    ** segment coordinates, never computed: no rounding of the
+    ** intersection point is involved.
+    */
+    if ( mpq_cmp(tmin, zero) == 0 )
+      *ipoint = *P1;
+    else if ( mpq_cmp(tmin, len2) == 0 )
+      *ipoint = *P2;
+    else if ( mpq_cmp(tmin, tQ1) == 0 )
+      *ipoint = *Q1;
+    else if ( mpq_cmp(tmin, tQ2) == 0 )
+      *ipoint = *Q2;
+    else
+      lwerror("%s: unreachable single-point collinear touch", __func__);
+    ret = LWSEG_INTERSECT_POINT;
+    goto cleanup;
+  }
+
+  /*
+  * The segments are not collinear, they intersect on a single point.
+  * When that point is not a vertex of either segment it is interior
+  * to both of them. The on-segment tests are exact.
+  */
+  if ( s11 == 0 && lwt_pt_in_extent(P1, P2, Q1) )
+  {
+    *ipoint = *Q1;
+    ret = LWSEG_INTERSECT_POINT;
+    goto cleanup;
+  }
+
+  if ( s12 == 0 && lwt_pt_in_extent(P1, P2, Q2) )
+  {
+    *ipoint = *Q2;
+    ret = LWSEG_INTERSECT_POINT;
+    goto cleanup;
+  }
+
+  if ( s21 == 0 && lwt_pt_in_extent(Q1, Q2, P1) )
+  {
+    *ipoint = *P1;
+    ret = LWSEG_INTERSECT_POINT;
+    goto cleanup;
+  }
+
+  if ( s22 == 0 && lwt_pt_in_extent(Q1, Q2, P2) )
+  {
+    *ipoint = *P2;
+    ret = LWSEG_INTERSECT_POINT;
+    goto cleanup;
+  }
+
+  ret = LWSEG_INTERSECT_CROSS;
+
+cleanup:
+  mpq_clear(x1);
+  mpq_clear(y1);
+  mpq_clear(x2);
+  mpq_clear(y2);
+  mpq_clear(q1x);
+  mpq_clear(q1y);
+  mpq_clear(q2x);
+  mpq_clear(q2y);
+  mpq_clear(vx);
+  mpq_clear(vy);
+  mpq_clear(ux);
+  mpq_clear(uy);
+  mpq_clear(t1);
+  mpq_clear(t2);
+  mpq_clear(t3);
+  mpq_clear(t4);
+  mpq_clear(len2);
+  mpq_clear(tQ1);
+  mpq_clear(tQ2);
+  mpq_clear(tmin);
+  mpq_clear(tmax);
+  mpq_clear(zero);
+
+  return ret;
+}
+
+/*
+ * Do two lines intersect anywhere but on a point shared by both of their
+ * boundaries, evaluated with exact arithmetic?
+ *
+ * Only 2D coordinates are considered.
+ *
+ * All the orientation and projection tests are evaluated with exact
+ * rational arithmetic (see lwt_segment_intersection_exact above), so that
+ * floating point cancellation between far-away coordinates cannot make a
+ * disjoint pair of lines look like an intersecting one.
+ *
+ * Coordinates that are not finite (NaN or Inf) cannot be converted to
+ * rationals; lines with such coordinates are reported as having a
+ * non-boundary intersection, which makes the caller reject them as
+ * crossing.
+ *
+ * @param line1 first line
+ * @param line2 second line
+ *
+ * @return 1 if there's a non-boundary 2d intersection, 0 if there's NO
+ *         non-boundary 2d intersection
+ */
+int
+lwt_LineHaveNonBoundary2DIntersection(const LWLINE *line1, const LWLINE *line2)
+{
+  const POINTARRAY *pa1, *pa2;
+  uint32_t i1, i2;
+  POINT2D ipoint;
+  const POINT2D *s1, *e1, *s2, *e2;
+
+  if ( !line1 || !line2 )
+    return LW_FALSE;
+
+  pa1 = line1->points;
+  pa2 = line2->points;
+
+  /* Lines without segments can't intersect anything */
+  if ( !pa1 || !pa2 || pa1->npoints < 2 || pa2->npoints < 2 )
+    return LW_FALSE;
+
+  /* Non-finite coordinates cannot be converted to rationals: report
+   * them as intersecting, so the caller rejects the line as crossing */
+  for (i1 = 0; i1 < pa1->npoints; ++i1)
+  {
+    const POINT2D *p = getPoint2d_cp(pa1, i1);
+    if ( ! isfinite(p->x) || ! isfinite(p->y) )
+      return LW_TRUE;
+  }
+  for (i2 = 0; i2 < pa2->npoints; ++i2)
+  {
+    const POINT2D *p = getPoint2d_cp(pa2, i2);
+    if ( ! isfinite(p->x) || ! isfinite(p->y) )
+      return LW_TRUE;
+  }
+
+  /* Boundary points of the two lines */
+  s1 = getPoint2d_cp(pa1, 0);
+  e1 = getPoint2d_cp(pa1, pa1->npoints - 1);
+  s2 = getPoint2d_cp(pa2, 0);
+  e2 = getPoint2d_cp(pa2, pa2->npoints - 1);
+
+  for (i1 = 0; i1 < pa1->npoints - 1; ++i1)
+  {
+    const POINT2D *p1 = getPoint2d_cp(pa1, i1);
+    const POINT2D *p2 = getPoint2d_cp(pa1, i1 + 1);
+
+    for (i2 = 0; i2 < pa2->npoints - 1; ++i2)
+    {
+      const POINT2D *q1 = getPoint2d_cp(pa2, i2);
+      const POINT2D *q2 = getPoint2d_cp(pa2, i2 + 1);
+      int inter;
+
+      inter = lwt_segment_intersection_exact(p1, p2, q1, q2, &ipoint);
+
+      /* Crossings and overlaps are never boundary only */
+      if ( inter == LWSEG_INTERSECT_CROSS ||
+           inter == LWSEG_INTERSECT_OVERLAP )
+        return LW_TRUE;
+
+      /*
+      ** A touch on a point which is a boundary point of both lines
+      ** is not a non-boundary intersection
+      */
+      if ( inter == LWSEG_INTERSECT_POINT &&
+           ( ! (P2D_SAME_STRICT(&ipoint, s1) || P2D_SAME_STRICT(&ipoint, e1)) ||
+             ! (P2D_SAME_STRICT(&ipoint, s2) || P2D_SAME_STRICT(&ipoint, e2)) ) )
+        return LW_TRUE;
+    }
+  }
+
+  return LW_FALSE;
+}
+
+
+
 /*
  * Check that an edge does not cross an existing node and
  * does not have non-boundary intersection with existing edge
@@ -652,16 +1132,7 @@ _lwt_CheckEdgeCrossing( LWT_TOPOLOGY* topo,
   LWT_ISO_EDGE *edges;
   LWT_ISO_NODE *nodes;
   const GBOX *edgebox;
-  GEOSGeometry *edgegg;
 
-  initGEOS(lwnotice, lwgeom_geos_error);
-
-  edgegg = LWGEOM2GEOS(lwline_as_lwgeom(geom), 0);
-  if (!edgegg)
-  {
-    lwerror("Could not convert edge geometry to GEOS: %s", lwgeom_geos_errmsg);
-    return -1;
-  }
   edgebox = lwgeom_get_bbox( lwline_as_lwgeom(geom) );
 
   /* loop over each node within the edge's gbox */
@@ -679,16 +1150,12 @@ _lwt_CheckEdgeCrossing( LWT_TOPOLOGY* topo,
 	  LWT_ISO_NODE *node = &(nodes[i]);
 	  LWT_ELEMID node_id = node->node_id;
 
-	  /* check if the edge contains this node (not on boundary) */
-	  /* ST_RelateMatch(rec.relate, 'T********') */
-
 	  /* skip boundary nodes */
 	  if (node_id == start_node) continue;
 	  if (node_id == end_node) continue;
 
 	  if (!node->geom || !node->geom->point || !node->geom->point->npoints)
 	  {
-		  GEOSGeom_destroy(edgegg);
 		  _lwt_release_nodes(nodes, num_nodes);
 		  lwerror("Internal error: lwt_be_getNodeWithinBox2D returned node %"
 		          LWTFMT_ELEMID " with no vertices", node_id);
@@ -701,7 +1168,6 @@ _lwt_CheckEdgeCrossing( LWT_TOPOLOGY* topo,
 	  {
 		  char locinfo[128] = "";
 		  snprintf(locinfo, sizeof(locinfo), " at POINT(%.15g %.15g)", p.x, p.y);
-		  GEOSGeom_destroy(edgegg);
 		  _lwt_release_nodes(nodes, num_nodes);
 		  lwerror("SQL/MM Spatial exception - geometry crosses a node%s", locinfo);
 		  return -1;
@@ -715,7 +1181,6 @@ _lwt_CheckEdgeCrossing( LWT_TOPOLOGY* topo,
   LWDEBUGF(1, "lwt_be_getEdgeWithinBox2D returned %" PRIu64 " edges", num_edges);
   if (num_edges == UINT64_MAX)
   {
-    GEOSGeom_destroy(edgegg);
     PGTOPO_BE_ERROR();
     return -1;
   }
@@ -723,9 +1188,6 @@ _lwt_CheckEdgeCrossing( LWT_TOPOLOGY* topo,
   {
     LWT_ISO_EDGE* edge = &(edges[i]);
     LWT_ELEMID edge_id = edge->edge_id;
-    GEOSGeometry *eegg;
-    char *relate;
-    int match;
 
     if ( edge_id == myself ) continue;
 
@@ -735,168 +1197,21 @@ _lwt_CheckEdgeCrossing( LWT_TOPOLOGY* topo,
       return -1;
     }
 
-    eegg = LWGEOM2GEOS( lwline_as_lwgeom(edge->geom), 0 );
-    if ( ! eegg ) {
-      GEOSGeom_destroy(edgegg);
-      _lwt_release_edges(edges, num_edges);
-      lwerror("Could not convert edge geometry to GEOS: %s", lwgeom_geos_errmsg);
-      return -1;
-    }
-
-    LWDEBUGF(2, "Edge %" LWTFMT_ELEMID " converted to GEOS", edge_id);
-
     /* check if the edge has a non-boundary-boundary intersection with our edge */
-
-    relate = GEOSRelateBoundaryNodeRule(eegg, edgegg, 2);
-    if ( ! relate ) {
-	    GEOSGeom_destroy(eegg);
-	    GEOSGeom_destroy(edgegg);
-	    _lwt_release_edges(edges, num_edges);
-	    lwerror("GEOSRelateBoundaryNodeRule error: %s", lwgeom_geos_errmsg);
-	    return -1;
-    }
-
-    LWDEBUGF(2, "Edge %" LWTFMT_ELEMID " relate pattern is %s", edge_id, relate);
-
-    match = GEOSRelatePatternMatch(relate, "FF*F*****");
-    if ( match ) {
-      /* error or no interior intersection */
-      GEOSFree(relate);
-      GEOSGeom_destroy(eegg);
-      if ( match == 2 ) {
-        _lwt_release_edges(edges, num_edges);
-        GEOSGeom_destroy(edgegg);
-        lwerror("GEOSRelatePatternMatch error: %s", lwgeom_geos_errmsg);
-        return -1;
-      }
-      continue; /* no interior intersection */
-    }
-
-    match = GEOSRelatePatternMatch(relate, "1FFF*FFF2");
-    if ( match ) {
-	    char locinfo[128] = "";
-	    const char *locsuffix = match == 2                                                        ? ""
-				    : _lwt_describe_intersection_point(edgegg, eegg, locinfo, sizeof(locinfo))
-					? locinfo
-					: "";
-	    GEOSGeom_destroy(eegg);
-	    GEOSGeom_destroy(edgegg);
-	    _lwt_release_edges(edges, num_edges);
-	    GEOSFree(relate);
-	    if (match == 2)
-	    {
-		    lwerror("GEOSRelatePatternMatch error: %s", lwgeom_geos_errmsg);
-	    }
-	    else
-	    {
-		    lwerror("SQL/MM Spatial exception - coincident edge %" LWTFMT_ELEMID "%s", edge_id, locsuffix);
-	    }
-      return -1;
-    }
-
-    match = GEOSRelatePatternMatch(relate, "1********");
-    if ( match ) {
-	    char locinfo[128] = "";
-	    const char *locsuffix = match == 2                                                        ? ""
-				    : _lwt_describe_intersection_point(edgegg, eegg, locinfo, sizeof(locinfo))
-					? locinfo
-					: "";
-	    GEOSGeom_destroy(eegg);
-	    GEOSGeom_destroy(edgegg);
-	    _lwt_release_edges(edges, num_edges);
-	    GEOSFree(relate);
-	    if (match == 2)
-	    {
-		    lwerror("GEOSRelatePatternMatch error: %s", lwgeom_geos_errmsg);
-	    }
-	    else
-	    {
-		    lwerror("Spatial exception - geometry intersects edge %" LWTFMT_ELEMID "%s", edge_id, locsuffix);
-	    }
-      return -1;
-    }
-
-    match = GEOSRelatePatternMatch(relate, "T********");
-    if ( match ) {
-	    char locinfo[128] = "";
-	    const char *locsuffix = match == 2                                                        ? ""
-				    : _lwt_describe_intersection_point(edgegg, eegg, locinfo, sizeof(locinfo))
-					? locinfo
-					: "";
-	    GEOSGeom_destroy(eegg);
-	    GEOSGeom_destroy(edgegg);
-	    _lwt_release_edges(edges, num_edges);
-	    GEOSFree(relate);
-	    if (match == 2)
-	    {
-		    lwerror("GEOSRelatePatternMatch error: %s", lwgeom_geos_errmsg);
-	    }
-	    else
-	    {
-		    lwerror(
-			"SQL/MM Spatial exception - geometry crosses edge %" LWTFMT_ELEMID "%s", edge_id, locsuffix);
-	    }
-      return -1;
-    }
-
-    match = GEOSRelatePatternMatch(relate, "*T*******");
-    if ( match ) {
-	    char locinfo[128] = "";
-	    const char *locsuffix = match == 2                                                        ? ""
-				    : _lwt_describe_intersection_point(edgegg, eegg, locinfo, sizeof(locinfo))
-					? locinfo
-					: "";
-	    GEOSGeom_destroy(eegg);
-	    GEOSGeom_destroy(edgegg);
-	    _lwt_release_edges(edges, num_edges);
-	    GEOSFree(relate);
-	    if (match == 2)
-	    {
-		    lwerror("GEOSRelatePatternMatch error: %s", lwgeom_geos_errmsg);
-	    }
-	    else
-	    {
-		    lwerror("Spatial exception - geometry boundary touches interior of edge %" LWTFMT_ELEMID "%s",
-			    edge_id,
-			    locsuffix);
-	    }
-      return -1;
-    }
-
-    match = GEOSRelatePatternMatch(relate, "***T*****");
-    if ( match ) {
-	    char locinfo[128] = "";
-	    const char *locsuffix = match == 2                                                        ? ""
-				    : _lwt_describe_intersection_point(edgegg, eegg, locinfo, sizeof(locinfo))
-					? locinfo
-					: "";
-	    GEOSGeom_destroy(eegg);
-	    GEOSGeom_destroy(edgegg);
-	    _lwt_release_edges(edges, num_edges);
-	    GEOSFree(relate);
-	    if (match == 2)
-	    {
-		    lwerror("GEOSRelatePatternMatch error: %s", lwgeom_geos_errmsg);
-	    }
-	    else
-	    {
-		    lwerror("Spatial exception - boundary of edge %" LWTFMT_ELEMID " touches interior of geometry%s",
-			    edge_id,
-			    locsuffix);
-	    }
+    if ( lwt_LineHaveNonBoundary2DIntersection(edge->geom, geom) )
+    {
+      char locinfo[128] = "";
+      _lwt_describe_intersection_point(lwline_as_lwgeom(edge->geom), lwline_as_lwgeom(geom), locinfo, sizeof(locinfo));
+      _lwt_release_edges(edges, num_edges);
+      lwerror("SQL/MM Spatial exception - non-boundary intersection with edge %" LWTFMT_ELEMID " at or near %s", edge_id, locinfo);
       return -1;
     }
 
     LWDEBUGF(2, "Edge %" LWTFMT_ELEMID " analysis completed, it does no harm", edge_id);
-
-    GEOSFree(relate);
-    GEOSGeom_destroy(eegg);
   }
   LWDEBUGF(1, "No edge crossing detected among the %" PRIu64 " candidate edges", num_edges);
   if ( edges ) _lwt_release_edges(edges, num_edges);
               /* would be NULL if num_edges was 0 */
-
-  GEOSGeom_destroy(edgegg);
 
   return 0;
 }
@@ -1888,27 +2203,49 @@ lwt_IsTopoRingCCW(const POINTARRAY *pa)
   const POINT2D *P3;
   mpf_t sum;
   mpf_t tmp;
-  double x0, x, y1, y2;
+  mpf_t x0;
+  mpf_t x;
+  mpf_t dy;
   uint32_t i;
   int ret;
 
   if (! pa || pa->npoints < 3 )
     return 0;
 
-  mpf_init2(sum, 64);
-  mpf_init2(tmp, 64);
-  mpf_set_d(sum, 0.0);
-
   P1 = getPoint2d_cp(pa, 0);
   P2 = getPoint2d_cp(pa, 1);
-  x0 = P1->x;
+
+  if (!isfinite(P1->x) || !isfinite(P1->y) || !isfinite(P2->x) || !isfinite(P2->y))
+	  return ptarray_isccw(pa);
+
+  mpf_init2(sum, 64);
+  mpf_init2(tmp, 64);
+  mpf_init2(x0, 64);
+  mpf_init2(x, 64);
+  mpf_init2(dy, 64);
+  mpf_set_d(sum, 0.0);
+  mpf_set_d(x0, P1->x);
+
   for ( i = 2; i < pa->npoints; i++ )
   {
     P3 = getPoint2d_cp(pa, i);
-    x = P2->x - x0;
-    y1 = P3->y;
-    y2 = P1->y;
-    mpf_set_d(tmp, x * (y2-y1));
+
+    if (!isfinite(P3->x) || !isfinite(P3->y))
+    {
+	    mpf_clear(dy);
+	    mpf_clear(x);
+	    mpf_clear(x0);
+	    mpf_clear(tmp);
+	    mpf_clear(sum);
+	    return ptarray_isccw(pa);
+    }
+
+    mpf_set_d(x, P2->x);
+    mpf_sub(x, x, x0);
+    mpf_set_d(dy, P1->y);
+    mpf_set_d(tmp, P3->y);
+    mpf_sub(dy, dy, tmp);
+    mpf_mul(tmp, x, dy);
     mpf_add(sum, sum, tmp);
     P1 = P2;
     P2 = P3;
@@ -1916,6 +2253,9 @@ lwt_IsTopoRingCCW(const POINTARRAY *pa)
 
   ret = mpf_cmp_ui(sum, 0) < 0;
 
+  mpf_clear(dy);
+  mpf_clear(x);
+  mpf_clear(x0);
   mpf_clear(tmp);
   mpf_clear(sum);
 
@@ -2044,6 +2384,12 @@ _lwt_MakeRingShell(LWT_TOPOLOGY *topo, LWT_ELEMID *signed_edge_ids, uint64_t num
   *isccw = lwt_IsTopoRingCCW(full_ring_pa);
 
   POINTARRAY **points = lwalloc(sizeof(POINTARRAY*));
+  if (!points)
+  {
+	  ptarray_free(full_ring_pa);
+	  lwerror("Could not allocate ring shell rings array");
+	  return NULL;
+  }
   points[0] = full_ring_pa;
 
   /* NOTE: the ring may very well have collapsed components,
@@ -4364,7 +4710,7 @@ _lwt_RemEdge( LWT_TOPOLOGY* topo, LWT_ELEMID edge_id, int modFace )
   if (result != 1)
   {
     _lwt_release_edges(edge, 1);
-    lwerror("Unexpected error: %" PRIu64 " faces updated when expecting 1", i);
+    lwerror("Unexpected error: %d faces updated when expecting 1", result);
     return -1;
   }
       }
@@ -6698,7 +7044,8 @@ _lwt_SplitAllEdgesToNewNode(LWT_TOPOLOGY* topo, LWT_ISO_EDGE *edges, uint64_t nu
     /* TODO: use square distance */
     dist = lwgeom_mindistance2d(lwline_as_lwgeom(edges[i].geom), lwpoint_as_lwgeom(point));
     LWDEBUGF(1, "Edge %" LWTFMT_ELEMID " distance: %.15g", e->edge_id, dist);
-    if ( dist >= tol ) continue;
+    if (dist && dist >= tol)
+	    continue;
     sorted[j].edge = e;
     sorted[j++].score = dist;
   }
@@ -6909,6 +7256,8 @@ _lwt_SplitAllEdgesToNewNode(LWT_TOPOLOGY* topo, LWT_ISO_EDGE *edges, uint64_t nu
 }
 
 /*
+ * @param nodeTol node snapping tolerance, or -1 for automatic computation
+ * @param edgeTol edge splitting tolerance, or -1 for automatic computation
  * @param findFace if non-zero the code will determine which face
  *        contains the given point (unless it is known to be NOT
  *        isolated)
@@ -6918,8 +7267,13 @@ _lwt_SplitAllEdgesToNewNode(LWT_TOPOLOGY* topo, LWT_ISO_EDGE *edges, uint64_t nu
  *                      split by this point.
  */
 static LWT_ELEMID
-_lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
-              findFace, int *moved, int *numSplitEdges)
+_lwt_AddPoint(LWT_TOPOLOGY *topo,
+	      LWPOINT *point,
+	      double nodeTol,
+	      double edgeTol,
+	      int findFace,
+	      int *moved,
+	      int *numSplitEdges)
 {
   uint64_t num, i;
   double mindist = FLT_MAX;
@@ -6930,9 +7284,11 @@ _lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
   int flds;
   LWT_ELEMID id = 0;
 
-  /* Get tolerance, if 0 was given */
-  if ( tol == -1 )
-    tol = _LWT_MINTOLERANCE(topo, pt);
+  /* Get tolerance, if -1 was given */
+  if (nodeTol == -1)
+	  nodeTol = _LWT_MINTOLERANCE(topo, pt);
+  if (edgeTol == -1)
+	  edgeTol = _LWT_MINTOLERANCE(topo, pt);
 
   LWDEBUGG(1, pt, "Adding point");
 
@@ -6942,7 +7298,7 @@ _lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
   TODO: use WithinBox2D
   */
   flds = LWT_COL_NODE_NODE_ID | LWT_COL_NODE_GEOM;
-  nodes = lwt_be_getNodeWithinDistance2D(topo, point, tol, &num, flds, 0);
+  nodes = lwt_be_getNodeWithinDistance2D(topo, point, nodeTol, &num, flds, 0);
   if (num == UINT64_MAX)
   {
     PGTOPO_BE_ERROR();
@@ -6953,28 +7309,32 @@ _lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
 
   if ( num )
   {
-    LWDEBUGF(1, "New point is within %.15g units of %" PRIu64 " nodes", tol, num);
-    /* Order by distance if there are more than a single return */
-    if ( num > 1 )
-    {{
-		    sorted = lwalloc(sizeof(scored_node) * num);
-		    for (i = 0; i < num; ++i)
-		    {
-			    sorted[i].node = nodes + i;
-			    sorted[i].score = lwgeom_mindistance2d(lwpoint_as_lwgeom(nodes[i].geom), pt);
-			    LWDEBUGF(
-				1, "Node %" LWTFMT_ELEMID " distance: %.15g", sorted[i].node->node_id, sorted[i].score);
-		    }
-		    qsort(sorted, num, sizeof(scored_node), compare_scored_node);
-		    nodes2 = lwalloc(sizeof(LWT_ISO_NODE) * num);
-		    for (i = 0; i < num; ++i)
-		    {
-			    nodes2[i] = *sorted[i].node;
-		    }
-      lwfree(sorted);
-      lwfree(nodes);
-      nodes = nodes2;
-    }}
+	  LWDEBUGF(1, "New point is within %.15g units of %" PRIu64 " nodes", nodeTol, num);
+	  /* Order by distance if there are more than a single return */
+	  if (num > 1)
+	  {
+		  {
+			  sorted = lwalloc(sizeof(scored_node) * num);
+			  for (i = 0; i < num; ++i)
+			  {
+				  sorted[i].node = nodes + i;
+				  sorted[i].score = lwgeom_mindistance2d(lwpoint_as_lwgeom(nodes[i].geom), pt);
+				  LWDEBUGF(1,
+					   "Node %" LWTFMT_ELEMID " distance: %.15g",
+					   sorted[i].node->node_id,
+					   sorted[i].score);
+			  }
+			  qsort(sorted, num, sizeof(scored_node), compare_scored_node);
+			  nodes2 = lwalloc(sizeof(LWT_ISO_NODE) * num);
+			  for (i = 0; i < num; ++i)
+			  {
+				  nodes2[i] = *sorted[i].node;
+			  }
+			  lwfree(sorted);
+			  lwfree(nodes);
+			  nodes = nodes2;
+		  }
+	  }
 
     for ( i=0; i<num; ++i )
     {
@@ -6983,7 +7343,8 @@ _lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
       double dist = lwgeom_mindistance2d(g, pt);
       /* TODO: move this check in the previous sort scan ... */
       /* must be closer than tolerated, unless distance is zero */
-      if ( dist && dist >= tol ) continue;
+      if (dist && dist >= nodeTol)
+	      continue;
       if ( ! id || dist < mindist )
       {
         id = n->node_id;
@@ -7007,18 +7368,19 @@ _lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
   TODO: use WithinBox2D
   */
   flds = LWT_COL_EDGE_ALL; /* EDGE_ID|LWT_COL_EDGE_GEOM;*/
-  edges = lwt_be_getEdgeWithinDistance2D(topo, point, tol, &num, flds, 0);
+  edges = lwt_be_getEdgeWithinDistance2D(topo, point, edgeTol, &num, flds, 0);
   if (num == UINT64_MAX)
   {
     PGTOPO_BE_ERROR();
     return -1;
   }
-  LWDEBUGF(1, "New point is within %.15g units of %" PRIu64 " edges", tol, num);
+  LWDEBUGF(1, "New point is within %.15g units of %" PRIu64 " edges", edgeTol, num);
   if ( num )
   {
-    id = _lwt_SplitAllEdgesToNewNode(topo, edges, num, lwgeom_as_lwpoint(pt), tol, moved);
-    _lwt_release_edges(edges, num);
-    if ( numSplitEdges ) *numSplitEdges = num;
+	  id = _lwt_SplitAllEdgesToNewNode(topo, edges, num, lwgeom_as_lwpoint(pt), edgeTol, moved);
+	  _lwt_release_edges(edges, num);
+	  if (numSplitEdges)
+		  *numSplitEdges = num;
   }
 
   if ( id == 0 )
@@ -7042,7 +7404,23 @@ _lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol, int
 LWT_ELEMID
 lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol)
 {
-  return _lwt_AddPoint(topo, point, tol, 1, NULL, NULL);
+	return _lwt_AddPoint(topo, point, tol, tol, 1, NULL, NULL);
+}
+
+static double
+_lwt_AddLineEndpointRepairTol(LWPOINT *point, int exactNodeSnap)
+{
+	double tol = _lwt_minTolerance(lwpoint_as_lwgeom(point));
+
+	/*
+	 * Explicit-zero caller endpoints must not use coordinate-scale repair
+	 * tolerance. Keep only the library-wide floating point tolerance so old
+	 * robust cases with machine-scale drift can still split intended edges.
+	 */
+	if (exactNodeSnap && tol > FP_TOLERANCE)
+		return FP_TOLERANCE;
+
+	return tol;
 }
 
 /*
@@ -7064,11 +7442,21 @@ lwt_AddPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol)
  *                    the number of new edges resulting from this
  *                    incoming new edge, taking into account edges
  *                    created due to splitting of existing edges.
+ * @param startExactNodeSnap if non-zero, insert the start endpoint with
+ *                           exact node tolerance.
+ * @param endExactNodeSnap if non-zero, insert the end endpoint with
+ *                         exact node tolerance.
  *
  */
 static LWT_ELEMID
-_lwt_AddLineEdge( LWT_TOPOLOGY* topo, LWLINE* edge, double tol,
-                  int handleFaceSplit, int *forward, int *numNewEdges )
+_lwt_AddLineEdge(LWT_TOPOLOGY *topo,
+		 LWLINE *edge,
+		 double tol,
+		 int startExactNodeSnap,
+		 int endExactNodeSnap,
+		 int handleFaceSplit,
+		 int *forward,
+		 int *numNewEdges)
 {
   LWCOLLECTION *col;
   LWPOINT *start_point, *end_point;
@@ -7080,6 +7468,8 @@ _lwt_AddLineEdge( LWT_TOPOLOGY* topo, LWLINE* edge, double tol,
   uint64_t nn, i;
   int moved=0, mm;
   int pointSplitEdges = -666;
+  double endpoint_node_tol;
+  double endpoint_edge_tol;
 
   if ( numNewEdges ) *numNewEdges = 0;
 
@@ -7092,9 +7482,19 @@ _lwt_AddLineEdge( LWT_TOPOLOGY* topo, LWLINE* edge, double tol,
     lwnotice("Empty component of noded line");
     return 0; /* must be empty */
   }
-  nid[0] = _lwt_AddPoint( topo, start_point,
-                          _lwt_minTolerance(lwpoint_as_lwgeom(start_point)),
-                          handleFaceSplit, &mm, &pointSplitEdges );
+  /*
+   * Endpoint insertion repairs already-noded components. Original input
+   * endpoints keep exact node tolerance when the caller requested zero
+   * line-body tolerance. They still get a bounded edge-repair tolerance so
+   * machine-scale drift can split an intended existing edge without projecting
+   * the endpoint to a coordinate-scale nearby edge. Noding-derived endpoints
+   * use local tolerance for both so GEOS intersection coordinates can rejoin
+   * existing topology nodes.
+   */
+  endpoint_edge_tol = _lwt_AddLineEndpointRepairTol(start_point, startExactNodeSnap);
+  endpoint_node_tol = startExactNodeSnap ? 0.0 : endpoint_edge_tol;
+  nid[0] =
+      _lwt_AddPoint(topo, start_point, endpoint_node_tol, endpoint_edge_tol, handleFaceSplit, &mm, &pointSplitEdges);
   lwpoint_free(start_point); /* too late if lwt_AddPoint calls lwerror */
   if ( nid[0] == -1 ) return -1; /* lwerror should have been called */
   if ( numNewEdges ) *numNewEdges += pointSplitEdges;
@@ -7109,9 +7509,9 @@ _lwt_AddLineEdge( LWT_TOPOLOGY* topo, LWLINE* edge, double tol,
             "after successfully getting first point !?");
     return -1;
   }
-  nid[1] = _lwt_AddPoint( topo, end_point,
-                          _lwt_minTolerance(lwpoint_as_lwgeom(end_point)),
-                          handleFaceSplit, &mm, &pointSplitEdges );
+  endpoint_edge_tol = _lwt_AddLineEndpointRepairTol(end_point, endExactNodeSnap);
+  endpoint_node_tol = endExactNodeSnap ? 0.0 : endpoint_edge_tol;
+  nid[1] = _lwt_AddPoint(topo, end_point, endpoint_node_tol, endpoint_edge_tol, handleFaceSplit, &mm, &pointSplitEdges);
   lwpoint_free(end_point); /* too late if lwt_AddPoint calls lwerror */
   if ( nid[1] == -1 ) return -1; /* lwerror should have been called */
   if ( numNewEdges ) *numNewEdges += pointSplitEdges;
@@ -7159,12 +7559,12 @@ _lwt_AddLineEdge( LWT_TOPOLOGY* topo, LWLINE* edge, double tol,
 
     if ( nn ) _lwt_release_nodes(node, nn);
 
-    LWDEBUGG(2, lwline_as_lwgeom(edge), "Snapped after drifted endpoints snap");
+    LWDEBUGG(1, lwline_as_lwgeom(edge), "Snapped after drifted endpoints snap");
 
-    /* make valid, after snap (to handle collapses) */
-    tmp = lwgeom_make_valid(lwline_as_lwgeom(edge));
+    /* node after snap (to handle collapses) */
+    tmp = lwgeom_node(lwline_as_lwgeom(edge));
 
-    LWDEBUGG(2, tmp, "Made-valid after snap to drifted endpoints");
+    LWDEBUGG(1, tmp, "Noded after snap to drifted endpoints");
 
     col = lwgeom_as_lwcollection(tmp);
     if ( col )
@@ -7299,6 +7699,57 @@ _lwt_split_by_nodes(const LWGEOM *g, const LWGEOM *nodes)
   return bg;
 }
 
+/*
+ * Compute the junction points between the overlay intersection linework
+ * (shared paths and crossings between the noded line and nearby edges)
+ * and the rest of the noded line: the 0-dimensional intersection
+ * components plus the mod-2 boundary of the 1-dimensional ones.
+ *
+ * These junctions must become topology nodes. GEOS >= 3.15 returns
+ * overlay output line-merged, which would otherwise hide them inside
+ * line interiors. Older GEOS keeps them as boundaries of the overlay
+ * output components, making a split at them a no-op.
+ *
+ * Returns a MULTIPOINT.
+ */
+static LWGEOM *
+_lwt_overlay_split_points(const LWGEOM *xset)
+{
+  LWGEOM *multi = lwgeom_as_multi(xset);
+  LWCOLLECTION *xcol = lwgeom_as_lwcollection(multi);
+  LWCOLLECTION *epoints = lwcollection_extract(xcol, POINTTYPE);
+  LWCOLLECTION *points = lwcollection_construct_empty(MULTIPOINTTYPE, xset->srid,
+    FLAGS_GET_Z(xset->flags), FLAGS_GET_M(xset->flags));
+  LWCOLLECTION *lines = lwcollection_extract(xcol, LINETYPE);
+  LWGEOM *bnd = lwgeom_boundary(lwcollection_as_lwgeom(lines));
+  uint32_t i;
+
+  for (i = 0; i < epoints->ngeoms; i++)
+    lwcollection_add_lwgeom(points, lwgeom_clone_deep(epoints->geoms[i]));
+
+  if (bnd)
+  {
+    LWCOLLECTION *bcol = lwgeom_as_lwcollection(bnd);
+    if (bcol)
+    {
+      for (i = 0; i < bcol->ngeoms; i++)
+        lwcollection_add_lwgeom(points, lwgeom_clone_deep(bcol->geoms[i]));
+    }
+    else if (!lwgeom_is_empty(bnd))
+    {
+      lwcollection_add_lwgeom(points, lwgeom_clone_deep(bnd));
+    }
+    lwgeom_free(bnd);
+  }
+
+  lwcollection_free(epoints);
+  lwcollection_free(lines);
+  lwgeom_free(multi);
+
+  points->srid = xset->srid;
+  return lwcollection_as_lwgeom(points);
+}
+
 static LWT_ELEMID*
 _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
             int handleFaceSplit, int maxNewEdges)
@@ -7306,7 +7757,7 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
   LWGEOM *geomsbuf[1];
   LWGEOM **geoms;
   uint32_t ngeoms;
-  LWGEOM *noded, *tmp;
+  LWGEOM *noded, *tmp, *xsplit = NULL;
   LWCOLLECTION *col;
   LWT_ELEMID *ids;
   LWT_ISO_EDGE *edges;
@@ -7317,7 +7768,10 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
   GBOX qbox;
   int forward;
   int input_was_closed = 0;
+  int input_tol_was_zero = (tol == 0.0);
   POINT4D originalStartPoint;
+  const POINT2D *original_start = NULL;
+  const POINT2D *original_end = NULL;
 
   if ( lwline_is_empty(line) )
   {
@@ -7331,6 +7785,8 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
     getPoint4d_p( line->points, 0, &originalStartPoint);
     LWDEBUGF(1, "Input line is closed, original point is %g,%g", originalStartPoint.x, originalStartPoint.y);
   }
+  original_start = getPoint2d_cp(line->points, 0);
+  original_end = getPoint2d_cp(line->points, line->points->npoints - 1);
 
   *nedges = -1; /* error condition, by default */
 
@@ -7516,6 +7972,9 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
     xset = lwgeom_intersection(noded, iedges);
     LWDEBUGG(1, xset, "Intersected");
     lwgeom_free(noded);
+    /* Collect the junctions between shared and non-shared linework
+     * before line merging can hide them (see step 2.5) */
+    xsplit = _lwt_overlay_split_points(xset);
 
     /* We linemerge here because INTERSECTION, as of GEOS 3.8,
      * will result in shared segments being output as multiple
@@ -7606,6 +8065,25 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
     lwcollection_release(col);
   }
 
+  /* 2.5. Split by overlay junctions
+   *
+   * GEOS >= 3.15 returns line-merged overlay output, hiding the
+   * junctions between shared and non-shared linework inside line
+   * interiors. Splitting restores them; older GEOS keeps them as
+   * component boundaries and the split is a no-op.
+   */
+  if ( xsplit )
+  {
+    if ( !lwgeom_is_empty(xsplit) )
+    {
+      tmp = _lwt_split_by_nodes(noded, xsplit);
+      lwgeom_free(noded);
+      noded = tmp;
+      LWDEBUGG(1, noded, "Overlay-junction-split");
+    }
+    lwgeom_free(xsplit);
+  }
+
 
   LWDEBUG(1, "Freeing up nearby elements");
 
@@ -7645,6 +8123,9 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
     int edgeNewEdges;
     LWT_ELEMID id;
     LWGEOM *g = geoms[i];
+    const LWLINE *edge_line = lwgeom_as_lwline(g);
+    int startExactNodeSnap = 0;
+    int endExactNodeSnap = 0;
     g->srid = noded->srid;
 
 #if POSTGIS_DEBUG_LEVEL > 0
@@ -7656,24 +8137,33 @@ _lwt_AddLine(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges,
     }
 #endif
 
-    forward = -1; /* will be set to either 0 or 1 if the edge already existed */
-    id = _lwt_AddLineEdge( topo, lwgeom_as_lwline(g), tol, handleFaceSplit, &forward, &edgeNewEdges );
-    num_new_edges += edgeNewEdges;
-    /* if forward is still == -1 this was NOT an existing edge ? */
-    if ( forward == -1 )
+    if (input_tol_was_zero && edge_line && edge_line->points->npoints > 0)
     {
-      ++num_new_edges;
+	    const POINT2D *start = getPoint2d_cp(edge_line->points, 0);
+	    const POINT2D *end = getPoint2d_cp(edge_line->points, edge_line->points->npoints - 1);
+	    startExactNodeSnap = p2d_same(start, original_start) || p2d_same(start, original_end);
+	    endExactNodeSnap = p2d_same(end, original_start) || p2d_same(end, original_end);
     }
 
-    LWDEBUGF(1, "_lwt_AddLineEdge returned %" LWTFMT_ELEMID
-      " (forward ? %d), reported to create %d new edges (total new edges: %d)",
-      id, forward, edgeNewEdges, num_new_edges);
-    if ( id < 0 )
+    forward = -1; /* will be set to either 0 or 1 if the edge already existed */
+    id = _lwt_AddLineEdge(
+	topo, lwgeom_as_lwline(g), tol, startExactNodeSnap, endExactNodeSnap, handleFaceSplit, &forward, &edgeNewEdges);
+    if (id < 0)
     {
       lwgeom_free(noded);
       lwfree(ids);
       return NULL;
     }
+
+    num_new_edges += edgeNewEdges;
+
+    LWDEBUGF(1,
+	     "_lwt_AddLineEdge returned %" LWTFMT_ELEMID
+	     " (forward ? %d), reported to create %d new edges (total new edges: %d)",
+	     id,
+	     forward,
+	     edgeNewEdges,
+	     num_new_edges);
 
     if ( maxNewEdges >= 0 && num_new_edges > maxNewEdges )
     {
@@ -7718,7 +8208,7 @@ lwt_AddLineNoFace(LWT_TOPOLOGY* topo, LWLINE* line, double tol, int* nedges)
 static void
 lwt_LoadPoint(LWT_TOPOLOGY* topo, LWPOINT* point, double tol)
 {
-  _lwt_AddPoint(topo, point, tol, 1, NULL, NULL);
+	_lwt_AddPoint(topo, point, tol, tol, 1, NULL, NULL);
 }
 
 static void

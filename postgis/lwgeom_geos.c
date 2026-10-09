@@ -53,6 +53,7 @@
 Datum isvalid(PG_FUNCTION_ARGS);
 Datum isvalidreason(PG_FUNCTION_ARGS);
 Datum isvaliddetail(PG_FUNCTION_ARGS);
+Datum issimpledetail(PG_FUNCTION_ARGS);
 Datum buffer(PG_FUNCTION_ARGS);
 Datum ST_Intersection(PG_FUNCTION_ARGS);
 Datum convexhull(PG_FUNCTION_ARGS);
@@ -418,8 +419,18 @@ Datum ST_LargestEmptyCircle(PG_FUNCTION_ARGS)
 		GEOSGeometry *ginput, *gcircle, *gcenter, *gnearest;
 		GEOSGeometry *gboundary = NULL;
 		double width, height, size;
-		GBOX gbox;
-		LWGEOM *lwg;
+		double boundary_area;
+		GBOX gbox, boundary_gbox;
+		LWGEOM *lwg, *lwboundary;
+
+		if (hasBoundary &&
+		    (!gserialized_get_gbox_p(boundary, &boundary_gbox) ||
+		     !(boundary_gbox.xmax > boundary_gbox.xmin && boundary_gbox.ymax > boundary_gbox.ymin)))
+		{
+			lwpgerror("Boundary geometry must have positive area");
+			PG_RETURN_NULL();
+		}
+
 		lwg = lwgeom_from_gserialized(geom);
 		if (!lwgeom_isfinite(lwg))
 		{
@@ -440,6 +451,24 @@ Datum ST_LargestEmptyCircle(PG_FUNCTION_ARGS)
 			tolerance = size / 1000.0;
 		}
 
+		if (hasBoundary)
+		{
+			lwboundary = lwgeom_from_gserialized(boundary);
+			if (!lwgeom_isfinite(lwboundary))
+			{
+				lwgeom_free(lwboundary);
+				lwpgerror("Boundary geometry contains invalid coordinates");
+				PG_RETURN_NULL();
+			}
+			boundary_area = lwgeom_area(lwboundary);
+			lwgeom_free(lwboundary);
+			if (!(boundary_area > 0.0))
+			{
+				lwpgerror("Boundary geometry must have positive area");
+				PG_RETURN_NULL();
+			}
+		}
+
 		initGEOS(lwpgnotice, lwgeom_geos_error);
 
 		ginput = POSTGIS2GEOS(geom);
@@ -448,9 +477,24 @@ Datum ST_LargestEmptyCircle(PG_FUNCTION_ARGS)
 
 		if (hasBoundary)
 		{
+			char boundary_valid;
 			gboundary = POSTGIS2GEOS(boundary);
 			if (!gboundary)
 				HANDLE_GEOS_ERROR("Boundary could not be converted to GEOS");
+			boundary_valid = GEOSisValid(gboundary);
+			if (boundary_valid == 2)
+			{
+				GEOSGeom_destroy(ginput);
+				GEOSGeom_destroy(gboundary);
+				HANDLE_GEOS_ERROR("GEOSisValid");
+			}
+			if (!boundary_valid)
+			{
+				GEOSGeom_destroy(ginput);
+				GEOSGeom_destroy(gboundary);
+				lwpgerror("Boundary geometry is invalid");
+				PG_RETURN_NULL();
+			}
 		}
 
 		gcircle = GEOSLargestEmptyCircle(ginput, gboundary, tolerance);
@@ -1546,6 +1590,9 @@ Datum ST_ClipByBox2d(PG_FUNCTION_ARGS)
 
 /*---------------------------------------------*/
 
+/* Forward declaration for ST_NurbsCurveIsValid */
+extern Datum ST_NurbsCurveIsValid(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1(isvalid);
 Datum isvalid(PG_FUNCTION_ARGS)
 {
@@ -1560,13 +1607,22 @@ Datum isvalid(PG_FUNCTION_ARGS)
 	if ( gserialized_is_empty(geom1) )
 		PG_RETURN_BOOL(true);
 
-	initGEOS(lwpgnotice, lwgeom_geos_error);
-
+	/* Check for NURBSCURVE: GEOS doesn't support it, use NURBS-specific validation */
 	lwgeom = lwgeom_from_gserialized(geom1);
 	if ( ! lwgeom )
 	{
 		lwpgerror("unable to deserialize input");
 	}
+
+	if ( lwgeom->type == NURBSCURVETYPE )
+	{
+		lwgeom_free(lwgeom);
+		/* Delegate to ST_NurbsCurveIsValid */
+		return DirectFunctionCall1(ST_NurbsCurveIsValid, PG_GETARG_DATUM(0));
+	}
+
+	initGEOS(lwpgnotice, lwgeom_geos_error);
+
 	g1 = LWGEOM2GEOS(lwgeom, 0);
 	lwgeom_free(lwgeom);
 
@@ -1725,6 +1781,92 @@ Datum issimple(PG_FUNCTION_ARGS)
 	}
 
 	PG_RETURN_BOOL(result);
+}
+
+PG_FUNCTION_INFO_V1(issimpledetail);
+Datum issimpledetail(PG_FUNCTION_ARGS)
+{
+#if POSTGIS_GEOS_VERSION < 31600
+	lwpgerror("The GEOS version this PostGIS binary "
+				"was compiled against (%d) doesn't support "
+				"'GEOSisSimpleWithParams' function (3.16.0+ required)",
+				POSTGIS_GEOS_VERSION);
+	PG_RETURN_NULL();
+#else /* POSTGIS_GEOS_VERSION >= 31600 */
+	GSERIALIZED *geom = NULL;
+	const GEOSGeometry *g1 = NULL;
+	char *values[2]; /* simple bool, location geometry */
+	GEOSGeometry *geos_location = NULL;
+	LWGEOM *location = NULL;
+	int8_t simple = 0;
+	HeapTupleHeader result;
+	TupleDesc tupdesc;
+	HeapTuple tuple;
+	AttInMetadata *attinmeta;
+	int findAllLocations = 0;
+	int boundaryNodeRule = 0;
+
+	/*
+	 * Build a tuple description for a
+	 * simple_detail tuple
+	 */
+	get_call_result_type(fcinfo, 0, &tupdesc);
+	BlessTupleDesc(tupdesc);
+
+	/*
+	 * generate attribute metadata needed later to produce
+	 * tuples from raw C strings
+	 */
+	attinmeta = TupleDescGetAttInMetadata(tupdesc);
+
+	geom = PG_GETARG_GSERIALIZED_P(0);
+	findAllLocations = PG_GETARG_INT32(1);
+	boundaryNodeRule = PG_GETARG_INT32(2);
+
+	initGEOS(lwpgnotice, lwgeom_geos_error);
+
+	g1 = POSTGIS2GEOS(geom);
+
+	if ( ! g1 )
+	{
+		lwpgerror("Geometry could not be converted to GEOS: %s", lwgeom_geos_errmsg);
+		PG_RETURN_NULL();
+	}
+
+	{
+		GEOSisSimpleParams *params = GEOSisSimpleParams_create();
+		GEOSisSimpleParams_setBoundaryNodeRule(params, boundaryNodeRule);
+		GEOSisSimpleParams_setFindAllLocations(params, findAllLocations);
+		simple = GEOSisSimpleWithParams(g1, params, &geos_location);
+		GEOSisSimpleParams_destroy(params);
+		GEOSGeom_destroy((GEOSGeometry *)g1);
+	}
+
+	if (simple == 2)
+	{
+		/* NOTE: should only happen on OOM or similar */
+		lwpgerror("GEOSisSimpleDetail threw an exception!");
+		PG_RETURN_NULL(); /* never gets here */
+	}
+	if ( geos_location )
+	{
+		location = GEOS2LWGEOM(geos_location, GEOSHasZ(geos_location));
+		GEOSGeom_destroy(geos_location);
+	}
+
+	/* the boolean simplicity */
+	values[0] =  simple ? "t" : "f";
+
+	/* the location */
+	values[1] = location ? lwgeom_to_hexwkb_buffer(location, WKB_EXTENDED) : 0;
+
+	tuple = BuildTupleFromCStrings(attinmeta, values);
+	result = (HeapTupleHeader) palloc(tuple->t_len);
+	memcpy(result, tuple->t_data, tuple->t_len);
+	heap_freetuple(tuple);
+
+	PG_RETURN_HEAPTUPLEHEADER(result);
+#endif /* POSTGIS_GEOS_VERSION >= 31400 */
 }
 
 PG_FUNCTION_INFO_V1(isring);
@@ -2315,9 +2457,7 @@ Datum ST_Snap(PG_FUNCTION_ARGS)
  * from Regione Toscana - Sistema Informativo per il Governo
  * del Territorio e dell'Ambiente (RT-SIGTA).
  *
- * Thanks to the PostGIS community for sharing poly/line ideas [1]
- *
- * [1] http://trac.osgeo.org/postgis/wiki/UsersWikiSplitPolygonWithLineString
+ * Thanks to the PostGIS community for sharing poly/line ideas.
  *
  */
 Datum ST_Split(PG_FUNCTION_ARGS);

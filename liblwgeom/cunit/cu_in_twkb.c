@@ -3,6 +3,7 @@
  * PostGIS - Spatial Types for PostgreSQL
  * http://postgis.net
  * Copyright 2010 Paul Ramsey <pramsey@cleverelephant.ca>
+ * Copyright 2026 Darafei Praliaskouski <me@komzpa.net>
  *
  * This is free software; you can redistribute and/or modify it under
  * the terms of the GNU General Public Licence. See the COPYING file.
@@ -12,10 +13,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "CUnit/Basic.h"
 
 #include "liblwgeom_internal.h"
 #include "cu_tester.h"
+#include "varint.h"
 
 /*
 ** Global variable to hold TWKB strings
@@ -222,7 +225,188 @@ static void test_twkb_in_precision(void)
 	precision = 0;
 }
 
+static void
+test_twkb_in_truncated_extended_dims(void)
+{
+	const uint8_t twkb[] = {
+	    0x01, /* POINT with default precision. */
+	    0x18  /* Empty geometry plus extended-dimension byte follows. */
+	};
+	LWGEOM *geom;
 
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, sizeof(twkb), LW_PARSER_CHECK_NONE);
+
+	/* Truncated extended-dimension metadata used to be read before the bounds
+	 * check. The expected contract is an ordinary TWKB size error, not an
+	 * out-of-buffer read while constructing the header.
+	 */
+	ASSERT_STRING_EQUAL(cu_error_msg, "twkb_parse_state_advance: TWKB structure does not match expected size!");
+	CU_ASSERT_PTR_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_twkb_in_overlong_varint(void)
+{
+	const uint8_t twkb[] = {0x02,
+				0x00, /* LINESTRING with default precision. */
+				0x80,
+				0x80,
+				0x80,
+				0x80,
+				0x80,
+				0x80, /* Overlong point-count varint. */
+				0x80,
+				0x80,
+				0x80,
+				0x80,
+				0x00};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, sizeof(twkb), LW_PARSER_CHECK_NONE);
+
+	/* Varints longer than the uint64_t encoding space used to shift by more
+	 * than the C type width before the parser could report malformed input.
+	 */
+	ASSERT_STRING_EQUAL(cu_error_msg, "varint_u64_decode: varint exceeds 64 bits");
+	CU_ASSERT_PTR_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_twkb_in_count_exceeds_payload(void)
+{
+	const uint8_t twkb[] = {0x02,
+				0x00, /* LINESTRING with default precision. */
+				0xff,
+				0xff,
+				0xff,
+				0xff,
+				0x0f, /* UINT32_MAX points. */
+				0x00,
+				0x00};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, sizeof(twkb), LW_PARSER_CHECK_NONE);
+
+	/* Count fields are allocation sizes. Reject impossible counts before
+	 * constructing point arrays from a buffer that cannot contain them.
+	 */
+	ASSERT_STRING_EQUAL(cu_error_msg,
+			    "twkb_parse_state_has_min_bytes: TWKB element count exceeds remaining payload");
+	CU_ASSERT_PTR_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_twkb_in_deep_collection(void)
+{
+	const size_t ngeoms = 201;
+	const size_t twkb_size = ngeoms * 3 + 2;
+	uint8_t *twkb = lwalloc(twkb_size);
+	LWGEOM *geom;
+	size_t i;
+
+	for (i = 0; i < ngeoms; i++)
+	{
+		/* GEOMETRYCOLLECTION with default precision and one child. */
+		twkb[3 * i] = 0x07;
+		twkb[3 * i + 1] = 0x00;
+		twkb[3 * i + 2] = 0x01;
+	}
+	twkb[3 * ngeoms] = 0x01;     /* POINT with default precision. */
+	twkb[3 * ngeoms + 1] = 0x10; /* Empty geometry. */
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, twkb_size, LW_PARSER_CHECK_NONE);
+
+	/* Recursive collection parsing must reject hostile nesting before the C
+	 * stack becomes the effective input validator.
+	 */
+	ASSERT_STRING_EQUAL(cu_error_msg, "Geometry has too many chained collections");
+	CU_ASSERT_PTR_NULL(geom);
+	lwfree(twkb);
+	cu_error_msg_reset();
+}
+
+static void
+test_twkb_in_coordinate_delta_wraparound(void)
+{
+	const uint8_t twkb[] = {0x03, 0x00, 0x16, 0x16, 0x16, 0x16, 0x16, 0x2f, 0x00, 0x00, 0x3d, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x16, 0x16, 0x16, 0x16, 0x16, 0x23, 0x06, 0x02, 0x7e, 0x84,
+				0x83, 0x84, 0x84, 0x84, 0x84, 0xae, 0xee, 0xff, 0x01, 0xf9, 0xff, 0xff, 0xff,
+				0xff, 0xef, 0x16, 0x16, 0xff, 0x16, 0x16, 0x16, 0x23, 0x06, 0x02, 0x7e, 0x84,
+				0x83, 0x84, 0x84, 0x84, 0x84, 0xae, 0xee, 0xff, 0x01, 0xf9, 0xff, 0xff, 0xff,
+				0xff, 0xef, 0xff, 0xff, 0x01, 0xff, 0x02, 0x00, 0x79, 0xb0};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, sizeof(twkb), LW_PARSER_CHECK_NONE);
+
+	/* Delta-encoded coordinates must not rely on signed integer overflow to
+	 * wrap hostile inputs into the int64_t accumulator range.
+	 */
+	CU_ASSERT(strstr(cu_error_msg, "called with n=0 and npoints=0") != NULL);
+	CU_ASSERT_PTR_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_twkb_in_linestring_coordinate_delta_wraparound(void)
+{
+	uint8_t twkb[64] = {0x02, 0x00, 0x02};
+	uint8_t *pos = twkb + 3;
+	LWGEOM *geom;
+
+	pos += varint_s64_encode_buf(INT64_MAX, pos);
+	pos += varint_s64_encode_buf(0, pos);
+	pos += varint_s64_encode_buf(1, pos);
+	pos += varint_s64_encode_buf(0, pos);
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, (size_t)(pos - twkb), LW_PARSER_CHECK_NONE);
+
+	ASSERT_STRING_EQUAL(cu_error_msg, "");
+	CU_ASSERT_PTR_NOT_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
+}
+
+static void
+test_twkb_in_unsupported_type(void)
+{
+	const uint8_t twkb[] = {0x08, /* unsupported TWKB type with default precision. */
+				0x00};
+	LWGEOM *geom;
+
+	cu_error_msg_reset();
+
+	geom = lwgeom_from_twkb(twkb, sizeof(twkb), LW_PARSER_CHECK_NONE);
+
+	ASSERT_STRING_EQUAL(cu_error_msg, "lwgeom_from_twkb_state: Unsupported geometry type: Unknown");
+	CU_ASSERT_PTR_NULL(geom);
+	if (geom != NULL)
+		lwgeom_free(geom);
+	cu_error_msg_reset();
+}
 
 /*
 ** Used by test harness to register the tests in this file.
@@ -239,4 +423,11 @@ void twkb_in_suite_setup(void)
 	PG_ADD_TEST(suite, test_twkb_in_multipolygon);
 	PG_ADD_TEST(suite, test_twkb_in_collection);
 	PG_ADD_TEST(suite, test_twkb_in_precision);
+	PG_ADD_TEST(suite, test_twkb_in_truncated_extended_dims);
+	PG_ADD_TEST(suite, test_twkb_in_overlong_varint);
+	PG_ADD_TEST(suite, test_twkb_in_count_exceeds_payload);
+	PG_ADD_TEST(suite, test_twkb_in_deep_collection);
+	PG_ADD_TEST(suite, test_twkb_in_coordinate_delta_wraparound);
+	PG_ADD_TEST(suite, test_twkb_in_linestring_coordinate_delta_wraparound);
+	PG_ADD_TEST(suite, test_twkb_in_unsupported_type);
 }

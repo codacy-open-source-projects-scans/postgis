@@ -22,6 +22,8 @@ use Cwd 'abs_path';
 use Getopt::Long;
 use strict;
 
+my $RUNNING_BIGENDIAN = unpack("S", pack("n", 1)) == 1;
+
 ##################################################################
 # Add . to @INC if removed for CVE-2016-1238
 ##################################################################
@@ -83,6 +85,7 @@ my $OPT_EXTENSIONS = 0;
 my $OPT_LEGACY = 0;
 my @OPT_HOOK_AFTER_CREATE;
 my @OPT_HOOK_AFTER_CREATE_DB;
+my @OPT_HOOK_BEFORE_INSTALL;
 my @OPT_HOOK_AFTER_RESTORE;
 my @OPT_HOOK_BEFORE_DUMP;
 my @OPT_HOOK_BEFORE_TEST;
@@ -117,6 +120,7 @@ GetOptions (
 	'build-dir=s' => \$TOP_BUILDDIR,
 	'after-create-script=s' => \@OPT_HOOK_AFTER_CREATE,
 	'after-create-db-script=s' => \@OPT_HOOK_AFTER_CREATE_DB,
+	'before-install-script=s' => \@OPT_HOOK_BEFORE_INSTALL,
 	'after-test-script=s' => \@OPT_HOOK_AFTER_TEST,
 	'before-uninstall-script=s' => \@OPT_HOOK_BEFORE_UNINSTALL,
 	'before-test-script=s' => \@OPT_HOOK_BEFORE_TEST,
@@ -754,6 +758,9 @@ Options:
   --after-create-db-script <path>
                   script to load after db creation
                   (multiple switches supported, to be run in given order)
+  --before-install-script <path>
+                  script to load after the baseline object count and before
+                  spatial installation (multiple switches supported)
   --before-uninstall-script <path>
                   script to load before spatial extension uninstall
                   (multiple switches supported, to be run in given order)
@@ -1043,6 +1050,15 @@ sub run_simple_test
 	return 1;
 }
 
+sub endian_expected_file
+{
+	my $expected = shift;
+	my $bigendian_expected = "${expected}.bigendian";
+
+	return $bigendian_expected if ( $RUNNING_BIGENDIAN && -r $bigendian_expected );
+	return $expected;
+}
+
 ##################################################################
 # This runs the loader once and checks the output of it.
 # It will NOT run if neither the expected SQL nor the expected
@@ -1093,6 +1109,7 @@ sub run_loader_and_check_output
 		if ( -r $expected_sql_file )
 		{
 			show_progress();
+			$expected_sql_file = endian_expected_file($expected_sql_file);
 			my $diff = diff($expected_sql_file, $outfile);
 			if ( $diff )
 			{
@@ -1535,12 +1552,6 @@ sub create_db
 
 	return 0 if system($createcmd);
 
-	foreach my $hook (@OPT_HOOK_AFTER_CREATE_DB)
-	{
-		print "Running after-create-db-script $hook\n";
-		die unless load_sql_file($hook, 1);
-	}
-
 	return 1;
 }
 
@@ -1551,8 +1562,20 @@ sub create_spatial
 
     $rv = create_db();
 
+    foreach my $hook (@OPT_HOOK_AFTER_CREATE_DB)
+    {
+        print "Running after-create-db-script $hook\n";
+        die unless load_sql_file($hook, 1);
+    }
+
     # Count database objects before installing anything
     $OBJ_COUNT_PRE = count_db_objects();
+
+    foreach my $hook (@OPT_HOOK_BEFORE_INSTALL)
+    {
+        print "Running before-install-script $hook\n";
+        die unless load_sql_file($hook, 1);
+    }
 
     if ( $OPT_EXTENSIONS )
     {
@@ -2196,7 +2219,7 @@ sub restore_db
         # We need to re-add "topology" to the search_path as it is lost
         # on dump/reload, see https://trac.osgeo.org/postgis/ticket/3454
         my $psql_opts = "--no-psqlrc --variable ON_ERROR_STOP=true";
-        my $cmd = "psql $psql_opts -c \"SELECT topology.AddToSearchPath('topology')\" $DB >> $REGRESS_LOG 2>&1";
+        my $cmd = "psql $psql_opts -c \"SELECT topology.AddToSearchPath('topology'::varchar)\" $DB >> $REGRESS_LOG 2>&1";
         $rv = system($cmd);
         if ( $rv ) {
             fail("Error encountered adding topology to search path after restore", $REGRESS_LOG);

@@ -49,6 +49,7 @@ typedef struct
 	int8_t has_srid;    /* SRID? */
 	int8_t error;       /* An error was found (not enough bytes to read) */
 	uint8_t depth;      /* Current recursion level (to prevent stack overflows). Maxes at LW_PARSER_MAX_DEPTH */
+	size_t pos_offset;  /* Current parse offset from wkb */
 	const uint8_t *pos; /* Current parse position */
 } wkb_parse_state;
 
@@ -105,8 +106,8 @@ uint8_t* bytes_from_hexbytes(const char *hexbuf, size_t hexsize)
 
 	for( i = 0; i < hexsize/2; i++ )
 	{
-		h1 = hex2char[(int)hexbuf[2*i]];
-		h2 = hex2char[(int)hexbuf[2*i+1]];
+		h1 = hex2char[(uint8_t)hexbuf[2*i]];
+		h2 = hex2char[(uint8_t)hexbuf[2*i+1]];
 		if( h1 > 15 )
 			lwerror("Invalid hex character (%c) encountered", hexbuf[2*i]);
 		if( h2 > 15 )
@@ -122,26 +123,60 @@ uint8_t* bytes_from_hexbytes(const char *hexbuf, size_t hexsize)
 
 
 
-
-
 /**
 * Check that we are not about to read off the end of the WKB
 * array.
 */
 static inline void wkb_parse_state_check(wkb_parse_state *s, size_t next)
 {
-	if( (s->pos + next) > (s->wkb + s->wkb_size) )
+	if (next > s->wkb_size || s->pos_offset > s->wkb_size - next)
 	{
 		lwerror("WKB structure does not match expected size!");
 		s->error = LW_TRUE;
 	}
 }
 
+static inline void
+wkb_parse_state_advance(wkb_parse_state *s, size_t next)
+{
+	s->pos_offset += next;
+	s->pos += next;
+}
+
+static inline int
+wkb_checked_mul_size(size_t a, size_t b, size_t *result)
+{
+	if (a != 0 && b > SIZE_MAX / a)
+		return LW_FALSE;
+
+	*result = a * b;
+	return LW_TRUE;
+}
+
+static inline int
+wkb_checked_add_size(size_t a, size_t b, size_t *result)
+{
+	if (b > SIZE_MAX - a)
+		return LW_FALSE;
+
+	*result = a + b;
+	return LW_TRUE;
+}
+
 /**
-* Take in an unknown kind of wkb type number and ensure it comes out
-* as an extended WKB type number (with Z/M/SRID flags masked onto the
-* high bits).
-*/
+ * Resolve a raw WKB type number into the parser state' internal type and flags.
+ *
+ * Interprets WKB type encodings (including extended flag bits and ISO-style
+ * 1000/2000/3000 modifiers) and updates the provided parse state:
+ * - sets s->has_z, s->has_m, s->has_srid according to detected flags,
+ * - sets s->lwtype to the corresponding internal lwgeom type enum.
+ *
+ * Recognizes standard WKB types, ISO extended encodings (where 1000/2000/3000
+ * ranges indicate Z/M presence), explicit high-bit flag encodings, and a few
+ * legacy PostGIS values (e.g., old Curve/Surface codes). On unrecognized or
+ * out-of-range type numbers an error is reported via lwerror and the state is
+ * left with whatever values were set before the error.
+ */
 static void lwtype_from_wkb_state(wkb_parse_state *s, uint32_t wkb_type)
 {
 	uint32_t wkb_simple_type;
@@ -235,6 +270,9 @@ static void lwtype_from_wkb_state(wkb_parse_state *s, uint32_t wkb_type)
 		case WKB_TRIANGLE_TYPE:
 			s->lwtype = TRIANGLETYPE;
 			break;
+		case WKB_NURBSCURVE_TYPE:
+			s->lwtype = NURBSCURVETYPE;
+			break;
 
 		/* PostGIS 1.5 emits 13, 14 for CurvePolygon, MultiCurve */
 		/* These numbers aren't SQL/MM (numbers currently only */
@@ -273,10 +311,11 @@ static char byte_from_wkb_state(wkb_parse_state *s)
 
 	char_value = s->pos[0];
 	LWDEBUGF(4, "Read byte value: %x", char_value);
-	s->pos += WKB_BYTE_SIZE;
+	wkb_parse_state_advance(s, WKB_BYTE_SIZE);
 
 	return char_value;
 }
+
 
 /**
 * Int32
@@ -306,7 +345,7 @@ static uint32_t integer_from_wkb_state(wkb_parse_state *s)
 		}
 	}
 
-	s->pos += WKB_INT_SIZE;
+	wkb_parse_state_advance(s, WKB_INT_SIZE);
 	return i;
 }
 
@@ -317,6 +356,10 @@ static uint32_t integer_from_wkb_state(wkb_parse_state *s)
 static double double_from_wkb_state(wkb_parse_state *s)
 {
 	double d = 0;
+
+	/* Check bounds before reading */
+	wkb_parse_state_check(s, WKB_DOUBLE_SIZE);
+	if (s->error) return 0.0;
 
 	memcpy(&d, s->pos, WKB_DOUBLE_SIZE);
 
@@ -332,12 +375,46 @@ static double double_from_wkb_state(wkb_parse_state *s)
 			((uint8_t*)(&d))[i] = ((uint8_t*)(&d))[WKB_DOUBLE_SIZE - i - 1];
 			((uint8_t*)(&d))[WKB_DOUBLE_SIZE - i - 1] = tmp;
 		}
-
 	}
 
-	s->pos += WKB_DOUBLE_SIZE;
+	wkb_parse_state_advance(s, WKB_DOUBLE_SIZE);
 	return d;
 }
+
+
+
+/**
+* Set the swap bytes flag depending on the endianness
+* of the machine and the endianness of the input data.
+* If they differ, we must swap, otherwise we can copy.
+*/
+static void wkb_swap_bytes(wkb_parse_state *s)
+{
+	char wkb_little_endian;
+
+	/* Fail when handed incorrect starting byte */
+	wkb_little_endian = byte_from_wkb_state(s);
+	if (s->error)
+		lwerror("Invalid endian flag value encountered.");
+
+	if( wkb_little_endian != 1 && wkb_little_endian != 0 )
+	{
+		s->error = LW_TRUE;
+		lwerror("Invalid endian flag value encountered.");
+	}
+
+	/* Check the endianness of our input  */
+	s->swap_bytes = LW_FALSE;
+
+	/* Machine arch is big endian, request is for little */
+	if (IS_BIG_ENDIAN && wkb_little_endian)
+		s->swap_bytes = LW_TRUE;
+	/* Machine arch is little endian, request is for big */
+	else if ((!IS_BIG_ENDIAN) && (!wkb_little_endian))
+		s->swap_bytes = LW_TRUE;
+}
+
+
 
 /**
 * POINTARRAY
@@ -348,9 +425,9 @@ static POINTARRAY* ptarray_from_wkb_state(wkb_parse_state *s)
 {
 	POINTARRAY *pa = NULL;
 	size_t pa_size;
-	uint32_t ndims = 2;
 	uint32_t npoints = 0;
 	static uint32_t maxpoints = UINT_MAX / WKB_DOUBLE_SIZE / 4;
+	uint32_t ndims = 2 + s->has_z + s->has_m;
 
 	/* Calculate the size of this point array. */
 	npoints = integer_from_wkb_state(s);
@@ -366,15 +443,18 @@ static POINTARRAY* ptarray_from_wkb_state(wkb_parse_state *s)
 
 	LWDEBUGF(4,"Pointarray has %d points", npoints);
 
-	if( s->has_z ) ndims++;
-	if( s->has_m ) ndims++;
-	pa_size = (size_t)npoints * ndims * WKB_DOUBLE_SIZE;
-
 	/* Empty! */
 	if( npoints == 0 )
 		return ptarray_construct(s->has_z, s->has_m, npoints);
 
 	/* Does the data we want to read exist? */
+	if (!wkb_checked_mul_size((size_t)npoints, ndims, &pa_size) ||
+	    !wkb_checked_mul_size(pa_size, WKB_DOUBLE_SIZE, &pa_size))
+	{
+		s->error = LW_TRUE;
+		lwerror("Pointarray length (%d) is too large", npoints);
+		return NULL;
+	}
 	wkb_parse_state_check(s, pa_size);
 	if (s->error)
 		return NULL;
@@ -383,7 +463,7 @@ static POINTARRAY* ptarray_from_wkb_state(wkb_parse_state *s)
 	if( ! s->swap_bytes )
 	{
 		pa = ptarray_construct_copy_data(s->has_z, s->has_m, npoints, (uint8_t*)s->pos);
-		s->pos += pa_size;
+		wkb_parse_state_advance(s, pa_size);
 	}
 	/* Otherwise we have to read each double, separately. */
 	else
@@ -432,7 +512,7 @@ static LWPOINT* lwpoint_from_wkb_state(wkb_parse_state *s)
 	if( ! s->swap_bytes )
 	{
 		pa = ptarray_construct_copy_data(s->has_z, s->has_m, npoints, (uint8_t*)s->pos);
-		s->pos += pa_size;
+		wkb_parse_state_advance(s, pa_size);
 	}
 	/* Otherwise we have to read each double, separately */
 	else
@@ -693,11 +773,28 @@ static LWCURVEPOLY* lwcurvepoly_from_wkb_state(wkb_parse_state *s)
 * POLYHEDRALSURFACETYPE
 */
 
+static LWCOLLECTION* lwcollection_from_wkb_state(wkb_parse_state *s);
+static LWNURBSCURVE* lwnurbscurve_from_wkb_state(wkb_parse_state *s);
+
 /**
-* COLLECTION, MULTIPOINTTYPE, MULTILINETYPE, MULTIPOLYGONTYPE, COMPOUNDTYPE,
-* MULTICURVETYPE, MULTISURFACETYPE,
-* TINTYPE
-*/
+ * Parse a collection (MULTI types, COLLECTION, TINTYPE, COMPOUND, CURVEPOLY, etc.) from WKB state.
+ *
+ * Reads the number of component geometries from the WKB parse state, constructs an
+ * empty LWCOLLECTION of the current s->lwtype/srid/dimension flags, then iteratively
+ * parses and appends each component geometry using lwgeom_from_wkb_state().
+ *
+ * Behavior and side effects:
+ * - Returns a newly allocated LWCOLLECTION containing the parsed components, or NULL on error.
+ * - For an empty collection (component count == 0) returns the empty collection.
+ * - If s->lwtype == POLYHEDRALSURFACETYPE, enables strict Z-closure checking by setting
+ *   the LW_PARSER_CHECK_ZCLOSURE flag in s->check before parsing components.
+ * - Increments s->depth while parsing to enforce recursion limits, if depth exceeds
+ *   LW_PARSER_MAX_DEPTH the function frees allocated resources, reports an error, and returns NULL.
+ * - On failure to parse or to add a component, frees any allocated geometry/collection and returns NULL.
+ *
+ * Return:
+ *   Pointer to a newly constructed LWCOLLECTION on success, or NULL on failure.
+ */
 static LWCOLLECTION* lwcollection_from_wkb_state(wkb_parse_state *s)
 {
 	uint32_t ngeoms = integer_from_wkb_state(s);
@@ -706,12 +803,17 @@ static LWCOLLECTION* lwcollection_from_wkb_state(wkb_parse_state *s)
 	LWCOLLECTION *col = lwcollection_construct_empty(s->lwtype, s->srid, s->has_z, s->has_m);
 	LWGEOM *geom = NULL;
 	uint32_t i;
+	int8_t prev_check = s->check;
+	uint8_t start_depth = s->depth;
 
 	LWDEBUGF(4,"Collection has %d components", ngeoms);
 
 	/* Empty collection? */
 	if ( ngeoms == 0 )
-		return col;
+	{
+	    s->check = prev_check;
+	    return col;
+	}
 
 	/* Be strict in polyhedral surface closures */
 	if ( s->lwtype == POLYHEDRALSURFACETYPE )
@@ -722,59 +824,286 @@ static LWCOLLECTION* lwcollection_from_wkb_state(wkb_parse_state *s)
 	{
 		lwcollection_free(col);
 		lwerror("Geometry has too many chained collections");
+		s->check = prev_check;
+		s->depth = start_depth;
 		return NULL;
 	}
 	for ( i = 0; i < ngeoms; i++ )
 	{
 		geom = lwgeom_from_wkb_state(s);
-		if ( lwcollection_add_lwgeom(col, geom) == NULL )
+		if (!geom || lwcollection_add_lwgeom(col, geom) == NULL )
 		{
 			lwgeom_free(geom);
 			lwgeom_free((LWGEOM *)col);
 			lwerror("Unable to add geometry (%p) to collection (%p)", (void *) geom, (void *) col);
+			s->check = prev_check;
+			s->depth = start_depth;
 			return NULL;
 		}
 	}
 	s->depth--;
+	s->check = prev_check;
 
 	return col;
 }
 
+/**
+ * Parse an ISO/IEC 13249-3:2016 NURBS curve from the current position of a WKB parse state.
+ *
+ * Reads the NURBSCURVE components in WKB order: degree, number of control points,
+ * per-control-point byte-order marker, coordinates (X, Y, optional Z and M), a 1-byte
+ * weight-present flag and optional weight value, then the knot count and knot values.
+ * If control-point count is zero an empty POINTARRAY is constructed with the current
+ * dimensionality. Knot count must be > 0 per the standard.
+ *
+ * On error (invalid data, unexpected EOF, invalid weight bit, allocation failure, or
+ * missing required knots) the function logs an error, frees any partially-allocated
+ * resources and returns NULL.
+ *
+ * Returns a newly-allocated LWNURBSCURVE on success; the caller owns the returned object.
+ *
+ * @return Pointer to constructed LWNURBSCURVE, or NULL on failure.
+ */
+static LWNURBSCURVE* lwnurbscurve_from_wkb_state(wkb_parse_state *s)
+{
+	uint32_t degree = 0, nknots = 0, npoints = 0, ndims;
+	double *weights = NULL, *knots = NULL;
+	POINTARRAY *points = NULL;
+	int all_weights_one = 1;
+	size_t pa_size, point_payload_size, weights_size, point_tags_size;
+	static const uint32_t MAXPOINTS = (uint32_t)(UINT_MAX / (WKB_DOUBLE_SIZE * 4));
+
+	/* ISO/IEC 13249-3:2016 compliant parsing */
+	degree = integer_from_wkb_state(s);
+	if (s->error) return NULL;
+	if (degree < 1 || degree > 10)
+	{
+		lwerror("WKB NURBSCURVE: degree %u outside valid range [1,10]", degree);
+		return NULL;
+	}
+
+	/* Read control points count */
+	npoints = integer_from_wkb_state(s);
+	if (s->error) return NULL;
+
+	/* Defensive upper bound (worst-case 4 doubles/point) */
+	if (npoints > MAXPOINTS) {
+		lwerror("WKB NURBSCURVE: control point count (%u) too large", npoints);
+		return NULL;
+	}
+
+	if (npoints > 0 && npoints <= degree) {
+		lwerror("WKB NURBSCURVE: degree %u requires at least %llu control points, got %u",
+		        degree, (unsigned long long)degree + 1, npoints);
+		return NULL;
+	}
+	const size_t min_point_size = 2 + (2 + (s->has_z ? 1 : 0) + (s->has_m ? 1 : 0)) * WKB_DOUBLE_SIZE;
+	if (!wkb_checked_mul_size((size_t)npoints, min_point_size, &pa_size))
+	{
+		lwerror("WKB NURBSCURVE: control point count (%u) too large", npoints);
+		return NULL;
+	}
+	wkb_parse_state_check(s, pa_size);
+	if (s->error)
+		return NULL;
+
+	/* Does the data we want to read exist? */
+	ndims = 2 + s->has_z + s->has_m;
+	if (!wkb_checked_mul_size((size_t)npoints, ndims, &point_payload_size) ||
+	    !wkb_checked_mul_size(point_payload_size, WKB_DOUBLE_SIZE, &point_payload_size) ||
+	    !wkb_checked_mul_size((size_t)npoints, sizeof(double), &weights_size) ||
+	    !wkb_checked_mul_size((size_t)npoints, sizeof(char) * 2, &point_tags_size) ||
+	    !wkb_checked_add_size(point_payload_size, weights_size, &pa_size) ||
+	    !wkb_checked_add_size(pa_size, point_tags_size, &pa_size))
+	{
+		lwerror("WKB NURBSCURVE: control point count (%u) too large", npoints);
+		return NULL;
+	}
+	wkb_parse_state_check(s, pa_size);
+	if (s->error)
+		return NULL;
+
+	/* Initialize points array */
+	if (npoints > 0) {
+		int8_t save_swap_butes = s->swap_bytes;
+
+		points = ptarray_construct(s->has_z, s->has_m, npoints);
+		weights = lwalloc(sizeof(double) * npoints);
+
+		/* ISO format: each control point has structure:
+		 * <byte order> <wkbweightedpoint> <bit> [<wkbweight>]
+		 */
+
+		for (uint32_t i = 0; i < npoints; i++) {
+			POINT4D pt = {0, 0, 0, 0};
+
+			/* Read byte order for this point (ISO requirement) */
+			wkb_swap_bytes(s);
+
+			/* Read point coordinates */
+			pt.x = double_from_wkb_state(s);
+			if (s->error) {
+				lwfree(weights);
+				ptarray_free(points);
+				return NULL;
+			}
+
+			pt.y = double_from_wkb_state(s);
+			if (s->error) {
+				lwfree(weights);
+				ptarray_free(points);
+				return NULL;
+			}
+
+			if (s->has_z) {
+				pt.z = double_from_wkb_state(s);
+				if (s->error) {
+					lwfree(weights);
+					ptarray_free(points);
+					return NULL;
+				}
+			}
+
+			if (s->has_m) {
+				pt.m = double_from_wkb_state(s);
+				if (s->error) {
+					lwfree(weights);
+					ptarray_free(points);
+					return NULL;
+				}
+			}
+
+			ptarray_set_point4d(points, i, &pt);
+
+			/* Read weight bit flag */
+			uint8_t has_weight = byte_from_wkb_state(s);
+			if (s->error) {
+				lwfree(weights);
+				ptarray_free(points);
+				return NULL;
+			}
+
+			if (has_weight == 0) {
+				/* Default weight = 1.0 */
+				weights[i] = 1.0;
+			} else if (has_weight == 1) {
+				/* Custom weight follows */
+				weights[i] = double_from_wkb_state(s);
+				if (weights[i] <= 0.0) {
+					lwerror("WKB NURBSCURVE: non-positive weight for point %d", i);
+					lwfree(weights);
+					ptarray_free(points);
+					return NULL;
+				}
+				if (s->error) {
+					lwfree(weights);
+					ptarray_free(points);
+					return NULL;
+				}
+				if (weights[i] != 1.0) all_weights_one = 0;
+			} else {
+				lwerror("WKB NURBSCURVE: invalid weight bit %d for point %d (must be 0 or 1)", has_weight, i);
+				lwfree(weights);
+				ptarray_free(points);
+				return NULL;
+			}
+
+		}
+		/* Restore original swap state */
+		s->swap_bytes = save_swap_butes;
+	}
+
+	/* Read knots (required by WKB standard) */
+	nknots = integer_from_wkb_state(s);
+	if (s->error) {
+		lwfree(weights);
+		ptarray_free(points);
+		return NULL;
+	}
+
+	if (npoints == 0)
+	{
+		if (nknots != 0)
+		{
+			lwerror("WKB NURBSCURVE EMPTY: expected 0 knots, got %u", nknots);
+			return NULL;
+		}
+		return lwnurbscurve_construct_empty(s->srid, s->has_z, s->has_m);
+	}
+
+	if (nknots == 0) {
+		lwerror("WKB NURBSCURVE: knots required by standard (got 0)");
+		lwfree(weights);
+		ptarray_free(points);
+		return NULL;
+	}
+
+	/* Validate knot count against B-spline formula */
+	uint32_t expected_knots = npoints + degree + 1;
+	if (nknots != expected_knots) {
+		lwerror("WKB NURBSCURVE: expected %d knots for degree %d and %d points, got %d",
+		        expected_knots, degree, npoints, nknots);
+		lwfree(weights);
+		ptarray_free(points);
+		return NULL;
+	}
+
+	knots = lwalloc(sizeof(double) * nknots);
+	for (uint32_t i = 0; i < nknots; i++) {
+		knots[i] = double_from_wkb_state(s);
+		if (s->error) {
+			lwfree(weights);
+			lwfree(knots);
+			ptarray_free(points);
+			return NULL;
+		}
+	}
+	for (uint32_t i = 1; i < nknots; i++) {
+		if (knots[i] < knots[i-1]) {
+			lwerror("WKB NURBSCURVE: knot vector must be non-decreasing");
+			lwfree(weights);
+			lwfree(knots);
+			ptarray_free(points);
+			return NULL;
+		}
+	}
+
+	uint32_t nweights = all_weights_one ? 0U : npoints;
+	if (all_weights_one) { lwfree(weights); weights = NULL; }
+	LWNURBSCURVE *curve = lwnurbscurve_construct(s->srid, NULL, degree, points, weights, knots, nweights, nknots);
+	if (!curve) {
+		if (weights) lwfree(weights);
+		if (knots) lwfree(knots);
+		if (points) ptarray_free(points); /* constructor did not take ownership on failure */
+		return NULL;
+	}
+	if (weights) lwfree(weights);
+	if (knots) lwfree(knots);
+	return curve;
+}
 
 /**
-* GEOMETRY
-* Generic handling for WKB geometries. The front of every WKB geometry
-* (including those embedded in collections) is an endian byte, a type
-* number and an optional srid number. We handle all those here, then pass
-* to the appropriate handler for the specific type.
-*/
+ * Parse a single WKB geometry from the given parse state and return it as an LWGEOM.
+ *
+ * Reads the leading endian byte, the WKB type (and optional SRID), updates the parse
+ * state (including byte-swap flag, detected lwtype and srid), and dispatches to the
+ * specific geometry reader for the detected type. On success returns a newly
+ * allocated LWGEOM; on error or unsupported type returns NULL and sets s->error.
+ *
+ * Side effects:
+ * - Advances s->pos as data are consumed.
+ * - May set s->swap_bytes, s->lwtype, s->srid and s->error.
+ *
+ * Return:
+ *   Pointer to the parsed LWGEOM, or NULL on error or unsupported geometry type.
+ */
 LWGEOM* lwgeom_from_wkb_state(wkb_parse_state *s)
 {
-	char wkb_little_endian;
 	uint32_t wkb_type;
 
 	LWDEBUG(4,"Entered function");
 
-	/* Fail when handed incorrect starting byte */
-	wkb_little_endian = byte_from_wkb_state(s);
-	if (s->error)
-		return NULL;
-	if( wkb_little_endian != 1 && wkb_little_endian != 0 )
-	{
-		LWDEBUG(4,"Leaving due to bad first byte!");
-		lwerror("Invalid endian flag value encountered.");
-		return NULL;
-	}
-
-	/* Check the endianness of our input  */
-	s->swap_bytes = LW_FALSE;
-
-	/* Machine arch is big endian, request is for little */
-	if (IS_BIG_ENDIAN && wkb_little_endian)
-		s->swap_bytes = LW_TRUE;
-	/* Machine arch is little endian, request is for big */
-	else if ((!IS_BIG_ENDIAN) && (!wkb_little_endian))
-		s->swap_bytes = LW_TRUE;
+	wkb_swap_bytes(s);
 
 	/* Read the type number */
 	wkb_type = integer_from_wkb_state(s);
@@ -825,7 +1154,9 @@ LWGEOM* lwgeom_from_wkb_state(wkb_parse_state *s)
 		case COLLECTIONTYPE:
 			return (LWGEOM*)lwcollection_from_wkb_state(s);
 			break;
-
+		case NURBSCURVETYPE:
+			return (LWGEOM*)lwnurbscurve_from_wkb_state(s);
+			break;
 		/* Unknown type! */
 		default:
 			lwerror("%s: Unsupported geometry type: %s", __func__, lwtype_name(s->lwtype));
@@ -863,6 +1194,7 @@ LWGEOM* lwgeom_from_wkb(const uint8_t *wkb, const size_t wkb_size, const char ch
 	s.has_srid = LW_FALSE;
 	s.error = LW_FALSE;
 	s.pos = wkb;
+	s.pos_offset = 0;
 	s.depth = 1;
 
 	if (!wkb || !wkb_size)

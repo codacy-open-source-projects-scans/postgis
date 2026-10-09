@@ -19,13 +19,14 @@
  **********************************************************************
  *
  * Copyright 2011-2017 Arrival 3D, Regina Obe
+ * Copyright 2026 Darafei Praliaskouski <me@komzpa.net>
  *
  **********************************************************************/
 
 /**
-* @file X3D output routines.
-*
-**********************************************************************/
+ * @file X3D output routines.
+ *
+ **********************************************************************/
 #include <string.h>
 #include "liblwgeom_internal.h"
 #include "stringbuffer.h"
@@ -40,9 +41,11 @@ static int
 asx3d3_triangle_sb(const LWTRIANGLE *triangle, int precision, int opts, const char *defid, stringbuffer_t *sb);
 
 static int asx3d3_multi_sb(const LWCOLLECTION *col, int precision, int opts, const char *defid, stringbuffer_t *sb);
+static int
+asx3d3_nurbscurve_sb(const LWNURBSCURVE *curve, int precision, int opts, const char *defid, stringbuffer_t *sb);
 static int asx3d3_psurface_sb(const LWPSURFACE *psur, int precision, int opts, const char *defid, stringbuffer_t *sb);
 static int asx3d3_tin_sb(const LWTIN *tin, int precision, int opts, const char *defid, stringbuffer_t *sb);
 
 static int
 asx3d3_collection_sb(const LWCOLLECTION *col, int precision, int opts, const char *defid, stringbuffer_t *sb);
-static int ptarray_to_x3d3_sb(POINTARRAY *pa, int precision, int opts, int is_closed, stringbuffer_t *sb );
+static int ptarray_to_x3d3_sb(POINTARRAY *pa, int precision, int opts, int is_closed, int force_3d, stringbuffer_t *sb);

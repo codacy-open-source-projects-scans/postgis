@@ -34,6 +34,7 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/makefuncs.h"
 #include "optimizer/optimizer.h"
+#include "parser/parse_oper.h"
 #include "parser/parse_func.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
@@ -328,6 +329,55 @@ Datum postgis_index_supportfn(PG_FUNCTION_ARGS)
 	 */
 	postgis_initialize_cache();
 
+	if (IsA(rawreq, SupportRequestSimplify))
+	{
+		SupportRequestSimplify *req = (SupportRequestSimplify *)rawreq;
+		FuncExpr *clause = req->fcall;
+		IndexableFunction idxfn = {NULL, 0, 0, 0, 0};
+
+		if (needsSpatialIndex(clause->funcid, &idxfn) && idxfn.index == ST_ORDERINGEQUALS_IDX &&
+		    list_length(clause->args) == 2)
+		{
+			Node *leftarg = linitial(clause->args);
+			Node *rightarg = lsecond(clause->args);
+			Oid leftdatatype = exprType(leftarg);
+			Oid rightdatatype = exprType(rightarg);
+			Oid eqoproid = InvalidOid;
+			bool hashable = false;
+
+			if (leftdatatype != rightdatatype)
+				PG_RETURN_POINTER((Node *)NULL);
+
+			/* Keep constant predicates on the spatial index support path below. */
+			if (!contain_var_clause(leftarg) || !contain_var_clause(rightarg))
+				PG_RETURN_POINTER((Node *)NULL);
+
+			if (contain_volatile_functions(leftarg) || contain_volatile_functions(rightarg))
+				PG_RETURN_POINTER((Node *)NULL);
+
+			/* ST_OrderingEquals uses the same gserialized_cmp equality as the = operator. */
+			get_sort_group_operators(leftdatatype, false, true, false, NULL, &eqoproid, NULL, &hashable);
+
+			if (!OidIsValid(eqoproid))
+				PG_RETURN_POINTER((Node *)NULL);
+
+			/*
+			 * Do not add a bbox-equality conjunct here. Exact serialized equality can
+			 * match non-finite coordinates that box2df equality rejects, so adding ~=
+			 * would make the simplification narrower than ST_OrderingEquals.
+			 */
+			ret = (Node *)make_opclause(eqoproid,
+						    BOOLOID,
+						    false,
+						    (Expr *)leftarg,
+						    (Expr *)rightarg,
+						    InvalidOid,
+						    clause->inputcollid);
+
+			PG_RETURN_POINTER(ret);
+		}
+	}
+
 	if (IsA(rawreq, SupportRequestSelectivity))
 	{
 		SupportRequestSelectivity *req = (SupportRequestSelectivity *) rawreq;
@@ -433,10 +483,16 @@ Datum postgis_index_supportfn(PG_FUNCTION_ARGS)
 				rightdatatype = exprType(rightarg);
 
 				/*
-				* Given the index operator family and the arguments and the
-				* desired strategy number we can now lookup the operator
-				* we want (usually && or &&&).
-				*/
+				 * Given the index operator family and the arguments and the
+				 * desired strategy number we can now lookup the operator
+				 * we want (usually && or &&&). ST_DFullyWithin is directional:
+				 * for an index on the first argument, overlap with the expanded
+				 * second argument is the safe lossy condition. The stronger
+				 * contained-by condition is only safe for an index on the second
+				 * argument, which must be covered by the expanded first argument.
+				 */
+				if (idxfn.index == ST_DFULLYWITHIN_IDX && req->indexarg == 0)
+					idxfn.index = ST_DWITHIN_IDX;
 				oproid = get_opfamily_member(opfamilyoid,
 							     leftdatatype,
 							     rightdatatype,

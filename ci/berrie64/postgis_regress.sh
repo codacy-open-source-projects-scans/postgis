@@ -13,6 +13,14 @@ export CONFIG_FILE="$CUR_DIR/configs.sh"
 . $CONFIG_FILE
 echo $PATH
 
+pg_stop()
+{
+	if [ -n "${PGDATA:-}" ] && test -s "${PGDATA}/postmaster.pid"; then
+		"${PGPATH}/bin/pg_ctl" stop -D "${PGDATA}" -s -m fast || true
+	fi
+}
+trap pg_stop EXIT
+
 sh autogen.sh
 ./configure --with-pgconfig=${PGPATH}/bin/pg_config --with-geosconfig=${GEOS_PATH}/bin/geos-config --with-library-minor-version \
     --without-interrupt-tests --prefix=${PGPATH}
@@ -25,7 +33,10 @@ make install
 make check RUNTESTFLAGS="-v --extension"
 err_status=$?
 
-make garden
+# Optional PROJ grids are not installed on this worker. Grid-dependent manual
+# examples are marked requires-external-state, so run the remaining examples
+# without the global optional-grid preflight.
+make garden EXAMPLETEST_CHECK_ENVIRONMENT=no
 err_status=$?
 
 utils/check_all_upgrades.sh \
@@ -33,7 +44,4 @@ utils/check_all_upgrades.sh \
 
 err_status=$?
 
-if [ -d $PGDATA/postmaster.pid ] ; then
-	$PGCTL stop -D $PGDATA -s -m fast
-fi
 exit $err_status

@@ -1,7 +1,6 @@
 /*
  *
  * WKTRaster - Raster Types for PostGIS
- * http://trac.osgeo.org/postgis/wiki/WKTRaster
  *
  * Copyright (C) 2011-2013 Regents of the University of California
  *   <bkpark@ucdavis.edu>
@@ -38,6 +37,7 @@
 #include <utils/lsyscache.h> /* for get_typlenbyvalalign */
 #include <utils/array.h> /* for ArrayType */
 #include <utils/builtins.h> /* for cstring_to_text */
+#include <utils/float.h>    /* for float8in */
 #include <catalog/pg_type.h> /* for INT2OID, INT4OID, FLOAT4OID, FLOAT8OID and TEXTOID */
 #include <executor/executor.h> /* for GetAttributeByName */
 
@@ -71,6 +71,7 @@ Datum RASTER_mapAlgebraFct(PG_FUNCTION_ARGS);
 
 /* one-raster neighborhood MapAlgebra */
 Datum RASTER_mapAlgebraFctNgb(PG_FUNCTION_ARGS);
+Datum RASTER_sum4ma(PG_FUNCTION_ARGS);
 
 /* two-raster MapAlgebra */
 Datum RASTER_mapAlgebra2(PG_FUNCTION_ARGS);
@@ -78,6 +79,89 @@ Datum RASTER_mapAlgebra2(PG_FUNCTION_ARGS);
 /* ---------------------------------------------------------------- */
 /*  n-raster MapAlgebra                                             */
 /* ---------------------------------------------------------------- */
+
+/*
+ * Neighborhood callback for one-raster map algebra that implements ST_Sum4ma.
+ * The callback receives the moving-window values as a PostgreSQL float8 array
+ * and returns their sum.  NULL cells follow the historical PL/pgSQL contract:
+ * a NULL nodata mode makes the result NULL, "ignore" skips NULL cells, and any
+ * other mode is interpreted as the numeric replacement value.  The replacement
+ * mode is cast only when a NULL cell is actually encountered so wrapper-provided
+ * modes such as "NULL" and "value" remain valid for all-non-NULL windows.
+ */
+PG_FUNCTION_INFO_V1(RASTER_sum4ma);
+Datum
+RASTER_sum4ma(PG_FUNCTION_ARGS)
+{
+	ArrayType *matrix;
+	Datum *values;
+	bool *nulls;
+	int nitems;
+	int i;
+	double sum = 0;
+	char *nodatamode = NULL;
+	bool ignore_nodata = false;
+	bool has_nodata_replacement = false;
+	double nodata_replacement = 0;
+
+	if (PG_ARGISNULL(0))
+		ereport(
+		    ERROR,
+		    (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("st_sum4ma: matrix argument must not be NULL")));
+
+	if (!PG_ARGISNULL(1))
+	{
+		nodatamode = text_to_cstring(PG_GETARG_TEXT_PP(1));
+		if (strcmp(nodatamode, "ignore") == 0)
+			ignore_nodata = true;
+	}
+
+	matrix = PG_GETARG_ARRAYTYPE_P(0);
+	if (ARR_NDIM(matrix) < 2)
+		ereport(ERROR,
+			(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+			 errmsg("st_sum4ma: matrix argument must have at least 2 dimensions")));
+
+	deconstruct_array(matrix, FLOAT8OID, sizeof(float8), FLOAT8PASSBYVAL, 'd', &values, &nulls, &nitems);
+
+	for (i = 0; i < nitems; i++)
+	{
+		if (nulls[i])
+		{
+			if (ignore_nodata)
+				continue;
+			if (!nodatamode)
+			{
+				pfree(nulls);
+				pfree(values);
+				PG_FREE_IF_COPY(matrix, 0);
+				PG_RETURN_NULL();
+			}
+
+			/*
+			 * Match the PL/pgSQL callback: wrapper-provided modes such as
+			 * "NULL" and "value" are only cast when a NULL cell is present.
+			 */
+			if (!has_nodata_replacement)
+			{
+				nodata_replacement =
+				    DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(nodatamode)));
+				has_nodata_replacement = true;
+			}
+			sum += nodata_replacement;
+		}
+		else
+			sum += DatumGetFloat8(values[i]);
+	}
+
+	if (nodatamode)
+		pfree(nodatamode);
+	pfree(nulls);
+	pfree(values);
+	PG_FREE_IF_COPY(matrix, 0);
+
+	PG_RETURN_FLOAT8(sum);
+}
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -88,12 +172,14 @@ typedef struct {
 	Oid ufc_noid;
 	Oid ufc_rettype;
 	FmgrInfo ufl_info;
+	int hasnodata;
 	/* copied from LOCAL_FCINFO in fmgr.h */
 	union {
 		FunctionCallInfoBaseData fcinfo;
-		char fcinfo_data[SizeForFunctionCallInfo(FUNC_MAX_ARGS)]; /* Could be optimized */
+		char fcinfo_data[SizeForFunctionCallInfo(3)];
 	} ufc_info_data;
 	FunctionCallInfo ufc_info;
+	ArrayType *empty_userargs;
 } rtpg_nmapalgebra_callback_arg;
 
 #if defined(__clang__)
@@ -157,6 +243,8 @@ static rtpg_nmapalgebra_arg rtpg_nmapalgebra_arg_init(void) {
 
 	arg->callback.ufc_noid = InvalidOid;
 	arg->callback.ufc_rettype = InvalidOid;
+	arg->callback.empty_userargs = NULL;
+	arg->callback.hasnodata = 1;
 
 	return arg;
 }
@@ -183,6 +271,8 @@ static void rtpg_nmapalgebra_arg_destroy(rtpg_nmapalgebra_arg arg) {
 		rt_raster_destroy(arg->cextent);
 	if( arg->mask != NULL )
 	  pfree(arg->mask);
+	if (arg->callback.empty_userargs != NULL)
+		pfree(arg->callback.empty_userargs);
 
 	pfree(arg);
 }
@@ -514,8 +604,13 @@ static int rtpg_nmapalgebra_callback(
 				break;
 		}
 	}
-	else
+	else if (callback->hasnodata)
 		*nodata = 1;
+	else
+	{
+		elog(ERROR, "RASTER_nMapAlgebra: Callback returned NULL but output raster has no NODATA value");
+		return 0;
+	}
 
 	return 1;
 }
@@ -803,7 +898,8 @@ Datum RASTER_nMapAlgebra(PG_FUNCTION_ARGS)
 			noerr = 1;
 		}
 		/* function should have correct # of args */
-		else if (arg->callback.ufl_info.fn_nargs != 3) {
+		else if (arg->callback.ufl_info.fn_nargs < 2 || arg->callback.ufl_info.fn_nargs > 3)
+		{
 			noerr = 2;
 		}
 
@@ -842,7 +938,9 @@ Datum RASTER_nMapAlgebra(PG_FUNCTION_ARGS)
 					elog(ERROR, "RASTER_nMapAlgebra: Function provided must return scalar (double precision, float, int, smallint)");
 					break;
 				case 2:
-					elog(ERROR, "RASTER_nMapAlgebra: Function provided must have three input parameters");
+					elog(
+					    ERROR,
+					    "RASTER_nMapAlgebra: Function provided must have two or three input parameters");
 					break;
 				case 1:
 					elog(ERROR, "RASTER_nMapAlgebra: Function provided must return double precision, not resultset");
@@ -864,20 +962,26 @@ Datum RASTER_nMapAlgebra(PG_FUNCTION_ARGS)
 
 		arg->callback.ufc_info->args[0].isnull = FALSE;
 		arg->callback.ufc_info->args[1].isnull = FALSE;
-		arg->callback.ufc_info->args[2].isnull = FALSE;
-		/* userargs (7) */
-		if (!PG_ARGISNULL(9))
-			arg->callback.ufc_info->args[2].value = PG_GETARG_DATUM(9);
-		else {
-      if (arg->callback.ufl_info.fn_strict) {
-				/* build and assign an empty TEXT array */
-				/* TODO: manually free the empty array? */
-				arg->callback.ufc_info->args[2].value = PointerGetDatum(construct_empty_array(TEXTOID));
-				arg->callback.ufc_info->args[2].isnull = FALSE;
-      }
-			else {
-				arg->callback.ufc_info->args[2].value = (Datum)NULL;
-				arg->callback.ufc_info->args[2].isnull = TRUE;
+		if (arg->callback.ufl_info.fn_nargs == 3)
+		{
+			arg->callback.ufc_info->args[2].isnull = FALSE;
+			/* userargs (7) */
+			if (!PG_ARGISNULL(9))
+				arg->callback.ufc_info->args[2].value = PG_GETARG_DATUM(9);
+			else
+			{
+				if (arg->callback.ufl_info.fn_strict)
+				{
+					arg->callback.empty_userargs = construct_empty_array(TEXTOID);
+					arg->callback.ufc_info->args[2].value =
+					    PointerGetDatum(arg->callback.empty_userargs);
+					arg->callback.ufc_info->args[2].isnull = FALSE;
+				}
+				else
+				{
+					arg->callback.ufc_info->args[2].value = (Datum)NULL;
+					arg->callback.ufc_info->args[2].isnull = TRUE;
+				}
 			}
 		}
 	}
@@ -916,8 +1020,9 @@ Datum RASTER_nMapAlgebra(PG_FUNCTION_ARGS)
 		arg->pixtype = rt_band_get_pixtype(band);
 
 	/* set hasnodata and nodataval */
-	arg->hasnodata = 1;
-	if (rt_band_get_hasnodata_flag(band))
+	arg->hasnodata = rt_band_get_hasnodata_flag(band);
+	arg->callback.hasnodata = arg->hasnodata;
+	if (arg->hasnodata)
 		rt_band_get_nodata(band, &(arg->nodataval));
 	else
 		arg->nodataval = rt_band_get_min_value(band);
@@ -996,6 +1101,8 @@ typedef struct {
 		double val;
 	} nodatanodata;
 
+	int hasnodata;
+
 	struct {
 		int count;
 		char **val;
@@ -1045,6 +1152,7 @@ static rtpg_nmapalgebraexpr_arg rtpg_nmapalgebraexpr_arg_init(int cnt, char **kw
 
 	arg->callback.nodatanodata.hasval = 0;
 	arg->callback.nodatanodata.val = 0;
+	arg->callback.hasnodata = 1;
 
 	return arg;
 }
@@ -1109,13 +1217,15 @@ static int rtpg_nmapalgebraexpr_callback(
 				*nodata = 1;
 		}
 		/* expression */
-		else {
+		else
+		{
 			id = 0;
 			if (callback->expr[id].hasval)
 				*value = callback->expr[id].val;
 			else if (callback->expr[id].spi_plan)
 				plan = callback->expr[id].spi_plan;
-			else {
+			else
+			{
 				if (callback->nodatanodata.hasval)
 					*value = callback->nodatanodata.val;
 				else
@@ -1286,6 +1396,12 @@ static int rtpg_nmapalgebraexpr_callback(
 		}
 
 		if (SPI_tuptable) SPI_freetuptable(tuptable);
+	}
+
+	if (*nodata && !callback->hasnodata)
+	{
+		elog(ERROR, "RASTER_nMapAlgebraExpr: Expression returned NULL but output raster has no NODATA value");
+		return 0;
 	}
 
 	POSTGIS_RT_DEBUGF(4, "(value, nodata) = (%f, %d)", *value, *nodata);
@@ -1609,8 +1725,9 @@ Datum RASTER_nMapAlgebraExpr(PG_FUNCTION_ARGS)
 		arg->bandarg->pixtype = rt_band_get_pixtype(band);
 
 	/* set hasnodata and nodataval */
-	arg->bandarg->hasnodata = 1;
-	if (rt_band_get_hasnodata_flag(band))
+	arg->bandarg->hasnodata = rt_band_get_hasnodata_flag(band);
+	arg->callback.hasnodata = arg->bandarg->hasnodata;
+	if (arg->bandarg->hasnodata)
 		rt_band_get_nodata(band, &(arg->bandarg->nodataval));
 	else
 		arg->bandarg->nodataval = rt_band_get_min_value(band);
@@ -3300,7 +3417,7 @@ Datum RASTER_clip(PG_FUNCTION_ARGS)
 	if (!PG_ARGISNULL(5) && PG_GETARG_BOOL(5) == TRUE){
 			options_len = options_len + 1;
 			options = (char **) palloc(sizeof(char *) * options_len);
-			options[options_len - 1] = palloc(sizeof(char*) * (strlen("ALL_TOUCHED=TRUE") + 1));
+			options[options_len - 1] = palloc(sizeof(char) * (strlen("ALL_TOUCHED=TRUE") + 1));
 		 	strcpy(options[options_len - 1], "ALL_TOUCHED=TRUE");
 	}
 
@@ -4139,12 +4256,14 @@ Datum RASTER_reclass_exact(PG_FUNCTION_ARGS) {
 		elog(ERROR, "Band reclassification failed");
 
 	/* replace old band with new band */
-	if (rt_raster_replace_band(raster, newband, bandnum-1) == NULL) {
+	band = rt_raster_replace_band(raster, newband, bandnum-1);
+	if (band == NULL) {
 		rt_band_destroy(newband);
 		rt_raster_destroy(raster);
 		PG_FREE_IF_COPY(pgraster, 0);
 		elog(ERROR, "Could not replace raster band of index %d with reclassified band", bandnum);
 	}
+	rt_band_destroy(band);
 
 	pgrtn = rt_raster_serialize(raster);
 	rt_raster_destroy(raster);
@@ -5278,7 +5397,7 @@ Datum RASTER_mapAlgebraFct(PG_FUNCTION_ARGS)
     int ret = -1;
     Oid oid;
     FmgrInfo cbinfo;
-    LOCAL_FCINFO(cbdata, FUNC_MAX_ARGS); /* Could be optimized */
+    LOCAL_FCINFO(cbdata, 3);
 
     Datum tmpnewval;
     char * strFromText = NULL;
@@ -5519,11 +5638,12 @@ Datum RASTER_mapAlgebraFct(PG_FUNCTION_ARGS)
     }
 
     /* prep function call data */
-    InitFunctionCallInfoData(*cbdata, &cbinfo, 2, InvalidOid, NULL, NULL);
+    InitFunctionCallInfoData(*cbdata, &cbinfo, cbinfo.fn_nargs, InvalidOid, NULL, NULL);
 
     cbdata->args[0].isnull = FALSE;
     cbdata->args[1].isnull = FALSE;
-    cbdata->args[2].isnull = FALSE;
+    if (cbinfo.fn_nargs == 3)
+	    cbdata->args[2].isnull = FALSE;
 
     /* check that the function isn't strict if the args are null. */
     if (PG_ARGISNULL(4)) {
@@ -5704,7 +5824,7 @@ Datum RASTER_mapAlgebraFctNgb(PG_FUNCTION_ARGS)
     int ret = -1;
     Oid oid;
     FmgrInfo cbinfo;
-    LOCAL_FCINFO(cbdata, FUNC_MAX_ARGS); /* Could be optimized */
+    LOCAL_FCINFO(cbdata, 3);
     Datum tmpnewval;
     ArrayType * neighborDatum;
     char * strFromText = NULL;
@@ -5951,7 +6071,7 @@ Datum RASTER_mapAlgebraFctNgb(PG_FUNCTION_ARGS)
     }
 
     /* prep function call data */
-    InitFunctionCallInfoData(*cbdata, &cbinfo, 3, InvalidOid, NULL, NULL);
+    InitFunctionCallInfoData(*cbdata, &cbinfo, cbinfo.fn_nargs, InvalidOid, NULL, NULL);
     cbdata->args[0].isnull = FALSE;
     cbdata->args[1].isnull = FALSE;
     cbdata->args[2].isnull = FALSE;
@@ -6330,7 +6450,7 @@ Datum RASTER_mapAlgebra2(PG_FUNCTION_ARGS)
 
 	Oid ufc_noid = InvalidOid;
 	FmgrInfo ufl_info;
-	LOCAL_FCINFO(ufc_info, FUNC_MAX_ARGS); /* Could be optimized */
+	LOCAL_FCINFO(ufc_info, 4);
 
 	int ufc_nullcount = 0;
 

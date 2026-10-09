@@ -1,10 +1,17 @@
 #!/bin/sh
 
-TMPDIR=/tmp/pgis_upgrade_test-$$/
+TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/pgis_upgrade_test.XXXXXX") || exit 1
 DATADIR=${TMPDIR}/cluster
 LOGFILE=${TMPDIR}/log
 INIT_SCRIPT=
-export PGPORT=15432
+if test -z "${PGPORT:-}"; then
+  pipeline=${CI_PIPELINE_NUMBER:-0}
+  workflow=${CI_WORKFLOW_NUMBER:-30}
+  case "${pipeline}" in ''|*[!0-9]*) pipeline=0 ;; esac
+  case "${workflow}" in ''|*[!0-9]*) workflow=30 ;; esac
+  PGPORT=$((20000 + (pipeline % 1000) * 32 + (workflow % 32)))
+fi
+export PGPORT
 export PGHOST=${TMPDIR}
 export PGDATABASE=postgis_cluster_upgrade_test
 PG_CONFIG_OLD=
@@ -16,8 +23,15 @@ usage() {
 
 cleanup() {
   echo "-- Cleaning up --"
-  echo "Stopping postmaster on ${DATADIR} up"
-  ${BIN_OLD}/pg_ctl -D ${DATADIR} stop
+  if test -f "${DATADIR}/postmaster.pid"; then
+    if test -n "${BIN_NEW}"; then
+      echo "Stopping postmaster on ${DATADIR}"
+      ${BIN_NEW}/pg_ctl -D ${DATADIR} stop
+    else
+      echo "Stopping postmaster on ${DATADIR}"
+      ${BIN_OLD}/pg_ctl -D ${DATADIR} stop
+    fi
+  fi
   echo "Removing ${TMPDIR}"
   rm -rf ${TMPDIR}
 }
@@ -56,6 +70,11 @@ if test -z "$PG_CONFIG_NEW"; then
   exit 1
 fi
 
+if test "$(id -u)" = "0"; then
+  echo "This script must be run as an unprivileged PostgreSQL cluster owner, not root" >&2
+  exit 1
+fi
+
 if test "$PG_CONFIG_OLD" = "$PG_CONFIG_NEW"; then
   echo "Old and new pg_config paths need be different" >&2
   exit 1
@@ -63,6 +82,11 @@ fi
 
 BIN_OLD=$(${PG_CONFIG_OLD} --bindir)
 BIN_NEW=$(${PG_CONFIG_NEW} --bindir)
+
+INITDB_NEW_OPTS=
+if ${BIN_NEW}/initdb --help | grep -q -- "--no-data-checksums"; then
+  INITDB_NEW_OPTS=--no-data-checksums
+fi
 
 echo "Testing cluster upgrade"
 echo "FROM: $(${PG_CONFIG_OLD} --version)"
@@ -104,7 +128,7 @@ mv ${DATADIR} ${PGDATAOLD}
 export PGDATANEW=${DATADIR}
 
 echo "Creating TO cluster"
-${BIN_NEW}/initdb ${PGDATANEW} > ${LOGFILE} 2>&1 || {
+${BIN_NEW}/initdb ${INITDB_NEW_OPTS} ${PGDATANEW} > ${LOGFILE} 2>&1 || {
   cat ${LOGFILE} && exit 1
 }
 
